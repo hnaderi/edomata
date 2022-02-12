@@ -8,7 +8,7 @@ import edfsm.core.Action
 import edfsm.core.Decision
 import edfsm.core.DecisionT
 import edfsm.eventsourcing.Fold
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 
 import FSMDefinition.*
 

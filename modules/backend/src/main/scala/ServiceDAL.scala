@@ -6,12 +6,12 @@ import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
 import edfsm.eventsourcing.*
+import edfsm.backend.CommandMessage
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
 import io.odin.syntax.*
-import edfsm.protocols.command.CommandMessage
 
 import java.time.OffsetDateTime
 

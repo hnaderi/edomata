@@ -68,7 +68,7 @@ class FSMRouteTest extends CatsEffectSuite {
   }
 
   test("error response") {
-    import edfsm.protocols.command.CommandMessage
+    import edfsm.backend.CommandMessage
 
     val req = POST(3, uri"/sut-error/inc?id=234")
 

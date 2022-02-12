@@ -3,7 +3,7 @@ package edfsm.backend
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 
 import FSMDefinition.*
 import FakeCommandHandlerBuilder.*

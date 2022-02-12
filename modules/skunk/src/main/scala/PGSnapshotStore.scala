@@ -7,7 +7,6 @@ import cats.effect.Concurrent
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
-import edfsm.core.Request
 import edfsm.eventsourcing.ESRepository
 import edfsm.eventsourcing.Journal
 import edfsm.eventsourcing.MyESRepository

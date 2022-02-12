@@ -12,12 +12,12 @@ import cats.effect.std.Semaphore
 import cats.implicits.*
 import edfsm.core.Decision
 import edfsm.core.DecisionT
+import edfsm.backend.CommandMessage
 import edfsm.eventsourcing.*
 import io.circe.Codec
 import io.circe.Encoder
 import io.odin.Logger
 import io.odin.syntax.*
-import edfsm.protocols.command.CommandMessage
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset

@@ -1,4 +1,4 @@
-package edfsm.protocols.command
+package edfsm.backend
 
 import CommandMessage._
 import java.time.Instant

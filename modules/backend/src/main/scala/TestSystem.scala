@@ -2,6 +2,7 @@ package edfsm.backend
 
 import cats.Functor
 import cats.Monad
+import cats.MonadError
 import cats.Show
 import cats.data.EitherNec
 import cats.effect.*
@@ -9,16 +10,15 @@ import cats.effect.implicits.*
 import cats.effect.std.Random
 import cats.effect.std.Semaphore
 import cats.implicits.*
+import edfsm.backend.test.FoldFailed
 import edfsm.core.Action
 import edfsm.core.Decision
 import edfsm.core.DecisionT
 import edfsm.eventsourcing.*
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 
 import FSMDefinition.*
 import TestSystem.*
-import cats.MonadError
-import edfsm.backend.test.FoldFailed
 
 trait TestSystem[F[_], Domain] {
   def tell(cmd: DomainCommand[Domain]): F[TestResult[Domain]]

@@ -12,7 +12,7 @@ import edfsm.backend.TestSystem.TestResult
 import edfsm.backend.*
 import edfsm.core.Decision
 import munit.CatsEffectSuite
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 
 import java.time.Instant
 

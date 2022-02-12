@@ -13,7 +13,7 @@ import io.odin.Logger
 import io.odin.syntax.*
 import edfsm.common.notification.OutboxService
 import edfsm.common.notification.PGOutboxService
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 import skunk.Session
 import java.time.OffsetDateTime
 import FSMDefinition.*

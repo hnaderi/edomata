@@ -15,8 +15,8 @@ import org.http4s.circe.CirceEntityEncoder.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.QueryParamDecoderMatcher
 import org.http4s.syntax.*
-import edfsm.protocols.command.CommandId
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandId
+import edfsm.backend.CommandMessage
 
 object FSMRoute {
   object CommandIdParam extends QueryParamDecoderMatcher[CommandId]("id")

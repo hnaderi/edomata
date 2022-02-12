@@ -2,7 +2,7 @@ package edfsm.backend
 
 import cats.implicits.*
 import io.circe.syntax.*
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*

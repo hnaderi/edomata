@@ -10,7 +10,7 @@ import io.circe.Encoder
 import munit.CatsEffectSuite
 import natchez.Trace.Implicits.noop
 import edfsm.common.pgPersistence.PGFixture
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 import skunk.net.protocol.Describe
 
 import java.util.UUID

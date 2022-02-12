@@ -1,6 +1,6 @@
 package edfsm.backend
 
-import edfsm.protocols.command.CommandMessage
+import edfsm.backend.CommandMessage
 
 trait CommandStore[F[_], T] {
   def append(cmd: CommandMessage[T]): F[Unit]
