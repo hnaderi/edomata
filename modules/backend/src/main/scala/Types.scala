@@ -4,11 +4,11 @@ import cats.Applicative
 import cats.data.EitherNec
 import cats.data.Kleisli
 import cats.data.ValidatedNec
+import edfsm.backend.CommandMessage
 import edfsm.core.Action
 import edfsm.core.Decision
 import edfsm.core.DecisionT
 import edfsm.eventsourcing.Fold
-import edfsm.backend.CommandMessage
 
 import FSMDefinition.*
 

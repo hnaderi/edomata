@@ -10,12 +10,12 @@ import cats.effect.implicits.*
 import cats.effect.std.Random
 import cats.effect.std.Semaphore
 import cats.implicits.*
+import edfsm.backend.CommandMessage
 import edfsm.backend.test.FoldFailed
 import edfsm.core.Action
 import edfsm.core.Decision
 import edfsm.core.DecisionT
 import edfsm.eventsourcing.*
-import edfsm.backend.CommandMessage
 
 import FSMDefinition.*
 import TestSystem.*
