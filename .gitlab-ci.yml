@@ -1,0 +1,52 @@
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+      variables:
+        NEEDS_APPROVAL: "true"
+    - if : $CI_COMMIT_TAG =~ /^v.*/ && $CI_COMMIT_REF_PROTECTED == "true"
+      variables:
+        RELEASE: "true"
+        PUBLISH: "true"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      variables:
+        PUBLISH: "true"
+
+stages:
+  - commit
+  - release
+
+.sbt_job:
+  image: hseeberger/scala-sbt:11.0.13_1.6.2_3.1.0
+
+.test_dependencies:
+  services:
+    - postgres:14
+  variables:
+    POSTGRES_HOST: postgres
+    POSTGRES_DB: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+  artifacts:
+    when: always
+    reports:
+      junit: "**/target/test-reports/*.xml"
+
+Commit:
+  stage: commit
+  extends:
+    - .sbt_job
+    - .test_dependencies
+  script:
+    - sbt clean scalafmtCheckAll compile test
+  rules:
+    - if: $NEEDS_APPROVAL
+
+Publish:
+  stage: commit
+  extends:
+    - .sbt_job
+    - .test_dependencies
+  script:
+    - sbt clean scalafmtCheckAll compile test publish
+  rules:
+    - if: $PUBLISH
