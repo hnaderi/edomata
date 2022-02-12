@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edfsm.backend.skunk
 
 import cats.FlatMap
 import cats.Monad
@@ -14,7 +14,7 @@ import edfsm.eventsourcing.MyESRepository
 import edfsm.eventsourcing.*
 import fs2.Stream
 import io.odin.Logger
-import edfsm.common.pgPersistence.assertInsertedSize
+import edfsm.backend.skunk.assertInsertedSize
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*

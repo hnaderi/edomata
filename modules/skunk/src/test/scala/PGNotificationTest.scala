@@ -1,12 +1,10 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import cats.effect.IO
 import cats.effect.Resource
 import cats.implicits.*
-import edfsm.eventsourcing.PGTest
 import fs2.Stream
 import munit.CatsEffectSuite
-import edfsm.common.notification.PGOutboxNotification
 
 import scala.concurrent.duration.*
 

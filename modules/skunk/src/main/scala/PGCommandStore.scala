@@ -1,4 +1,4 @@
-package edfsm.backend
+package edfsm.backend.skunk
 
 import cats.implicits.*
 import io.circe.syntax.*
@@ -11,6 +11,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import cats.Functor
 import cats.effect.kernel.MonadCancel
+import edfsm.backend.CommandStore
 
 object PGCommandStore {
   object Queries {

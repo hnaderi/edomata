@@ -1,8 +1,8 @@
-package edfsm.eventsourcing
+package edfsm.backend.skunk
 
 import cats.effect.IO
+import edfsm.backend.skunk.PGFixture
 import munit.CatsEffectSuite
-import edfsm.common.pgPersistence.PGFixture
 
 abstract class PGTest extends CatsEffectSuite {
   protected val SUT = ResourceSuiteLocalFixture(

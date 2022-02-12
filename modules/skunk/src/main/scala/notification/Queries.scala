@@ -1,4 +1,4 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import skunk.*
 import skunk.circe.codec.all.jsonb
@@ -9,7 +9,7 @@ import skunk.implicits.*
 import java.time.OffsetDateTime
 import scala.concurrent.duration.*
 
-private[notification] final class Queries[T](
+private[skunk] final class Queries[T](
     namespace: String,
     codec: Codec[T]
 ) {

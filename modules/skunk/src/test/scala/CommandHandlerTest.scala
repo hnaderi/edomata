@@ -1,16 +1,18 @@
-package edfsm.backend
+package edfsm.backend.skunk
 
 import cats.effect.IO
 import cats.effect.Resource
 import cats.implicits.*
+import edfsm.backend.CommandHandler
+import edfsm.backend.CommandMessage
+import edfsm.backend.ServiceDAL
+import edfsm.backend.skunk.PGFixture
 import edfsm.eventsourcing.AggregateState
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import munit.CatsEffectSuite
 import natchez.Trace.Implicits.noop
-import edfsm.common.pgPersistence.PGFixture
-import edfsm.backend.CommandMessage
 import skunk.net.protocol.Describe
 
 import java.util.UUID

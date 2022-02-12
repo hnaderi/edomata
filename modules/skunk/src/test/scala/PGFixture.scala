@@ -1,11 +1,10 @@
-package edfsm.common
-package pgPersistence
+package edfsm.backend.skunk
 
 import cats.effect.IO
-import skunk.Session
 import cats.effect.Resource
-import natchez.Trace.Implicits.noop
 import cats.implicits.*
+import natchez.Trace.Implicits.noop
+import skunk.Session
 
 object PGFixture {
   val pgHost = sys.env.getOrElse("POSTGRES_HOST", "localhost")

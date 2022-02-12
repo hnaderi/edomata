@@ -1,4 +1,4 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import java.time.OffsetDateTime
 import fs2.Stream

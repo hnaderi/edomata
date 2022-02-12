@@ -1,22 +1,25 @@
-package edfsm.backend
+package edfsm.backend.skunk
 
 import cats.Show
 import cats.data.NonEmptyChain
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
+import edfsm.backend.CommandMessage
+import edfsm.backend.CommandStore
+import edfsm.backend.DomainCommand
+import edfsm.backend.DomainTransition
+import edfsm.backend.FSMDefinition.*
+import edfsm.backend.ServiceDAL
 import edfsm.eventsourcing.*
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
 import io.odin.syntax.*
-import edfsm.common.notification.OutboxService
-import edfsm.common.notification.PGOutboxService
-import edfsm.backend.CommandMessage
 import skunk.Session
+
 import java.time.OffsetDateTime
-import FSMDefinition.*
 
 object PGServiceDAL {
   def from[F[_]: Async, Domain](

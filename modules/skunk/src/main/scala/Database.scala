@@ -1,5 +1,4 @@
-package edfsm.common
-package pgPersistence
+package edfsm.backend.skunk
 
 import cats.effect._
 import cats.effect.implicits.*

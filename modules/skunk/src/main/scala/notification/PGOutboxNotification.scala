@@ -1,4 +1,4 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import cats.MonadError
 import cats.effect.Concurrent
@@ -12,7 +12,7 @@ import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
 import io.odin.loggers.ConstContextLogger
-import edfsm.common.*
+
 import skunk.Channel
 import skunk.Session
 import skunk.circe.codec.json
@@ -72,7 +72,7 @@ object PGOutboxNotification {
         in.enqueueUnterminated(q) mergeHaltL Stream.fromQueueUnterminated(q, 1)
       }
 
-  private[notification] def getChannel[F[_]](
+  private[skunk] def getChannel[F[_]](
       session: Session[F],
       namespace: String
   )(using

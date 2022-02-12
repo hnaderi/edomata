@@ -1,14 +1,13 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.std.CountDownLatch
 import cats.implicits.*
-import edfsm.eventsourcing.PGTest
+import edfsm.backend.skunk.Database
+import edfsm.backend.skunk.PGFixture
 import fs2.Stream
 import munit.CatsEffectSuite
-import edfsm.common.pgPersistence.Database
-import edfsm.common.pgPersistence.PGFixture
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset

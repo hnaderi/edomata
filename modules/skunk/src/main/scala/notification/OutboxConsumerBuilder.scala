@@ -1,4 +1,4 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import cats.effect.Resource
 import cats.effect.Temporal
@@ -7,7 +7,7 @@ import fs2.Stream
 import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
-import edfsm.common.notification.OutboxService
+
 import skunk.Session
 
 import PGOutboxConsumer.*

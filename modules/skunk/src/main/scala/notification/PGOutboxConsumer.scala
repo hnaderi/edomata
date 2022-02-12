@@ -1,4 +1,4 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import cats.effect.Concurrent
 import cats.effect.Resource
@@ -13,8 +13,7 @@ import io.circe.Decoder
 import io.circe.Encoder
 import io.odin.Logger
 import io.odin.loggers.ConstContextLogger
-import edfsm.common.*
-import edfsm.common.notification.OutboxService
+
 import skunk.Session
 import skunk.circe.codec.json
 
@@ -34,7 +33,7 @@ final case class PGOutboxConsumer[F[_]: Temporal](
   ): Stream[F, Unit] =
     notification.stream(namespace).through(pipe(namespace, func))
 
-  private[notification] def pipe[T: Encoder: Decoder](
+  private[skunk] def pipe[T: Encoder: Decoder](
       namespace: String,
       func: OutboxItem[T] => F[Unit]
   ): Pipe[F, Unit, Unit] = {

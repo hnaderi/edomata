@@ -1,8 +1,13 @@
-package edfsm.backend
+package edfsm.backend.skunk
 
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
+import edfsm.backend.CommandHandler
+import edfsm.backend.DomainLogic
+import edfsm.backend.DomainTransition
+import edfsm.backend.FSMDefinition.*
+import edfsm.backend.skunk.Database
 import edfsm.eventsourcing.*
 import io.circe.Codec
 import io.circe.Decoder
@@ -10,10 +15,7 @@ import io.circe.Encoder
 import io.odin.Logger
 import io.odin.syntax.*
 import natchez.Trace
-import edfsm.common.pgPersistence.Database
 import skunk.Session
-
-import FSMDefinition.*
 
 /** Builder for constructing a FSM service handler in F
   */

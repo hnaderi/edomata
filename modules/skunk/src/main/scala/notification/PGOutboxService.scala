@@ -1,4 +1,4 @@
-package edfsm.common.notification
+package edfsm.backend.skunk
 
 import cats.Functor
 import cats.MonadError
@@ -11,7 +11,7 @@ import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
 import io.odin.loggers.ConstContextLogger
-import edfsm.common.pgPersistence.assertInserted
+import edfsm.backend.skunk.assertInserted
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*

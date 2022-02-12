@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edfsm.backend.skunk
 
 import cats.Functor
 import cats.Monad

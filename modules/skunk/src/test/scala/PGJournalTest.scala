@@ -1,12 +1,14 @@
-package edfsm.eventsourcing
+package edfsm.backend.skunk
 
+import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.Resource
+import edfsm.backend.skunk.Database
+import edfsm.backend.skunk.PGFixture
+import edfsm.eventsourcing.Journal
 import munit.CatsEffectSuite
-import edfsm.common.pgPersistence.PGFixture
-import edfsm.common.pgPersistence.Database
+
 import java.time.ZoneOffset
-import cats.data.NonEmptyChain
 import java.util.UUID
 
 class PGJournalTest extends CatsEffectSuite {

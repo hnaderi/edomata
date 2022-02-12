@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edfsm.backend.skunk
 
 import cats.Monad
 import cats.MonadError
@@ -13,7 +13,7 @@ import edfsm.eventsourcing.MyESRepository
 import edfsm.eventsourcing.*
 import fs2.Stream
 import io.odin.Logger
-import edfsm.common.pgPersistence.*
+import edfsm.backend.skunk.*
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*
