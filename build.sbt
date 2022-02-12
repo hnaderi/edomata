@@ -1,3 +1,4 @@
+import laika.io.config.SiteConfig
 import sbt.ThisBuild
 import Dependencies._
 
@@ -39,33 +40,41 @@ lazy val modules: List[ProjectReference] = List(
   endpoint,
   eventsourcing,
   skunkBackend,
-  backendTestkit
+  backendTestkit,
+  docs
 )
 
 lazy val root = (project in file("."))
   .settings(
-    Common.settings,
     publish / skip := true
   )
-  .aggregate(modules: _*)
-  .enablePlugins(MicrositesPlugin)
   .enablePlugins(GitVersioning)
   .enablePlugins(GitBranchPrompt)
+  .aggregate(modules: _*)
 
-lazy val docs = project
-  .in(file("docs-build"))
+import laika.parse.code.SyntaxHighlighting
+import laika.markdown.github.GitHubFlavor
+
+lazy val docs = (project in file("docs-build"))
   .settings(
     Common.settings,
+    publish / skip := true,
+    laikaIncludeAPI := true,
+    Laika / sourceDirectories := Seq(mdocOut.value),
     mdocVariables := Map(
       "VERSION" -> version.value
     ),
-    libraryDependencies := libraryDependencies.value.map(
-      _ excludeAll (
-        ExclusionRule(organization = "com.lihaoyi", name = "sourcecode_2.13")
-      )
-    )
+    laikaExtensions ++= Seq(GitHubFlavor, SyntaxHighlighting),
+    laikaTheme := SiteConfigs.landing.build
   )
+  .enablePlugins(LaikaPlugin)
+  .enablePlugins(ScalaUnidocPlugin)
   .enablePlugins(MdocPlugin)
+  .dependsOn(
+    core,
+    backend,
+    eventsourcing
+  )
 
 import Libraries._
 
@@ -86,3 +95,5 @@ lazy val skunkBackend = module("skunk", skunk ++ odin)
   .dependsOn(backend)
 
 lazy val backendTestkit = testkit("backend").dependsOn(backend)
+
+addCommandAlias("site", List("docs/clean", "mdoc", "laikaSite").mkString(" ;"))

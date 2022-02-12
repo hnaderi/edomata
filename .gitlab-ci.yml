@@ -13,7 +13,7 @@ workflow:
 
 stages:
   - commit
-  - release
+  - publish
 
 .sbt_job:
   image: hseeberger/scala-sbt:11.0.13_1.6.2_3.1.0
@@ -38,15 +38,30 @@ Commit:
     - .test_dependencies
   script:
     - sbt clean scalafmtCheckAll compile test
-  rules:
-    - if: $NEEDS_APPROVAL
+  artifacts:
+    paths:
+      - "**/target"
 
-Publish:
-  stage: commit
+Release:
+  stage: publish
   extends:
     - .sbt_job
-    - .test_dependencies
   script:
-    - sbt clean scalafmtCheckAll compile test publish
+    - sbt publish
+  rules:
+    - if: $RELEASE
+
+pages:
+  stage: publish
+  extends:
+    - .sbt_job
+  script:
+    - sbt site
+    - mv docs-build/target/docs/site public
+  artifacts:
+    paths:
+      - public
+    exclude:
+      - public/target
   rules:
     - if: $PUBLISH
