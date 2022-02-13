@@ -1,4 +1,4 @@
-# edomata
+# Introduction
 
 Pure Event-driven automatons in scala  
 for people who can't keep every little annoying detail of a large framework!

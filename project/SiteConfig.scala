@@ -9,7 +9,12 @@ import laika.sbt.LaikaConfig
 object SiteConfigs {
   val landing = Helium.defaults.site
     .landingPage(
-      logo = None, //Some(Image()),
+      logo = Some(
+        Image.internal(
+          Root / "icon.png",
+          width = Some(Length(50, LengthUnit.percent))
+        )
+      ),
       title = Some("Edomata"),
       subtitle = Some("Event-driven automatons for Scala"),
       latestReleases = Seq(
