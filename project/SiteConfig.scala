@@ -23,7 +23,7 @@ object SiteConfigs {
       ),
       license = Some("Apache 2"),
       documentationLinks = Seq(
-        TextLink.internal(Root / "introduction.md", "Doc 1"),
+        TextLink.internal(Root / "api"/ "index.html", "API docs"),
         TextLink.internal(Root / "features.md", "Doc 2")
       ),
       projectLinks = Seq(
@@ -61,7 +61,7 @@ object SiteConfigs {
     .topNavigationBar(
       homeLink = IconLink.internal(Root / "introduction.md", HeliumIcon.home),
       navLinks = Seq(
-        IconLink.internal(Root / "introduction.md", HeliumIcon.download),
+        IconLink.internal(Root / "api" / "index.html", HeliumIcon.api),
         TextLink.external("http://somewhere.com/", "Text Link"),
         ButtonLink.external("http://somewhere.com/", "Button Link")
       ),

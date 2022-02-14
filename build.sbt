@@ -60,6 +60,7 @@ lazy val docs = (project in file("docs-build"))
     Common.settings,
     publish / skip := true,
     laikaIncludeAPI := true,
+    laikaGenerateAPI / mappings := (ScalaUnidoc / packageDoc / mappings).value,
     Laika / sourceDirectories := Seq(mdocOut.value),
     mdocVariables := Map(
       "VERSION" -> version.value
