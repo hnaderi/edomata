@@ -23,12 +23,13 @@ object SiteConfigs {
       ),
       license = Some("Apache 2"),
       documentationLinks = Seq(
-        TextLink.internal(Root / "api"/ "index.html", "API docs"),
-        TextLink.internal(Root / "features.md", "Doc 2")
+        TextLink.internal(Root / "introduction.md", "Inroduction"),
+        TextLink.internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
+        TextLink.internal(Root / "principles" / "index.md", "Principles"),
+        TextLink.internal(Root / "api"/ "index.html", "API docs")
       ),
       projectLinks = Seq(
-        IconLink.internal(Root / "introduction.md", HeliumIcon.demo),
-        ButtonLink.external("http://somewhere.com/", "Somewhere")
+        TextLink.external("http://somewhere.com/", "Demo")
       ),
       teasers = Seq(
         Teaser(
@@ -62,10 +63,8 @@ object SiteConfigs {
       homeLink = IconLink.internal(Root / "introduction.md", HeliumIcon.home),
       navLinks = Seq(
         IconLink.internal(Root / "api" / "index.html", HeliumIcon.api),
-        TextLink.external("http://somewhere.com/", "Text Link"),
-        ButtonLink.external("http://somewhere.com/", "Button Link")
-      ),
-      highContrast = true
+        TextLink.external("http://somewhere.com/", "Text Link")
+      )
     )
 
 }
