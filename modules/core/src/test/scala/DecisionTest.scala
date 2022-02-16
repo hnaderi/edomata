@@ -1,4 +1,4 @@
-package edfsm.core
+package edomata.core
 
 import cats.data.NonEmptyChain
 import cats.implicits.*

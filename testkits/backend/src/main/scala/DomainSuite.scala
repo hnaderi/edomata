@@ -1,18 +1,18 @@
-package edfsm.backend.test
+package edomata.backend.test
 
 import cats.Eval
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.implicits.*
-import edfsm.backend.FSMDefinition.*
-import edfsm.backend.RequestContext
-import edfsm.backend.TestSystem
-import edfsm.backend.TestSystem.TestResult
-import edfsm.backend.*
-import edfsm.core.Decision
+import edomata.backend.FSMDefinition.*
+import edomata.backend.RequestContext
+import edomata.backend.TestSystem
+import edomata.backend.TestSystem.TestResult
+import edomata.backend.*
+import edomata.core.Decision
 import munit.CatsEffectSuite
-import edfsm.backend.CommandMessage
+import edomata.backend.CommandMessage
 
 import java.time.Instant
 

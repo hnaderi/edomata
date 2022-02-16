@@ -1,4 +1,4 @@
-package edfsm.backend
+package edomata.backend
 
 import cats.Functor
 import cats.Monad
@@ -10,12 +10,12 @@ import cats.effect.implicits.*
 import cats.effect.std.Random
 import cats.effect.std.Semaphore
 import cats.implicits.*
-import edfsm.backend.CommandMessage
-import edfsm.backend.test.FoldFailed
-import edfsm.core.Action
-import edfsm.core.Decision
-import edfsm.core.DecisionT
-import edfsm.eventsourcing.*
+import edomata.backend.CommandMessage
+import edomata.backend.test.FoldFailed
+import edomata.core.Action
+import edomata.core.Decision
+import edomata.core.DecisionT
+import edomata.eventsourcing.*
 
 import FSMDefinition.*
 import TestSystem.*

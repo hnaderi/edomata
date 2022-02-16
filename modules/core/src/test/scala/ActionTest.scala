@@ -1,4 +1,4 @@
-package edfsm.core
+package edomata.core
 
 import cats.Eval
 import cats.data.Kleisli

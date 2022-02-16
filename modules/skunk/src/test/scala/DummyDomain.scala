@@ -1,11 +1,11 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.Monad
 import cats.implicits.*
-import edfsm.backend.DomainLogic
-import edfsm.backend.DomainTransition
-import edfsm.backend.FSMDefinition.*
-import edfsm.core.Action.*
+import edomata.backend.DomainLogic
+import edomata.backend.DomainTransition
+import edomata.backend.FSMDefinition.*
+import edomata.core.Action.*
 
 type DummyDomain = (
     HasState[Long],

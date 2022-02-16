@@ -1,4 +1,4 @@
-package edfsm.backend
+package edomata.backend
 
 sealed trait FSMDefinition
 object FSMDefinition {

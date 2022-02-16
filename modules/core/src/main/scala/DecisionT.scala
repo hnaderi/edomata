@@ -1,13 +1,13 @@
-package edfsm.core
+package edomata.core
 
 import cats.Applicative
 import cats.Functor
 import cats.Monad
 import cats.data.ValidatedNec
 import cats.implicits._
-import edfsm.core.Decision.Accepted
-import edfsm.core.Decision.InDecisive
-import edfsm.core.Decision.Rejected
+import edomata.core.Decision.Accepted
+import edomata.core.Decision.InDecisive
+import edomata.core.Decision.Rejected
 
 final case class DecisionT[F[_], R, E, A](run: F[Decision[R, E, A]]) {
   def map[B](f: A => B)(using F: Functor[F]): DecisionT[F, R, E, B] =

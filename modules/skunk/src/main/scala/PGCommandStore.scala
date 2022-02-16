@@ -1,8 +1,8 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.implicits.*
 import io.circe.syntax.*
-import edfsm.backend.CommandMessage
+import edomata.backend.CommandMessage
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*
@@ -11,7 +11,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import cats.Functor
 import cats.effect.kernel.MonadCancel
-import edfsm.backend.CommandStore
+import edomata.backend.CommandStore
 
 object PGCommandStore {
   object Queries {

@@ -1,13 +1,13 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.effect.IO
 import cats.effect.Resource
 import cats.implicits.*
-import edfsm.backend.CommandHandler
-import edfsm.backend.CommandMessage
-import edfsm.backend.ServiceDAL
-import edfsm.backend.skunk.PGFixture
-import edfsm.eventsourcing.AggregateState
+import edomata.backend.CommandHandler
+import edomata.backend.CommandMessage
+import edomata.backend.ServiceDAL
+import edomata.backend.skunk.PGFixture
+import edomata.eventsourcing.AggregateState
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder

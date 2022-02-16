@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edomata.eventsourcing
 
 import scala.collection._
 

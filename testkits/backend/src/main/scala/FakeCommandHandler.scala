@@ -1,9 +1,9 @@
-package edfsm.backend
+package edomata.backend
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
-import edfsm.backend.CommandMessage
+import edomata.backend.CommandMessage
 
 import FSMDefinition.*
 

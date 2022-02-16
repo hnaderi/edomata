@@ -17,7 +17,7 @@ def module(name: String, deps: Seq[ModuleID] = Nil): Project = {
       Common.settings,
       libraryDependencies ++=
         Libraries.cats ++ Libraries.munit.map(_ % Test) ++ deps,
-      moduleName := s"edfsm-$name"
+      moduleName := s"edomata-$name"
     )
     .enablePlugins(GitlabPlugin)
 }
@@ -29,7 +29,7 @@ def testkit(name: String, deps: Seq[ModuleID] = Nil): Project = {
       Common.settings,
       libraryDependencies ++=
         Libraries.cats ++ Libraries.munit ++ deps,
-      moduleName := s"edfsm-$name-testkit"
+      moduleName := s"edomata-$name-testkit"
     )
     .enablePlugins(GitlabPlugin)
 }

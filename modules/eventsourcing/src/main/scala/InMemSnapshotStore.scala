@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edomata.eventsourcing
 
 import cats.effect.Concurrent
 import cats.effect.kernel.Ref

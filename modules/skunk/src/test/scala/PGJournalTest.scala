@@ -1,11 +1,11 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.Resource
-import edfsm.backend.skunk.Database
-import edfsm.backend.skunk.PGFixture
-import edfsm.eventsourcing.Journal
+import edomata.backend.skunk.Database
+import edomata.backend.skunk.PGFixture
+import edomata.eventsourcing.Journal
 import munit.CatsEffectSuite
 
 import java.time.ZoneOffset

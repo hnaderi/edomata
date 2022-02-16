@@ -1,10 +1,10 @@
-package edfsm.backend
+package edomata.backend
 
 import cats.Monad
 import cats.data.Kleisli
 import cats.data.ValidatedNec
-import edfsm.core.Action
-import edfsm.core.Decision
+import edomata.core.Action
+import edomata.core.Decision
 
 import FSMDefinition.*
 

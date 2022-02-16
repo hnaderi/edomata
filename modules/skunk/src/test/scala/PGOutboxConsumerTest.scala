@@ -1,11 +1,11 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.std.CountDownLatch
 import cats.implicits.*
-import edfsm.backend.skunk.Database
-import edfsm.backend.skunk.PGFixture
+import edomata.backend.skunk.Database
+import edomata.backend.skunk.PGFixture
 import fs2.Stream
 import munit.CatsEffectSuite
 

@@ -1,17 +1,17 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.Show
 import cats.data.NonEmptyChain
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
-import edfsm.backend.CommandMessage
-import edfsm.backend.CommandStore
-import edfsm.backend.DomainCommand
-import edfsm.backend.DomainTransition
-import edfsm.backend.FSMDefinition.*
-import edfsm.backend.ServiceDAL
-import edfsm.eventsourcing.*
+import edomata.backend.CommandMessage
+import edomata.backend.CommandStore
+import edomata.backend.DomainCommand
+import edomata.backend.DomainTransition
+import edomata.backend.FSMDefinition.*
+import edomata.backend.ServiceDAL
+import edomata.eventsourcing.*
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder

@@ -1,4 +1,4 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.effect._
 import cats.effect.implicits.*

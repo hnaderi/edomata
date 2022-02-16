@@ -1,12 +1,12 @@
-package edfsm.backend
+package edomata.backend
 
 import cats.Show
 import cats.data.NonEmptyChain
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
-import edfsm.backend.CommandMessage
-import edfsm.eventsourcing.*
+import edomata.backend.CommandMessage
+import edomata.eventsourcing.*
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder

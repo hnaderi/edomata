@@ -1,6 +1,6 @@
-package edfsm.backend
+package edomata.backend
 
-import edfsm.backend.CommandMessage
+import edomata.backend.CommandMessage
 
 trait CommandStore[F[_], T] {
   def append(cmd: CommandMessage[T]): F[Unit]

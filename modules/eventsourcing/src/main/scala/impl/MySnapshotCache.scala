@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edomata.eventsourcing
 
 import cats.Show
 import cats.effect.kernel.Async

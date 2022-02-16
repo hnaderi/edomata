@@ -1,4 +1,4 @@
-package edfsm.eventsourcing
+package edomata.eventsourcing
 
 import fs2.Stream
 import fs2.Stream.*

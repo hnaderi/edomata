@@ -1,7 +1,7 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.effect.IO
-import edfsm.backend.skunk.PGFixture
+import edomata.backend.skunk.PGFixture
 import munit.CatsEffectSuite
 
 abstract class PGTest extends CatsEffectSuite {

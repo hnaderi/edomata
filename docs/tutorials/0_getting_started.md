@@ -7,6 +7,6 @@ libraryDependencies += "ir.hnaderi" %% "edomata-core" % "@VERSION@"
 ```
 
 ```scala mdoc
-import edfsm.core.*
+import edomata.core.*
 val d1 = Decision.pure(1)
 ```

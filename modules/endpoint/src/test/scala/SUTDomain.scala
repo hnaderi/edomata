@@ -1,14 +1,14 @@
-package edfsm
+package edomata
 
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.Resource
 import cats.implicits.*
-import edfsm.backend.FSMDefinition.*
-import edfsm.backend.TestSystem.TestUnit
-import edfsm.backend.*
-import edfsm.core.Action
+import edomata.backend.FSMDefinition.*
+import edomata.backend.TestSystem.TestUnit
+import edomata.backend.*
+import edomata.core.Action
 import io.circe.Json
 import munit.CatsEffectSuite
 import org.http4s.HttpApp

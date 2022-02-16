@@ -1,4 +1,4 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.Monad
 import cats.MonadError
@@ -7,13 +7,13 @@ import cats.effect.Concurrent
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
-import edfsm.eventsourcing.ESRepository
-import edfsm.eventsourcing.Journal
-import edfsm.eventsourcing.MyESRepository
-import edfsm.eventsourcing.*
+import edomata.eventsourcing.ESRepository
+import edomata.eventsourcing.Journal
+import edomata.eventsourcing.MyESRepository
+import edomata.eventsourcing.*
 import fs2.Stream
 import io.odin.Logger
-import edfsm.backend.skunk.*
+import edomata.backend.skunk.*
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*

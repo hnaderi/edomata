@@ -1,13 +1,13 @@
-package edfsm
+package edomata
 
 import cats.Monad
 import cats.Show
 import cats.effect.Clock
 import cats.implicits.*
-import edfsm.backend.CommandHandler
-import edfsm.backend.CommandResult
-import edfsm.backend.FSMDefinition.CommandFor
-import edfsm.backend.FSMDefinition.RejectionFor
+import edomata.backend.CommandHandler
+import edomata.backend.CommandResult
+import edomata.backend.FSMDefinition.CommandFor
+import edomata.backend.FSMDefinition.RejectionFor
 import io.circe.Json
 import io.circe.syntax.*
 import org.http4s.*
@@ -15,8 +15,8 @@ import org.http4s.circe.CirceEntityEncoder.*
 import org.http4s.dsl.Http4sDsl
 import org.http4s.dsl.impl.QueryParamDecoderMatcher
 import org.http4s.syntax.*
-import edfsm.backend.CommandId
-import edfsm.backend.CommandMessage
+import edomata.backend.CommandId
+import edomata.backend.CommandMessage
 
 object FSMRoute {
   object CommandIdParam extends QueryParamDecoderMatcher[CommandId]("id")

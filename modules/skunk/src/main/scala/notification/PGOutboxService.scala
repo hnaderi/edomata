@@ -1,4 +1,4 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.Functor
 import cats.MonadError
@@ -6,12 +6,12 @@ import cats.effect.*
 import cats.effect.implicits.*
 import cats.effect.std.Queue
 import cats.implicits.*
-import edfsm.eventsourcing.*
+import edomata.eventsourcing.*
 import fs2.Stream
 import fs2.Stream.*
 import io.odin.Logger
 import io.odin.loggers.ConstContextLogger
-import edfsm.backend.skunk.assertInserted
+import edomata.backend.skunk.assertInserted
 import skunk.*
 import skunk.circe.codec.all.jsonb
 import skunk.codec.all.*

@@ -1,13 +1,13 @@
-package edfsm.core
+package edomata.core
 
 import cats.Applicative
 import cats.Functor
 import cats.Monad
 import cats.data.ValidatedNec
 import cats.implicits._
-import edfsm.core.Decision.Accepted
-import edfsm.core.Decision.InDecisive
-import edfsm.core.Decision.Rejected
+import edomata.core.Decision.Accepted
+import edomata.core.Decision.InDecisive
+import edomata.core.Decision.Rejected
 
 final case class ActionResult[R, E, N, T](
     decision: Decision[R, E, T],

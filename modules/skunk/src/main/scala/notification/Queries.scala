@@ -1,4 +1,4 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import skunk.*
 import skunk.circe.codec.all.jsonb

@@ -1,8 +1,8 @@
-package edfsm.backend.test
+package edomata.backend.test
 
 import cats.data.NonEmptyChain
 import cats.implicits.*
-import edfsm.backend.FSMDefinition.*
+import edomata.backend.FSMDefinition.*
 
 final case class FoldFailed[Domain](
     errors: NonEmptyChain[RejectionFor[Domain]]

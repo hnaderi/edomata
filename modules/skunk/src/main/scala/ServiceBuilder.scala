@@ -1,14 +1,14 @@
-package edfsm.backend.skunk
+package edomata.backend.skunk
 
 import cats.effect.*
 import cats.effect.implicits.*
 import cats.implicits.*
-import edfsm.backend.CommandHandler
-import edfsm.backend.DomainLogic
-import edfsm.backend.DomainTransition
-import edfsm.backend.FSMDefinition.*
-import edfsm.backend.skunk.Database
-import edfsm.eventsourcing.*
+import edomata.backend.CommandHandler
+import edomata.backend.DomainLogic
+import edomata.backend.DomainTransition
+import edomata.backend.FSMDefinition.*
+import edomata.backend.skunk.Database
+import edomata.eventsourcing.*
 import io.circe.Codec
 import io.circe.Decoder
 import io.circe.Encoder

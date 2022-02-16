@@ -1,4 +1,4 @@
-package edfsm.backend
+package edomata.backend
 
 import cats.effect.IO
 import cats.implicits.*
@@ -7,7 +7,7 @@ import munit.ScalaCheckEffectSuite
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.effect.PropF.*
-import edfsm.backend.CommandMessage
+import edomata.backend.CommandMessage
 
 import java.time.Instant
 

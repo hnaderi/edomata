@@ -1,4 +1,4 @@
-package edfsm.backend
+package edomata.backend
 
 import CommandMessage._
 import java.time.Instant
