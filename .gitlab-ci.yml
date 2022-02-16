@@ -37,7 +37,7 @@ Commit:
     - .sbt_job
     - .test_dependencies
   script:
-    - sbt clean scalafmtCheckAll compile test
+    - sbt commit
   artifacts:
     paths:
       - "**/target"

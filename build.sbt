@@ -41,7 +41,8 @@ lazy val modules: List[ProjectReference] = List(
   eventsourcing,
   skunkBackend,
   backendTestkit,
-  docs
+  docs,
+  mdocPlantuml
 )
 
 lazy val root = (project in file("."))
@@ -51,6 +52,12 @@ lazy val root = (project in file("."))
   .enablePlugins(GitVersioning)
   .enablePlugins(GitBranchPrompt)
   .aggregate(modules: _*)
+
+lazy val mdocPlantuml = (project in file("mdoc-plantuml"))
+  .settings(
+    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2022.1"
+  )
+  .enablePlugins(MdocPlugin)
 
 import laika.parse.code.SyntaxHighlighting
 import laika.markdown.github.GitHubFlavor
@@ -74,7 +81,8 @@ lazy val docs = (project in file("docs-build"))
   .dependsOn(
     core,
     backend,
-    eventsourcing
+    eventsourcing,
+    mdocPlantuml
   )
 
 import Libraries._
@@ -97,4 +105,12 @@ lazy val skunkBackend = module("skunk", skunk ++ odin)
 
 lazy val backendTestkit = testkit("backend").dependsOn(backend)
 
-addCommandAlias("site", List("docs/clean", "mdoc", "laikaSite").mkString(" ;"))
+addCommandAlias(
+  "site",
+  List("docs/clean", "docs/mdoc", "laikaSite").mkString(" ;")
+)
+addCommandAlias(
+  "commit",
+  List("clean", "scalafmtCheckAll", "scalafmtSbtCheck", "compile", "test")
+    .mkString(" ;")
+)
