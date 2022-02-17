@@ -13,7 +13,9 @@ class PlantumlModifier extends StringModifier {
   def process(info: String, code: Input, reporter: Reporter): String =
     val fmt = if info.isEmpty then "svg" else info.toLowerCase
     val input = code.text
-    val ssr = new SourceStringReader(s"@startuml\n$input \n@enduml")
+    val ssr =
+      if input.stripLeading.startsWith("@") then new SourceStringReader(input)
+      else new SourceStringReader(s"@startuml\n$input \n@enduml")
     val enc = ssr.getBlocks.get(0).getEncodedUrl
 
     s"![](https://plantuml.com/plantuml/$fmt/$enc)\n"

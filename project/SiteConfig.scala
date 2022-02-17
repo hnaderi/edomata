@@ -38,7 +38,7 @@ object SiteConfigs {
           "Fully referentially transparent, no exceptions or runtime reflection and integration with cats-effect for polymorphic effect handling."
         ),
         Teaser(
-          "Modular",
+          "Modular/Polymorphic",
           "You can decide on your ecosystem, usage, libraries, patterns ..."
         ),
         Teaser(
