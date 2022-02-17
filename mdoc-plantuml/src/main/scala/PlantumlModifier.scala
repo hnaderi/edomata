@@ -11,12 +11,17 @@ import scala.meta.inputs.Input
 class PlantumlModifier extends StringModifier {
   val name: String = "plantuml"
   def process(info: String, code: Input, reporter: Reporter): String =
-    val fmt = if info.isEmpty then "svg" else info.toLowerCase
+    val directive = if info.isEmpty then "uml" else info.toLowerCase
     val input = code.text
-    val ssr =
-      if input.stripLeading.startsWith("@") then new SourceStringReader(input)
-      else new SourceStringReader(s"@startuml\n$input \n@enduml")
+    val ssr = new SourceStringReader(s"""
+@start$directive
+skin rose
+skinparam backgroundColor transparent
+
+$input
+@end$directive
+""")
     val enc = ssr.getBlocks.get(0).getEncodedUrl
 
-    s"![](https://plantuml.com/plantuml/$fmt/$enc)\n"
+    s"![](https://plantuml.com/plantuml/svg/$enc)\n"
 }

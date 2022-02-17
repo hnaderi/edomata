@@ -4,13 +4,11 @@ I tried to keep them as generic as possible, but some of them are also mapped to
 
 ## Message
 A packet of data, that can carry some information
-```scala mdoc:plantuml
-@startmindmap
+```scala mdoc:plantuml:mindmap
 * message
 ** event
 ** command
 ** document
-@endmindmap
 ```
 
 ### Command message
@@ -61,8 +59,7 @@ A process manager that involves in a long running business process, that potenti
 
 ## Tactical design
 
-```scala mdoc:plantuml
-@startmindmap
+```scala mdoc:plantuml:mindmap
 * Aggregate root
 ** id
 ** state
@@ -70,7 +67,6 @@ A process manager that involves in a long running business process, that potenti
 *** (entity +)
 **** id
 **** value object
-@endmindmap
 ```
 
 ### Value object

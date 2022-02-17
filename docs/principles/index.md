@@ -7,7 +7,6 @@ Events are first class citizens of the system, and in a pure eda system, events 
 It is a persistence strategy that takes EDA to its extreme, where any change to any data is due to events.
 it's litmus test would be something like this:  
 ```scala mdoc:plantuml
-!theme vibrant
 start
 
 :system changes its state;
@@ -25,7 +24,8 @@ it is the idea of applying CQS principle to whole sub-systems, meaning that resp
 - when there is a need to have more than one representation of data, and different databases for each of them
 - when business logic is totally irrelevant to views that users need or business logic is to complex to be mixed with other irrelevant responsibilities.
 
-Note that this is also a local pattern, not an architecture, and almost always is not a replacement for crud systems.
+Note that this is also a local pattern, not an architecture, and almost always is not a replacement for crud systems.  
+Also CQRS doesn't have to mean doing event sourcing, introducing commands, event, read sides, sagas, async processing and so forth.
 
 ## Actor model
 The actor model in computer science is a mathematical model of concurrent computation that treats actor as the universal primitive of concurrent computation. In response to a message it receives, an actor can: 

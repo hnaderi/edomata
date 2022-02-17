@@ -12,7 +12,7 @@ val d1 = Decision.pure(1)
 ```
 
 
-```scala mdoc:plantuml:svg
+```scala mdoc:plantuml
 hide empty description
 [*] --> State1
 State1 --> [*]
