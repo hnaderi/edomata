@@ -1,7 +1,13 @@
 # Principles
 
+## Message passing system
+Systems (usually based on [Actor model]) that communicate through message passing, meaning that interactions are done by sending encapsulated data packets,
+which may have any arbitrary intents and semantics.
+this may be used to decouple execution stages both in time and space, so execution can continue on a different machine, or a different time on the same or another machine.
+
 ## Event driven system
-Events are first class citizens of the system, and in a pure eda system, events are reasons; meaning that nothing happens unless there is exactly one event for it. events are not meant to be source of data transfer as they are very lean and most of the you need more than one event to reach a conclusion, but sometimes are used that way for pragmatic reasons.  
+A specific form of message passing that always uses events as messages.
+Events are first class citizens of the system, and in a pure eda system, events are reasons; meaning that nothing happens unless there is exactly one event for it.
 
 ## Event sourcing
 It is a persistence strategy that takes EDA to its extreme, where any change to any data is due to events.
@@ -17,10 +23,10 @@ else (It depends)
  #pink:not event sourced;
 ```  
 
-Note that this is not an architecture as opposed to EDA which is, ES is considered a local persistence strategy, and it must be completely transparent and isolated from external systems.
+Note that this is not an architecture as opposed to EDA which is, ES is considered a local persistence strategy, and it must be totally transparent and isolated from external systems.
 
 ## CQRS
-it is the idea of applying CQS principle to whole sub-systems, meaning that responsibility for handling commands are completely separated from handling queries. it is an extremely useful pattern for following scenarios:
+it is the idea of applying CQS principle to whole sub-systems, meaning that responsibility for handling commands are totally separated from handling queries. it is a useful pattern for following scenarios:
 - when there is a need to have more than one representation of data, and different databases for each of them
 - when business logic is totally irrelevant to views that users need or business logic is to complex to be mixed with other irrelevant responsibilities.
 
