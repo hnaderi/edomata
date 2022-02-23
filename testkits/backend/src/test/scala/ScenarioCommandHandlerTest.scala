@@ -1,17 +1,18 @@
-package edomata.backend
+package edomata.backend.test
 
 import cats.effect.IO
 import cats.implicits.*
+import edomata.backend.CommandMessage
+import edomata.backend.FSMDefinition.*
+import edomata.backend.*
 import munit.CatsEffectSuite
 import munit.ScalaCheckEffectSuite
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.effect.PropF.*
-import edomata.backend.CommandMessage
 
 import java.time.Instant
 
-import FSMDefinition.*
 import ScenarioCommandHandlerTest.*
 
 class ScenarioCommandHandlerTest

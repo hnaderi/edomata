@@ -1,11 +1,10 @@
-package edomata.backend
+package edomata.backend.test
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import edomata.backend.CommandMessage
-
-import FSMDefinition.*
+import edomata.backend.FSMDefinition.*
 
 final class Timeline[Domain] {
   enum Outcome {

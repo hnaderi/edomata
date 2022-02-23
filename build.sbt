@@ -99,18 +99,31 @@ lazy val backend = module("backend")
 
 lazy val endpoint = module("endpoint", http4s)
   .dependsOn(backend)
+  .dependsOn(backendTestkit % Test)
 
 lazy val skunkBackend = module("skunk", skunk ++ odin)
   .dependsOn(backend)
 
 lazy val backendTestkit = testkit("backend").dependsOn(backend)
 
-addCommandAlias(
-  "site",
-  List("docs/clean", "docs/mdoc", "laikaSite").mkString(" ;")
+def addAlias(name: String)(tasks: String*) =
+  addCommandAlias(name, tasks.mkString(" ;"))
+
+addAlias("site")(
+  "docs/clean",
+  "docs/mdoc",
+  "laikaSite"
 )
-addCommandAlias(
-  "commit",
-  List("clean", "scalafmtCheckAll", "scalafmtSbtCheck", "compile", "test")
-    .mkString(" ;")
+addAlias("commit")(
+  "clean",
+  "scalafmtCheckAll",
+  "scalafmtSbtCheck",
+  "compile",
+  "test"
+)
+addAlias("precommit")(
+  "scalafmtAll",
+  "scalafmtSbt",
+  "compile",
+  "test"
 )

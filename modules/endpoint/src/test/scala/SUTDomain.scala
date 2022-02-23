@@ -6,7 +6,8 @@ import cats.effect.IO
 import cats.effect.Resource
 import cats.implicits.*
 import edomata.backend.FSMDefinition.*
-import edomata.backend.TestSystem.TestUnit
+import edomata.backend.test.TestSystem
+import edomata.backend.test.TestSystem.TestUnit
 import edomata.backend.*
 import edomata.core.Action
 import io.circe.Json

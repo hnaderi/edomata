@@ -1,4 +1,4 @@
-package edomata.backend
+package edomata.backend.test
 
 import cats.Functor
 import cats.Monad
@@ -11,13 +11,14 @@ import cats.effect.std.Random
 import cats.effect.std.Semaphore
 import cats.implicits.*
 import edomata.backend.CommandMessage
+import edomata.backend.FSMDefinition.*
+import edomata.backend.*
 import edomata.backend.test.FoldFailed
 import edomata.core.Action
 import edomata.core.Decision
 import edomata.core.DecisionT
 import edomata.eventsourcing.*
 
-import FSMDefinition.*
 import TestSystem.*
 
 trait TestSystem[F[_], Domain] {

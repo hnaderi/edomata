@@ -6,13 +6,11 @@ import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.implicits.*
 import edomata.backend.FSMDefinition.*
-import edomata.backend.RequestContext
-import edomata.backend.TestSystem
-import edomata.backend.TestSystem.TestResult
 import edomata.backend.*
+import edomata.backend.test.TestSystem
+import edomata.backend.test.TestSystem.TestResult
 import edomata.core.Decision
 import munit.CatsEffectSuite
-import edomata.backend.CommandMessage
 
 import java.time.Instant
 

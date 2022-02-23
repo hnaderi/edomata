@@ -1,11 +1,11 @@
-package edomata.backend
+package edomata.backend.test
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import edomata.backend.CommandMessage
-
-import FSMDefinition.*
+import edomata.backend.FSMDefinition.*
+import edomata.backend.*
 
 final class FakeCommandHandler[Domain](
     cmds: Ref[IO, List[DomainCommand[Domain]]]
