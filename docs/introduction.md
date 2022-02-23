@@ -13,11 +13,13 @@ There are a lot of attempts with huge success in this area, but every one of the
 ### Akka and Akka persistence
 it is a very strong and well established ecosystem, but it has a few drawbacks:
 
-* to low level
-* tries to solve a lot of problems at once, which almost always will lead to mixing domain logic and implementation details
-* in case of event sourcing, it encourages bad ideas, such as central journal which will lead to brittle and hard to change logic if not used with a high level of experience and considerations
-* it is not composable, you can't compose or reuse actors easily
-* it is too complex and needs a lot of specific experience in Akka itself
+* incompatible ecosystem with FP
+* too low level
+* easy too use, but not simple
+* tries to solve a lot of problems at once, which can lead to mixing domain logic and implementation details if not used carefully
+* in case of event sourcing, it does mislead somehow, as sourcing inputs does not make a system event sourced
+* you can't compose or reuse actors easily
+* it is somewhat complex and needs a lot of specific experience in Akka itself
 * not friendly with purely functional programs as it requires shims and wrappers every where
 
 however, it has a large ecosystem and community, and it should be your first consideration if none of the drawbacks above make any sense to you.
@@ -26,16 +28,16 @@ however, it has a large ecosystem and community, and it should be your first con
 this is a very nice purely functional wrapper (with brilliant design) around Akka and Akka persistence, solves the problem with composablity and purely functional programming, but leaves us with yet another level of indirection which makes the mix more complex.
 
 ### Axon
-Are you serious? that's for a different world where people go to their editor with a pile of annotations and program in annotations. also it is too proprietary in every direction; if you are considering it, there is a huge chance that this library won't be a good experience for you.
+Are you serious? that's for a different world where people go to their editors with a pile of annotations and program in annotations. also it is too proprietary in every direction; if you are considering it, there is a huge chance that this library won't be a good experience for you.
 
 ### Your home grown toolbox
-Event sourcing does not require any framework and almost always they mess up the work, as mentioned by Greg Young and other pioneer of ES/CQRS, and it does not need a long way to go in order to reach this conclusion, it is sufficient to use one of the available frameworks for a real project and you will reach the same conclusion (if you care for simplicity); so it is almost always better to develop your home grown toolbox and utilities, right?!
+Event sourcing does not require any framework and almost always they mess up the work, as mentioned by Greg Young and other pioneers of ES/CQRS, and it does not need a long way to go in order to reach this conclusion, it is sufficient to use one of the available frameworks for a real project and you will reach the same conclusion (if you care for simplicity); so it is almost always better to develop your home grown toolbox and utilities, right?!  
 IMO yes actually, and you are asking so what's the point of this library if you think so?!!!  
 that seems like a paradox, but I'll explain it in [Rationale]
 
 ## Rationale
 Designing DDD systems requires a lot of experience, which is really hard to convey in text books, as the problems that DDD solves are problems that we face when deepen in a specific domain, and try to discover it; which is a hard and time consuming process that can't be simulated in a comprehensive way in a book; and most development efforts rely on using opinionated frameworks which will lead to problems mentioned above, and worst of all, most of the literature for this are written with OOP in mind and does not transfer to FP easily and requires way more experience in both area. also there are a lot of spread misconception about what is event sourcing and how and when to use it all over the internet, which will lead to increasing this gap.  
-This library is meant to help with this problem, so it can be both a way to show how those ideas can be mapped to FP, and also probably and handy toolbox acting like a seed to grow your own home grown toolbox.
+This library is meant to help with this problem, so it can be both a way to show how those ideas can be mapped to FP, and also probably a handy toolbox acting like a seed to grow your own home grown toolbox.
 
 ## Next
 - [Design goals](about/design_goals.md)
