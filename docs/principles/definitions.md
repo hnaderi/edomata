@@ -7,6 +7,9 @@ A packet of data, that can carry some information
 ```scala mdoc:plantuml:mindmap
 * message
 ** event
+*** domain event
+*** integration event
+*** ...
 ** command
 ** document
 ```
