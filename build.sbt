@@ -73,7 +73,7 @@ lazy val docs = (project in file("docs-build"))
       "VERSION" -> version.value
     ),
     laikaExtensions ++= Seq(GitHubFlavor, SyntaxHighlighting),
-    laikaTheme := SiteConfigs.landing.build
+    laikaTheme := SiteConfigs(version.value).build
   )
   .enablePlugins(LaikaPlugin)
   .enablePlugins(ScalaUnidocPlugin)

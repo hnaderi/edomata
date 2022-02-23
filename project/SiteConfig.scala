@@ -1,13 +1,14 @@
+import laika.ast.Path.Root
+import laika.ast._
+import laika.config.ConfigBuilder
+import laika.config.LaikaKeys
 import laika.helium.Helium
 import laika.helium.config._
-import laika.theme._
-import laika.ast._
-import laika.ast.Path.Root
-import laika.config.{ConfigBuilder, LaikaKeys}
 import laika.sbt.LaikaConfig
+import laika.theme._
 
 object SiteConfigs {
-  val landing = Helium.defaults.site
+  def apply(version: String): Helium = Helium.defaults.site
     .landingPage(
       logo = Some(
         Image.internal(
@@ -18,19 +19,15 @@ object SiteConfigs {
       title = Some("Edomata"),
       subtitle = Some("Event-driven automatons for Scala"),
       latestReleases = Seq(
-        ReleaseInfo("Latest Stable Release", "2.3.5"),
-        ReleaseInfo("Latest Milestone Release", "2.4.0-M2")
+        ReleaseInfo("Latest develop Release", version)
       ),
-      license = Some("Apache 2"),
+      license = Some("Apache 2.0"),
       documentationLinks = Seq(
         TextLink.internal(Root / "introduction.md", "Inroduction"),
         TextLink
           .internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
         TextLink.internal(Root / "principles" / "index.md", "Principles"),
         TextLink.internal(Root / "api" / "index.html", "API docs")
-      ),
-      projectLinks = Seq(
-        TextLink.external("http://somewhere.com/", "Demo")
       ),
       teasers = Seq(
         Teaser(
@@ -63,8 +60,7 @@ object SiteConfigs {
     .topNavigationBar(
       homeLink = IconLink.internal(Root / "introduction.md", HeliumIcon.home),
       navLinks = Seq(
-        IconLink.internal(Root / "api" / "index.html", HeliumIcon.api),
-        TextLink.external("http://somewhere.com/", "Text Link")
+        IconLink.internal(Root / "api" / "index.html", HeliumIcon.api)
       )
     )
 
