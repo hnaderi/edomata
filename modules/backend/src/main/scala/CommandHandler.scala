@@ -10,9 +10,9 @@ import cats.effect.implicits.*
 import cats.effect.std.Random
 import cats.effect.std.Semaphore
 import cats.implicits.*
+import edomata.backend.CommandMessage
 import edomata.core.Decision
 import edomata.core.DecisionT
-import edomata.backend.CommandMessage
 import edomata.eventsourcing.*
 import io.circe.Codec
 import io.circe.Encoder

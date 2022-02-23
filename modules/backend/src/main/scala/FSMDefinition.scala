@@ -1,7 +1,16 @@
 package edomata.backend
 
+import scala.annotation.showAsInfix
+
 sealed trait FSMDefinition
 object FSMDefinition {
+
+  @showAsInfix
+  type And[B, A <: FSMDefinition] <: Tuple = B match {
+    case FSMDefinition => A *: B *: EmptyTuple
+    case Tuple         => A *: B
+  }
+
   sealed trait HasCommand[C] extends FSMDefinition
   sealed trait HasState[S] extends FSMDefinition
   sealed trait HasRejection[R] extends FSMDefinition
