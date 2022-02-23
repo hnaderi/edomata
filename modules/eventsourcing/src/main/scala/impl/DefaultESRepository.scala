@@ -15,9 +15,9 @@ import io.odin.Logger
 import java.time.OffsetDateTime
 import java.util.UUID
 
-import MyESRepository.*
+import DefaultESRepository.*
 
-final class MyESRepository[F[_]: Concurrent, I <: String, E, S, R](
+final class DefaultESRepository[F[_]: Concurrent, I <: String, E, S, R](
     snapshot: SnapshotStore[F, I, AggregateState[S]],
     journal: Journal[F, I, E],
     logger: Logger[F],
@@ -131,15 +131,15 @@ final class MyESRepository[F[_]: Concurrent, I <: String, E, S, R](
   }
 }
 
-object MyESRepository {
+object DefaultESRepository {
   def apply[F[_]: Concurrent, I <: String, E, S, R](
       snapshot: SnapshotStore[F, I, AggregateState[S]],
       journal: Journal[F, I, E],
       logger: Logger[F],
       initial: S,
       fold: Fold[S, E, R]
-  )(using Show[R]): MyESRepository[F, I, E, S, R] =
-    new MyESRepository(snapshot, journal, logger, initial, fold)
+  )(using Show[R]): DefaultESRepository[F, I, E, S, R] =
+    new DefaultESRepository(snapshot, journal, logger, initial, fold)
 
   enum Error(msg: String) extends Exception(msg) {
     case FoldError(metadata: EventMetadata, debug: NonEmptyChain[String])

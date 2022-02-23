@@ -53,7 +53,7 @@ object PGServiceDAL {
       def repo: ESRepository[F, String, InternalEventFor[Domain], StateFor[
         Domain
       ]] =
-        MyESRepository(
+        DefaultESRepository(
           snapshot = snapshot,
           journal = journal,
           logger = logger,

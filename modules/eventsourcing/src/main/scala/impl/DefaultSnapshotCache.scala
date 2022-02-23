@@ -8,7 +8,7 @@ import fs2.Stream
 import io.odin.Logger
 import io.odin.consoleLogger
 
-object MySnapshotCache {
+object DefaultSnapshotCache {
   def apply[F[_]: Async, I: Show, S](
       store: SnapshotStore[F, I, S],
       size: Int = 1000

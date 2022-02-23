@@ -18,7 +18,7 @@ class ESRepositoryTest extends CatsEffectSuite {
   private val repo = for {
     sn <- InMemSnapshotStore[IO, String, AggregateState[Long]]
     jr <- InMemJournal[IO, String, Long]
-  } yield MyESRepository[IO, String, Long, Long, String](
+  } yield DefaultESRepository[IO, String, Long, Long, String](
     sn,
     jr,
     io.odin.Logger.noop,
@@ -82,7 +82,7 @@ class ESRepositoryTest extends CatsEffectSuite {
     } yield {
       assertEquals(s, AggregateState(0, 0L))
       att match {
-        case Left(MyESRepository.Error.LogicError(l)) =>
+        case Left(DefaultESRepository.Error.LogicError(l)) =>
           assertEquals(l.length, 1L)
         case _ => fail("Did not reject invalid event!")
       }

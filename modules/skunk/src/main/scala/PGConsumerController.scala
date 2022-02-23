@@ -9,7 +9,6 @@ import cats.effect.implicits.*
 import cats.implicits.*
 import edomata.eventsourcing.ESRepository
 import edomata.eventsourcing.Journal
-import edomata.eventsourcing.MyESRepository
 import edomata.eventsourcing.*
 import fs2.Stream
 import io.odin.Logger
