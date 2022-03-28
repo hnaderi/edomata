@@ -75,6 +75,19 @@ trait DecisionOps {
       case Accepted(_, _) => true
       case _              => false
     }
+
+    def toValidated: ValidatedNec[R, T] = self match {
+      case Decision.Accepted(_, t) => Validated.Valid(t)
+      case Decision.InDecisive(t)  => Validated.Valid(t)
+      case Decision.Rejected(r)    => Validated.Invalid(r)
+    }
+  }
+
+  extension [R, T](self: ValidatedNec[R, T]) {
+    def toDecision[E]: Decision[R, E, T] = self match {
+      case Validated.Valid(t)   => Decision.InDecisive(t)
+      case Validated.Invalid(r) => Decision.Rejected(r)
+    }
   }
 }
 

@@ -33,7 +33,9 @@ final case class DecisionT[F[_], R, E, A](run: F[Decision[R, E, A]]) {
   def as[B](b: B)(using F: Functor[F]): DecisionT[F, R, E, B] = map(_ => b)
 }
 
-object DecisionT extends DecisionTConstructors with DecisionTCatsInstances
+object DecisionT extends DecisionTConstructors with DecisionTCatsInstances {
+  type Of[F[_], R, E] = [t] =>> DecisionT[F, R, E, t]
+}
 
 sealed transparent trait DecisionTConstructors {
   def pure[F[_], R, E, T](
