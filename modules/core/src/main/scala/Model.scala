@@ -7,8 +7,7 @@ import cats.implicits.*
 
 import Decision.*
 
-abstract class Model[S, Event, Rejection] { self: S =>
-
+trait Model[S, Event, Rejection] { self: S =>
   def handle[T](
       dec: Decision[Rejection, Event, T]
   ): Decision[Rejection, Event, (S, T)] =

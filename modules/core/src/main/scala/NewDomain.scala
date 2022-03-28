@@ -1,7 +1,5 @@
 package edomata.core
 
-import cats.Applicative
-import cats.Monad
 import cats.data.ValidatedNec
 import cats.implicits.*
 import edomata.core.*
@@ -9,16 +7,21 @@ import edomata.core.*
 sealed trait NewDomain[Command, State, Event, Rejection, Notification] {
   def withCommand[T]: NewDomain[T, State, Event, Rejection, Notification] =
     new NewDomain {}
-  def withState[T]: NewDomain[Command, T, Event, Rejection, Notification] =
-    new NewDomain {}
-  def withEvent[T]: NewDomain[Command, State, T, Rejection, Notification] =
-    new NewDomain {}
-  def withRejection[T]: NewDomain[Command, State, Event, T, Notification] =
-    new NewDomain {}
   def withNotification[T]: NewDomain[Command, State, Event, Rejection, T] =
     new NewDomain {}
+  def withModel[T <: Model[?, ?, ?]]
+      : NewDomain[Command, T, EventFrom[T], RejectionFrom[T], Notification] =
+    new NewDomain {}
 
-  type DomainModel = State & Model[State, Rejection, Event]
+  type EventFrom[T] = T match {
+    case Model[_, e, _] => e
+  }
+
+  type RejectionFrom[T] = T match {
+    case Model[_, _, r] => r
+  }
+
+  type DomainModel = State & Model[State, Event, Rejection]
   type Decision[T] = edomata.core.Decision[Rejection, Event, T]
   type Logic[F[_], T] = DecisionT[F, Rejection, Event, T]
   type LogicOf[F[_]] = [t] =>> DecisionT[F, Rejection, Event, t]
