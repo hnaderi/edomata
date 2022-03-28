@@ -9,6 +9,7 @@ import cats.data.ValidatedNec
 import scala.annotation.tailrec
 
 import Decision._
+import cats.MonadError
 
 /** Represents states in a decision context */
 enum Decision[R, E, +T] {
@@ -94,18 +95,8 @@ trait DecisionOps {
 type D[R, E] = [T] =>> Decision[R, E, T]
 
 sealed trait DecisionCatsInstances {
-
-  implicit def catsFunctorInstance[R, E]: Functor[D[R, E]] =
-    new Functor[D[R, E]] {
-      override def map[A, B](
-          fa: Decision[R, E, A]
-      )(f: A => B): Decision[R, E, B] =
-        fa.map(f)
-    }
-
-  implicit def catsMonadInstance[R, E]: Monad[D[R, E]] =
-    new Monad[D[R, E]] {
-
+  given [R, E]: MonadError[D[R, E], NonEmptyChain[R]] =
+    new MonadError[D[R, E], NonEmptyChain[R]] {
       override def pure[A](x: A): Decision[R, E, A] = Decision.pure(x)
 
       override def map[A, B](
@@ -135,6 +126,17 @@ sealed trait DecisionCatsInstances {
             }
           case Rejected(reasons) => Rejected(reasons)
         }
+
+      def handleErrorWith[A](
+          fa: Decision[R, E, A]
+      )(f: NonEmptyChain[R] => Decision[R, E, A]): Decision[R, E, A] =
+        fa match {
+          case Decision.Rejected(e) => f(e)
+          case other                => other
+        }
+
+      def raiseError[A](e: NonEmptyChain[R]): Decision[R, E, A] =
+        Decision.Rejected(e)
 
     }
 }
