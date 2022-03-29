@@ -4,9 +4,10 @@ import cats.Applicative
 import cats.Monad
 import cats.data.ValidatedNec
 import cats.implicits.*
-import edomata.core.*
 
-final class ServiceBuilderDSL[C, S, E, R, N](domain: NewDomain[C, S, E, R, N]) {
+final class ServiceBuilderDSL[C, S, E, R, N](
+    domain: DomainFlat[C, S, E, R, N]
+) {
   def router[F[_]: Monad](
       f: C => domain.Service[F, Unit]
   ): domain.Service[F, Unit] =
@@ -14,6 +15,8 @@ final class ServiceBuilderDSL[C, S, E, R, N](domain: NewDomain[C, S, E, R, N]) {
 
   def eval[F[_]: Monad, T](ft: F[T]): domain.Service[F, T] =
     DecisionT.liftF(RequestMonad.liftF(ft))
+
+  def ask[F[_]: Monad]: domain.Service[F, C] = DecisionT.liftF(RequestMonad.ask)
 
   def accept[F[_]: Monad](e: E, es: E*): domain.Service[F, Unit] =
     DecisionT.accept(e, es: _*)
