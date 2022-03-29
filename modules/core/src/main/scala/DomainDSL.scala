@@ -68,9 +68,23 @@ type ServiceF[F[_], C, R, E, N, T] =
 
 extension [F[_]: Monad, C, R, E, N, T](service: ServiceF[F, C, R, E, N, T]) {
   def exec(c: C): F[Response[N, Decision[R, E, T]]] = service.run.run(c)
-  def publishOnRejection(
+  def publishOnRejectionNoReset(
       f: NonEmptyChain[R] => Seq[N]
   ): ServiceF[F, C, R, E, N, T] = service.onError { case e =>
     DecisionT.liftF(RequestMonad.publish(f(e): _*))
   }
+  def publishOnRejection(
+      f: NonEmptyChain[R] => Seq[N]
+  ): ServiceF[F, C, R, E, N, T] = DecisionT {
+    RequestMonad { env =>
+      service.run.run(env).map {
+        case res @ Response(Decision.Rejected(e), _) =>
+          res.copy(notifications = f(e))
+        case other => other
+      }
+    }
+  }
+
+  def resetOnRejection: ServiceF[F, C, R, E, N, T] =
+    publishOnRejection(_ => Nil)
 }
