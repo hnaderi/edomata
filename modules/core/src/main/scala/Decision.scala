@@ -1,7 +1,6 @@
 package edomata.core
 
-import cats.Functor
-import cats.Monad
+import cats.MonadError
 import cats.data.NonEmptyChain
 import cats.data.Validated
 import cats.data.ValidatedNec
@@ -9,7 +8,6 @@ import cats.data.ValidatedNec
 import scala.annotation.tailrec
 
 import Decision._
-import cats.MonadError
 
 /** Represents states in a decision context */
 enum Decision[R, E, +T] {

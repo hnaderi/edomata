@@ -2,6 +2,7 @@ package edomata.core
 
 import cats.data.ValidatedNec
 import cats.implicits.*
+
 import java.time.Instant
 
 final case class RequestContext2[M[C] <: CommandMetadata[C], C, S](
