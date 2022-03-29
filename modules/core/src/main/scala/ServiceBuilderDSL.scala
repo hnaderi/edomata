@@ -18,6 +18,9 @@ final class ServiceBuilderDSL[C, S, E, R, N](domain: NewDomain[C, S, E, R, N]) {
   def accept[F[_]: Monad](e: E, es: E*): domain.Service[F, Unit] =
     DecisionT.accept(e, es: _*)
 
+  def acceptReturn[F[_]: Monad, T](t: T)(e: E, es: E*): domain.Service[F, T] =
+    DecisionT.acceptReturn(t)(e, es: _*)
+
   def reject[F[_]: Monad](reason: R, more: R*): domain.Service[F, Nothing] =
     DecisionT.reject(reason, more: _*)
 

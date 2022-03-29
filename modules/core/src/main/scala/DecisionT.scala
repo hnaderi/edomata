@@ -66,6 +66,12 @@ sealed transparent trait DecisionTConstructors {
   ): DecisionT[F, R, E, Unit] =
     lift(Decision.accept(ev, evs: _*))
 
+  def acceptReturn[F[_]: Applicative, R, E, T](t: T)(
+      ev: E,
+      evs: E*
+  ): DecisionT[F, R, E, T] =
+    lift(Decision.acceptReturn(t)(ev, evs: _*))
+
   def reject[F[_]: Applicative, R, E](
       reason: R,
       otherReasons: R*

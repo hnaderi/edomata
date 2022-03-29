@@ -26,7 +26,10 @@ sealed trait DecisionConstructors {
   def unit[R, E]: Decision[R, E, Unit] = InDecisive(())
 
   def accept[R, E](ev: E, evs: E*): Decision[R, E, Unit] =
-    Accepted(NonEmptyChain.of(ev, evs: _*), ())
+    acceptReturn(())(ev, evs: _*)
+
+  def acceptReturn[R, E, T](t: T)(ev: E, evs: E*): Decision[R, E, T] =
+    Accepted(NonEmptyChain.of(ev, evs: _*), t)
 
   def reject[R, E](
       reason: R,
