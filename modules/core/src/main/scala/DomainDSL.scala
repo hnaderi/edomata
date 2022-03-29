@@ -2,8 +2,8 @@ package edomata.core
 
 import cats.Applicative
 import cats.Monad
-import cats.data.ValidatedNec
 import cats.data.NonEmptyChain
+import cats.data.ValidatedNec
 import cats.implicits.*
 
 import java.time.Instant
@@ -68,12 +68,15 @@ type ServiceF[F[_], C, R, E, N, T] =
 
 extension [F[_]: Monad, C, R, E, N, T](service: ServiceF[F, C, R, E, N, T]) {
   def exec(c: C): F[Response[N, Decision[R, E, T]]] = service.run.run(c)
-  def publishOnRejectionNoReset(
+  def publishOnRejectionNoResetWith(
       f: NonEmptyChain[R] => Seq[N]
   ): ServiceF[F, C, R, E, N, T] = service.onError { case e =>
     DecisionT.liftF(RequestMonad.publish(f(e): _*))
   }
-  def publishOnRejection(
+  def publishOnRejectionNoReset(ns: N*): ServiceF[F, C, R, E, N, T] =
+    publishOnRejectionNoResetWith(_ => ns)
+
+  def publishOnRejectionWith(
       f: NonEmptyChain[R] => Seq[N]
   ): ServiceF[F, C, R, E, N, T] = DecisionT {
     RequestMonad { env =>
@@ -84,7 +87,9 @@ extension [F[_]: Monad, C, R, E, N, T](service: ServiceF[F, C, R, E, N, T]) {
       }
     }
   }
+  def publishOnRejection(ns: N*): ServiceF[F, C, R, E, N, T] =
+    publishOnRejectionWith(_ => ns)
 
   def resetOnRejection: ServiceF[F, C, R, E, N, T] =
-    publishOnRejection(_ => Nil)
+    publishOnRejectionWith(_ => Nil)
 }
