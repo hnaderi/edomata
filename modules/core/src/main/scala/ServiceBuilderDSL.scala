@@ -33,6 +33,9 @@ final class ServiceBuilderDSL[C, S, E, R, N](domain: NewDomain[C, S, E, R, N]) {
   def publish[F[_]: Monad](n: N*): domain.Service[F, Unit] =
     DecisionT.liftF(RequestMonad.publish(n: _*))
 
+  def publishReturn[F[_]: Monad, T](t: T)(n: N*): domain.Service[F, T] =
+    DecisionT.liftF(RequestMonad.publishReturn(t)(n: _*))
+
   def handle[F[_]: Monad, T](
       decision: domain.Decision[T]
   ): domain.Service[F, T] =

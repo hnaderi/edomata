@@ -77,7 +77,12 @@ sealed transparent trait RequestMonadConstructors {
   def publish[F[_]: Applicative, Env, N](
       ns: N*
   ): RequestMonad[F, Env, N, Unit] =
-    lift(Response(Decision.unit, ns))
+    lift(Response((), ns))
+
+  def publishReturn[F[_]: Applicative, Env, N, T](t: T)(
+      ns: N*
+  ): RequestMonad[F, Env, N, T] =
+    lift(Response(t, ns))
 }
 
 sealed transparent trait RequestMonadCatsInstances {
