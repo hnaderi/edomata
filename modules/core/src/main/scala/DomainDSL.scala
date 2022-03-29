@@ -21,6 +21,7 @@ final case class DomainDSL[C, S, E, R, N, M[C] <: CommandMetadata[C]](
 
   type RequestOf[F[_]] = [t] =>> RequestMonad[F, M[C], N, t]
   type Service[F[_], T] = DecisionT[RequestOf[F], R, E, T]
+  type ServiceOf[F[_]] = [t] =>> Service[F, t]
 
   def router[F[_]: Monad](
       f: C => Service[F, Unit]
