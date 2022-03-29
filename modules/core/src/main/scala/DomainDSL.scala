@@ -3,6 +3,7 @@ package edomata.core
 import cats.Applicative
 import cats.Monad
 import cats.data.ValidatedNec
+import cats.data.NonEmptyChain
 import cats.implicits.*
 
 import java.time.Instant
@@ -62,8 +63,14 @@ final case class DomainDSL[C, S, E, R, N, M[C] <: CommandMetadata[C]](
     DecisionT.lift(decision)
 }
 
-extension [F[_]: Monad, C, R, E, N, T](
-    service: DecisionT[[t] =>> RequestMonad[F, C, N, t], R, E, T]
-) {
+type ServiceF[F[_], C, R, E, N, T] =
+  DecisionT[[t] =>> RequestMonad[F, C, N, t], R, E, T]
+
+extension [F[_]: Monad, C, R, E, N, T](service: ServiceF[F, C, R, E, N, T]) {
   def exec(c: C): F[Response[N, Decision[R, E, T]]] = service.run.run(c)
+  def publishOnRejection(
+      f: NonEmptyChain[R] => Seq[N]
+  ): ServiceF[F, C, R, E, N, T] = service.onError { case e =>
+    DecisionT.liftF(RequestMonad.publish(f(e): _*))
+  }
 }

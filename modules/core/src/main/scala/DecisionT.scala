@@ -4,10 +4,12 @@ import cats.Applicative
 import cats.Functor
 import cats.Monad
 import cats.data.ValidatedNec
+import cats.data.NonEmptyChain
 import cats.implicits._
 import edomata.core.Decision.Accepted
 import edomata.core.Decision.InDecisive
 import edomata.core.Decision.Rejected
+import cats.MonadError
 
 final case class DecisionT[F[_], R, E, A](run: F[Decision[R, E, A]]) {
   def map[B](f: A => B)(using F: Functor[F]): DecisionT[F, R, E, B] =
@@ -87,7 +89,9 @@ sealed transparent trait DecisionTCatsInstances {
         f: A => B
     ): DecisionT[F, R, E, B] = fa.map(f)
 
-  given [F[_], R, E](using F: Monad[F]): Monad[DT[F, R, E]] with
+  given [F[_], R, E](using
+      F: Monad[F]
+  ): MonadError[DT[F, R, E], NonEmptyChain[R]] with
     override def map[A, B](fa: DecisionT[F, R, E, A])(
         f: A => B
     ): DecisionT[F, R, E, B] = fa.map(f)
@@ -112,5 +116,17 @@ sealed transparent trait DecisionTCatsInstances {
 
     def pure[A](x: A): DecisionT[F, R, E, A] =
       DecisionT.pure(x)
+
+    def raiseError[A](e: NonEmptyChain[R]): DecisionT[F, R, E, A] =
+      DecisionT.lift(Decision.Rejected(e))
+
+    def handleErrorWith[A](fa: DecisionT[F, R, E, A])(
+        f: NonEmptyChain[R] => DecisionT[F, R, E, A]
+    ): DecisionT[F, R, E, A] = DecisionT {
+      F.flatMap(fa.run) {
+        case Decision.Rejected(e) => f(e).run
+        case other                => F.pure(other)
+      }
+    }
 
 }
