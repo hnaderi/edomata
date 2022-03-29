@@ -4,6 +4,9 @@ import cats.Applicative
 import cats.Monad
 import cats.data.ValidatedNec
 import cats.implicits.*
+
+import java.time.Instant
+
 import Domain.*
 
 final case class DomainDSL[C, S, E, R, N, M[C] <: CommandMetadata[C]](
@@ -28,6 +31,8 @@ final case class DomainDSL[C, S, E, R, N, M[C] <: CommandMetadata[C]](
 
   def ask[F[_]: Monad]: Service[F, M[C]] = DecisionT.liftF(RequestMonad.ask)
   def aggregateId[F[_]: Monad]: Service[F, String] = ask.map(_.address)
+  def messageId[F[_]: Monad]: Service[F, String] = ask.map(_.id)
+  def messageTime[F[_]: Monad]: Service[F, Instant] = ask.map(_.time)
   def command[F[_]: Monad]: Service[F, C] = ask.map(_.payload)
 
   def accept[F[_]: Monad](e: E, es: E*): Service[F, Unit] =
