@@ -37,3 +37,13 @@ trait Model[S, Event, Rejection] { self: S =>
 
   def transition: Transition
 }
+
+object Model {
+  type EventFrom[T] = T match {
+    case Model[_, e, _] => e
+  }
+
+  type RejectionFrom[T] = T match {
+    case Model[_, _, r] => r
+  }
+}

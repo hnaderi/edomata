@@ -4,22 +4,17 @@ import cats.data.ValidatedNec
 import cats.implicits.*
 import edomata.core.*
 
+import Model.{EventFrom, RejectionFrom}
+
 sealed trait NewDomain[Command, State, Event, Rejection, Notification] {
   def withCommand[T]: NewDomain[T, State, Event, Rejection, Notification] =
     new NewDomain {}
   def withNotification[T]: NewDomain[Command, State, Event, Rejection, T] =
     new NewDomain {}
+
   def withModel[T <: Model[?, ?, ?]]
       : NewDomain[Command, T, EventFrom[T], RejectionFrom[T], Notification] =
     new NewDomain {}
-
-  type EventFrom[T] = T match {
-    case Model[_, e, _] => e
-  }
-
-  type RejectionFrom[T] = T match {
-    case Model[_, _, r] => r
-  }
 
   type DomainModel = State & Model[State, Event, Rejection]
   type Decision[T] = edomata.core.Decision[Rejection, Event, T]
