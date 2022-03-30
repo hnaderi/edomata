@@ -62,3 +62,10 @@ final class DomainDSL2[C, S, E, R, N, M] {
   ): Service[F, T] =
     DecisionT.lift(decision)
 }
+
+object DomainDSL2 {
+  import DomainType.*
+  def build[D]: DomainDSL2[CommandFor[D], StateFor[D], EventFor[
+    D
+  ], RejectionFor[D], NotificationFor[D], MetadataFor[D]] = new DomainDSL2
+}
