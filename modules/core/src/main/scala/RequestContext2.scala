@@ -5,10 +5,12 @@ import cats.implicits.*
 
 import java.time.Instant
 
-final case class RequestContext2[M[C] <: CommandMetadata[C], C, S](
+final case class RequestContext2[C, S, M](
+    id: String,
     aggregateId: String,
-    command: M[C],
-    state: S
+    command: C,
+    state: S,
+    metadata: M
 )
 
 trait CommandMetadata[+C] {
