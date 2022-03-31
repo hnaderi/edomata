@@ -8,8 +8,6 @@ import cats.implicits.*
 
 import java.time.Instant
 
-import Domain.*
-
 final class DomainDSL2[F[_]: Monad, C, S, E, R, N, M] {
   type DomainModel = S & Model[S, E, R]
   type Decision[T] = edomata.core.Decision[R, E, T]
@@ -69,4 +67,35 @@ object DomainDSL2 {
   def build[F[_]: Monad, D]: DomainDSL2[F, CommandFor[D], StateFor[D], EventFor[
     D
   ], RejectionFor[D], NotificationFor[D], MetadataFor[D]] = new DomainDSL2
+}
+
+type ServiceF[F[_], C, R, E, N, T] =
+  DecisionT[[t] =>> RequestMonad[F, C, N, t], R, E, T]
+
+extension [F[_]: Monad, C, R, E, N, T](service: ServiceF[F, C, R, E, N, T]) {
+  def exec(c: C): F[Response[N, Decision[R, E, T]]] = service.run.run(c)
+  def publishOnRejectionNoResetWith(
+      f: NonEmptyChain[R] => Seq[N]
+  ): ServiceF[F, C, R, E, N, T] = service.onError { case e =>
+    DecisionT.liftF(RequestMonad.publish(f(e): _*))
+  }
+  def publishOnRejectionNoReset(ns: N*): ServiceF[F, C, R, E, N, T] =
+    publishOnRejectionNoResetWith(_ => ns)
+
+  def publishOnRejectionWith(
+      f: NonEmptyChain[R] => Seq[N]
+  ): ServiceF[F, C, R, E, N, T] = DecisionT {
+    RequestMonad { env =>
+      service.run.run(env).map {
+        case res @ Response(Decision.Rejected(e), _) =>
+          res.copy(notifications = f(e))
+        case other => other
+      }
+    }
+  }
+  def publishOnRejection(ns: N*): ServiceF[F, C, R, E, N, T] =
+    publishOnRejectionWith(_ => ns)
+
+  def resetOnRejection: ServiceF[F, C, R, E, N, T] =
+    publishOnRejectionWith(_ => Nil)
 }
