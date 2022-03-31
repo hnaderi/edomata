@@ -4,7 +4,7 @@ import Dependencies._
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala3 = "3.1.0"
+lazy val scala3 = "3.1.1"
 ThisBuild / scalaVersion := scala3
 ThisBuild / fork := true
 ThisBuild / git.useGitDescribe := true
@@ -88,7 +88,7 @@ lazy val docs = (project in file("docs-build"))
 import Libraries._
 
 lazy val core = module("core").settings(
-  libraryDependencies ++= cats
+  libraryDependencies ++= cats ++ catsLaws
 )
 
 lazy val eventsourcing = module("eventsourcing", fs2 ++ odin)

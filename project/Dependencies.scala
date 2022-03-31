@@ -7,11 +7,11 @@ object Dependencies {
   object Versions {
     val odin = "0.13.0"
     val cats = "2.7.0"
-    val fs2 = "3.2.4"
+    val fs2 = "3.2.7"
     val catsEffect = "3.3.5"
     val http4s = "1.0.0-M30"
     val circe = "0.14.1"
-    val skunk = "0.2.3"
+    val skunk = "0.3.1"
     val scalaCheck = "1.15.4"
     val MUnit = "0.7.29"
     val CatsEffectMunit = "1.0.7"
@@ -69,6 +69,11 @@ object Dependencies {
       "org.scalameta" %% "munit-scalacheck" % Versions.MUnit,
       "org.typelevel" %% "munit-cats-effect-3" % Versions.CatsEffectMunit,
       "org.typelevel" %% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion
+    )
+
+    val catsLaws = Seq(
+      "org.typelevel" %% "cats-laws" % Versions.cats % Test,
+      "org.typelevel" %% "discipline-munit" % "1.0.9" % Test
     )
   }
 }
