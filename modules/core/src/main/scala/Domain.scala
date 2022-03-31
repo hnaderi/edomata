@@ -2,21 +2,23 @@ package edomata.core
 
 import scala.annotation.showAsInfix
 
-sealed trait DomainType
+sealed trait Domain
 
-object DomainType {
-  sealed trait HasCommand[C] extends DomainType
-  sealed trait HasModelTypes[S, E, R] extends DomainType
-  sealed trait HasNotification[N] extends DomainType
-  sealed trait HasMetadata[M] extends DomainType
-  type HasModel[M <: Model[?, ?, ?]] <: DomainType = M match {
+object Domain {
+  sealed trait HasCommand[C] extends Domain
+  sealed trait HasModelTypes[S, E, R] extends Domain
+  sealed trait HasNotification[N] extends Domain
+  sealed trait HasMetadata[M] extends Domain
+  sealed trait NoMetadata extends HasMetadata[Unit]
+
+  type HasModel[M <: Model[?, ?, ?]] <: Domain = M match {
     case Model[s, e, r] => HasModelTypes[s, e, r]
   }
 
   @showAsInfix
-  type And[B, A <: DomainType] <: Tuple = B match {
-    case DomainType => A *: B *: EmptyTuple
-    case Tuple      => A *: B
+  type And[B, A <: Domain] <: Tuple = B match {
+    case Domain => A *: B *: EmptyTuple
+    case Tuple  => A *: B
   }
 
   type CommandFor[D] = D match {

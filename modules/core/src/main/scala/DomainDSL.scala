@@ -8,7 +8,7 @@ import cats.implicits.*
 
 import java.time.Instant
 
-final class DomainDSL2[F[_]: Monad, C, S, E, R, N, M] {
+final class DomainDSL[F[_]: Monad, C, S, E, R, N, M] {
   type DomainModel = S & Model[S, E, R]
   type Decision[T] = edomata.core.Decision[R, E, T]
   type Logic[F[_], T] = DecisionT[F, R, E, T]
@@ -62,11 +62,11 @@ final class DomainDSL2[F[_]: Monad, C, S, E, R, N, M] {
     DecisionT.lift(decision)
 }
 
-object DomainDSL2 {
-  import DomainType.*
-  def build[F[_]: Monad, D]: DomainDSL2[F, CommandFor[D], StateFor[D], EventFor[
+object DomainDSL {
+  import Domain.*
+  def build[F[_]: Monad, D]: DomainDSL[F, CommandFor[D], StateFor[D], EventFor[
     D
-  ], RejectionFor[D], NotificationFor[D], MetadataFor[D]] = new DomainDSL2
+  ], RejectionFor[D], NotificationFor[D], MetadataFor[D]] = new DomainDSL
 }
 
 type ServiceF[F[_], C, R, E, N, T] =
