@@ -4,10 +4,12 @@ import cats.MonadError
 import cats.data.NonEmptyChain
 import cats.data.Validated
 import cats.data.ValidatedNec
+import cats.data.EitherNec
 
 import scala.annotation.tailrec
 
 import Decision._
+import cats.data.Chain
 
 /** Represents states in a decision context */
 enum Decision[R, E, +T] {
@@ -45,16 +47,16 @@ sealed trait DecisionConstructors {
 }
 
 trait DecisionOps {
-  extension [R, E, T](self: Decision[R, E, T]) {
-    def map[B](f: T => B): Decision[R, E, B] =
+  extension [R, E, A](self: Decision[R, E, A]) {
+    def map[B](f: A => B): Decision[R, E, B] =
       self match {
-        case e: InDecisive[R, E, T] => e.copy(result = f(e.result))
-        case e: Accepted[R, E, T]   => e.copy(result = f(e.result))
+        case e: InDecisive[R, E, A] => e.copy(result = f(e.result))
+        case e: Accepted[R, E, A]   => e.copy(result = f(e.result))
         case Rejected(reasons)      => Rejected(reasons)
       }
 
     def flatMap[R2 >: R, E2 >: E, B](
-        f: T => Decision[R2, E2, B]
+        f: A => Decision[R2, E2, B]
     ): Decision[R2, E2, B] =
       self match {
         case Accepted(events, result) =>
@@ -78,11 +80,19 @@ trait DecisionOps {
       case _              => false
     }
 
-    def toValidated: ValidatedNec[R, T] = self match {
+    def fold[B](fr: NonEmptyChain[R] => B, fa: A => B): B = self match {
+      case Decision.InDecisive(a)  => fa(a)
+      case Decision.Accepted(_, a) => fa(a)
+      case Decision.Rejected(r)    => fr(r)
+    }
+
+    def toValidated: ValidatedNec[R, A] = self match {
       case Decision.Accepted(_, t) => Validated.Valid(t)
       case Decision.InDecisive(t)  => Validated.Valid(t)
       case Decision.Rejected(r)    => Validated.Invalid(r)
     }
+    def toOption: Option[A] = fold(_ => None, Some(_))
+    def toEither: EitherNec[R, A] = fold(Left(_), Right(_))
   }
 
   extension [R, T](self: ValidatedNec[R, T]) {
@@ -111,22 +121,26 @@ sealed trait DecisionCatsInstances {
         fa.flatMap(f)
 
       @tailrec
-      override def tailRecM[A, B](a: A)(
+      private def step[A, B](a: A, evs: Chain[E] = Chain.empty)(
           f: A => Decision[R, E, Either[A, B]]
       ): Decision[R, E, B] =
         f(a) match {
-          case InDecisive(result) =>
-            result match {
-              case Left(value)  => tailRecM(value)(f)
-              case Right(value) => InDecisive(value)
-            }
-          case Accepted(events, result) =>
-            result match {
-              case Left(value)  => tailRecM(value)(f)
-              case Right(value) => Accepted(events, value)
-            }
-          case Rejected(reasons) => Rejected(reasons)
+          case Decision.Accepted(ev2, Left(a)) =>
+            step(a, evs ++ ev2.toChain)(f)
+          case Decision.Accepted(ev2, Right(b)) =>
+            Decision.Accepted(ev2.prependChain(evs), b)
+          case Decision.InDecisive(Left(a)) => step(a, evs)(f)
+          case Decision.InDecisive(Right(b)) =>
+            NonEmptyChain
+              .fromChain(evs)
+              .fold(Decision.InDecisive(b))(Decision.Accepted(_, b))
+          case Decision.Rejected(rs) => Decision.Rejected(rs)
         }
+
+      override def tailRecM[A, B](a: A)(
+          f: A => Decision[R, E, Either[A, B]]
+      ): Decision[R, E, B] =
+        step(a)(f)
 
       def handleErrorWith[A](
           fa: Decision[R, E, A]

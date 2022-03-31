@@ -1,5 +1,6 @@
 package edomata.core
 
+import cats.Monad
 import cats.data.NonEmptyChain
 import cats.implicits.*
 import munit.*
@@ -17,6 +18,15 @@ class DecisionTest extends ScalaCheckSuite {
       assertEquals(c, Decision.Accepted(a.events ++ b.events, b.result))
     }
   }
+
+  test("tail rec") {
+    val c = Monad[[t] =>> Decision[Rejection, Event, t]].tailRecM(0) { a =>
+      if (a < 10) then Decision.acceptReturn(Left(a + 1))(a)
+      else Decision.pure(a.asRight)
+    }
+    assertEquals(c, Decision.Accepted(NonEmptyChain(0, (1 to 9): _*), 10))
+  }
+
   property("Rejected terminates") {
     forAll(notRejected, rejected) { (a, b) =>
       val c = a.flatMap(_ => b)
