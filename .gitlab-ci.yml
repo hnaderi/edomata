@@ -16,7 +16,7 @@ stages:
   - publish
 
 .sbt_job:
-  image: hseeberger/scala-sbt:11.0.13_1.6.2_3.1.0
+  image: hseeberger/scala-sbt:11.0.13_1.6.2_3.1.1
 
 .test_dependencies:
   services:
