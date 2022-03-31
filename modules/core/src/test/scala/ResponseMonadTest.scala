@@ -2,6 +2,7 @@ package edomata.core
 
 import cats.Eval
 import cats.Monad
+import cats.MonadError
 import cats.data.Kleisli
 import cats.data.NonEmptyChain
 import cats.implicits.*
@@ -29,7 +30,7 @@ class ResponseMonadTest extends FunSuite, ScalaCheckSuite {
         val r1 = ResponseMonad(a1, n1)
         val r2 = ResponseMonad(a2, n2)
         val r3 = r1 >> r2
-        assertEquals(r3, ResponseMonad(a1.flatMap(_ => a2), Nil))
+        assertEquals(r3, ResponseMonad(a1.flatMap(_ => a2), n2))
         assert(r3.result.isRejected)
     }
   }
@@ -50,18 +51,6 @@ class ResponseMonadTest extends FunSuite, ScalaCheckSuite {
       assertEquals(
         r2,
         r1.copy(notifications = r1.notifications ++ n2)
-      )
-    }
-  }
-  property("Error handling") {
-    forAll(rejected, notifications, notifications) { (a1, n1, n2) =>
-      val r1 = ResponseMonad(a1, n1)
-      val r2 = r1.handleErrorWith { case r =>
-        ResponseMonad(Decision.Rejected(r), n2)
-      }
-      assertEquals(
-        r2,
-        r1.copy(notifications = n2)
       )
     }
   }
@@ -95,6 +84,6 @@ object ResponseMonadTest {
   final case class Notification(value: String = "")
 
   type Res[T] = ResponseMonad[Rejection, Event, Notification, T]
-  private val notifications =
+  val notifications: Gen[Seq[Notification]] =
     Gen.containerOf[Seq, Notification](arbitrary[String].map(Notification(_)))
 }

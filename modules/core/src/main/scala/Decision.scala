@@ -10,6 +10,7 @@ import scala.annotation.tailrec
 
 import Decision._
 import cats.data.Chain
+import cats.kernel.Eq
 
 /** Represents states in a decision context */
 enum Decision[R, E, +T] {
@@ -154,4 +155,6 @@ sealed trait DecisionCatsInstances {
         Decision.Rejected(e)
 
     }
+
+  given [R, E, T]: Eq[Decision[R, E, T]] = Eq.instance(_ == _)
 }

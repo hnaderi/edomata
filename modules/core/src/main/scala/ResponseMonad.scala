@@ -10,6 +10,7 @@ import cats.data.ValidatedNec
 import cats.implicits.*
 
 import scala.annotation.tailrec
+import cats.kernel.Eq
 
 final case class ResponseMonad[R, E, N, +A](
     result: Decision[R, E, A],
@@ -25,7 +26,7 @@ final case class ResponseMonad[R, E, N, +A](
     a => {
       val out = f(a)
       (result >> out.result) match {
-        case d @ Decision.Rejected(_) => ResponseMonad(d)
+        case d @ Decision.Rejected(_) => ResponseMonad(d, out.notifications)
         case other => ResponseMonad(other, notifications ++ out.notifications)
       }
     }
@@ -50,9 +51,8 @@ final case class ResponseMonad[R, E, N, +A](
 }
 
 object ResponseMonad extends ResponseMonadConstructors {
-  given [R, E, N]
-      : MonadError[[t] =>> ResponseMonad[R, E, N, t], NonEmptyChain[R]] =
-    new MonadError {
+  given [R, E, N]: Monad[[t] =>> ResponseMonad[R, E, N, t]] =
+    new Monad {
       override def map[A, B](fa: ResponseMonad[R, E, N, A])(
           f: A => B
       ): ResponseMonad[R, E, N, B] = fa.map(f)
@@ -71,23 +71,30 @@ object ResponseMonad extends ResponseMonadConstructors {
       ): ResponseMonad[R, E, N, B] =
         val out = f(a)
         out.result match {
-          case Decision.Accepted(ev2, Left(a)) =>
-            step(a, evs ++ ev2.toChain, ns ++ out.notifications)(f)
-          case Decision.Accepted(ev2, Right(b)) =>
-            ResponseMonad(
-              Decision.Accepted(ev2.prependChain(evs), b),
-              ns ++ out.notifications
-            )
-          case Decision.InDecisive(Left(a)) =>
-            step(a, evs, ns ++ out.notifications)(f)
-          case Decision.InDecisive(Right(b)) =>
-            ResponseMonad(
-              NonEmptyChain
-                .fromChain(evs)
-                .fold(Decision.InDecisive(b))(Decision.Accepted(_, b)),
-              ns ++ out.notifications
-            )
-          case Decision.Rejected(rs) => ResponseMonad(Decision.Rejected(rs))
+          case Decision.Accepted(ev2, e) =>
+            e match {
+              case Left(a) =>
+                step(a, evs ++ ev2.toChain, ns ++ out.notifications)(f)
+              case Right(b) =>
+                ResponseMonad(
+                  Decision.Accepted(ev2.prependChain(evs), b),
+                  ns ++ out.notifications
+                )
+            }
+          case Decision.InDecisive(e) =>
+            e match {
+              case Left(a) =>
+                step(a, evs, ns ++ out.notifications)(f)
+              case Right(b) =>
+                ResponseMonad(
+                  NonEmptyChain
+                    .fromChain(evs)
+                    .fold(Decision.InDecisive(b))(Decision.Accepted(_, b)),
+                  ns ++ out.notifications
+                )
+            }
+          case Decision.Rejected(rs) =>
+            out.copy(result = Decision.Rejected(rs))
         }
 
       def tailRecM[A, B](
@@ -99,20 +106,9 @@ object ResponseMonad extends ResponseMonadConstructors {
 
       def pure[A](x: A): ResponseMonad[R, E, N, A] =
         ResponseMonad(Decision.pure(x))
-
-      def handleErrorWith[A](
-          fa: ResponseMonad[R, E, N, A]
-      )(
-          f: NonEmptyChain[R] => ResponseMonad[R, E, N, A]
-      ): ResponseMonad[R, E, N, A] =
-        fa.result match {
-          case Decision.Rejected(e) => f(e)
-          case other                => fa
-        }
-
-      def raiseError[A](e: NonEmptyChain[R]): ResponseMonad[R, E, N, A] =
-        ResponseMonad(Decision.Rejected(e))
     }
+
+  given [R, E, N, T]: Eq[ResponseMonad[R, E, N, T]] = Eq.instance(_ == _)
 }
 
 sealed trait ResponseMonadConstructors {

@@ -62,18 +62,4 @@ object DecisionTest {
 
   val anySut: Gen[SUT] = Gen.oneOf(accepted, rejected, indecisive)
   val notRejected: Gen[SUT] = Gen.oneOf(accepted, indecisive)
-
-  private def necOf[T](g: Gen[T]): Gen[NonEmptyChain[T]] =
-    Gen
-      .chooseNum(1, 10)
-      .flatMap(n =>
-        Gen
-          .listOfN(n, g)
-          .map(NonEmptyChain.fromSeq)
-          .flatMap {
-            case Some(e) => Gen.const(e)
-            case None    => Gen.fail
-          }
-      )
-
 }
