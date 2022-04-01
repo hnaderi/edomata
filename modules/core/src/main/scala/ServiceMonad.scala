@@ -80,8 +80,13 @@ final case class ServiceMonad[F[_], -Env, R, E, N, A](
 
 object ServiceMonad
     extends ServiceMonadInstances
-    with ServiceMonadConstructors
-    with DomainServiceConstructors
+    with ServiceMonadConstructors {
+  import Domain.*
+  def domain[D]: DomainServiceConstructors[CommandFor[D], StateFor[D], EventFor[
+    D
+  ], RejectionFor[D], NotificationFor[D], MetadataFor[D]] =
+    new DomainServiceConstructors
+}
 
 sealed trait ServiceMonadInstances {
   given [F[_]: Monad, Env, R, E, N]
