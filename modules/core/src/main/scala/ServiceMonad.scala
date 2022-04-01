@@ -80,7 +80,7 @@ object ServiceMonad {
       ): G[B] = ServiceMonad(env =>
         Monad[F].tailRecM(ResponseMonad.pure[R, E, N, A](a))(rma =>
           rma.result.fold(
-            _ => ???,
+            _ => ???, //This cannot happen
             a =>
               f(a)
                 .run(env)
