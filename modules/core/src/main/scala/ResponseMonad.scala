@@ -117,6 +117,9 @@ sealed trait ResponseMonadConstructors {
 
   def unit[R, E, N]: ResponseMonad[R, E, N, Unit] = pure(())
 
+  def lift[R, E, N, T](d: Decision[R, E, T]): ResponseMonad[R, E, N, T] =
+    ResponseMonad(d)
+
   def publish[R, E, N](n: N*): ResponseMonad[R, E, N, Unit] =
     ResponseMonad(Decision.unit, n)
 

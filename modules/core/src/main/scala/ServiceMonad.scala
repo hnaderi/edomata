@@ -1,14 +1,16 @@
 package edomata.core
 
 import cats.Applicative
+import cats.Contravariant
 import cats.FlatMap
 import cats.Functor
-import cats.implicits.*
-import cats.data.NonEmptyChain
 import cats.Monad
-import cats.data.Kleisli
+import cats.arrow.FunctionK
+import cats.data.NonEmptyChain
+import cats.implicits.*
 import cats.kernel.Eq
-import cats.Contravariant
+
+import ServiceMonad.*
 
 final case class ServiceMonad[F[_], Env, R, E, N, A](
     run: Env => F[ResponseMonad[R, E, N, A]]
@@ -45,6 +47,14 @@ final case class ServiceMonad[F[_], Env, R, E, N, A](
   ): G[B] =
     ServiceMonad(run.andThen(_.map(f)))
 
+  def mapK[G[_]](fk: FunctionK[F, G]): ServiceMonad[G, Env, R, E, N, A] =
+    ServiceMonad(run.andThen(fk.apply))
+
+  def andThen[B](f: A => F[B])(using
+      Monad[F]
+  ): ServiceMonad[F, Env, R, E, N, B] =
+    flatMap(a => liftF(f(a).map(ResponseMonad.pure)))
+
   def as[B](b: B)(using Functor[F]): G[B] = map(_ => b)
 
   /** Clears all notifications so far */
@@ -63,7 +73,52 @@ final case class ServiceMonad[F[_], Env, R, E, N, A](
     transform(_.publishOnRejection(ns: _*))
 }
 
-object ServiceMonad {
+object ServiceMonad extends ServiceMonadInstances {
+  def pure[F[_]: Monad, Env, R, E, N, T](
+      t: T
+  ): ServiceMonad[F, Env, R, E, N, T] =
+    ServiceMonad(_ => ResponseMonad.pure(t).pure)
+
+  def unit[F[_]: Monad, Env, R, E, N, T]: ServiceMonad[F, Env, R, E, N, Unit] =
+    pure(())
+
+  def liftF[F[_], Env, R, E, N, T](
+      f: F[ResponseMonad[R, E, N, T]]
+  ): ServiceMonad[F, Env, R, E, N, T] = ServiceMonad(_ => f)
+
+  def lift[F[_]: Applicative, Env, R, E, N, T](
+      f: ResponseMonad[R, E, N, T]
+  ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.pure)
+
+  def eval[F[_]: Applicative, Env, R, E, N, T](
+      f: F[T]
+  ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.map(ResponseMonad.pure))
+
+  def run[F[_]: Applicative, Env, R, E, N, T](
+      f: Env => F[T]
+  ): ServiceMonad[F, Env, R, E, N, T] = ServiceMonad(
+    f.andThen(_.map(ResponseMonad.pure))
+  )
+
+  def read[F[_]: Applicative, Env, R, E, N, T]
+      : ServiceMonad[F, Env, R, E, N, Env] = run(_.pure[F])
+
+  def publish[F[_]: Applicative, Env, R, E, N](
+      ns: N*
+  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(ResponseMonad.publish(ns: _*))
+
+  def reject[F[_]: Applicative, Env, R, E, N](
+      r: R,
+      rs: R*
+  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(ResponseMonad.reject(r, rs: _*))
+
+  def perform[F[_]: Applicative, Env, R, E, N, T](
+      d: Decision[R, E, T]
+  ): ServiceMonad[F, Env, R, E, N, T] = lift(ResponseMonad.lift(d))
+
+}
+
+sealed trait ServiceMonadInstances {
   given [F[_]: Monad, Env, R, E, N]
       : Monad[[t] =>> ServiceMonad[F, Env, R, E, N, t]] =
     new Monad {
@@ -112,4 +167,5 @@ object ServiceMonad {
           f: B => A
       ): ServiceMonad[F, B, R, E, N, T] = fa.contramap(f)
     }
+
 }
