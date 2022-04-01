@@ -1,20 +1,39 @@
 package edomata.core
 
-import cats.Eval
 import cats.Monad
-import cats.MonadError
-import cats.data.Kleisli
 import cats.data.NonEmptyChain
 import cats.implicits.*
+import cats.kernel.laws.discipline.EqTests
+import cats.laws.discipline.MonadErrorTests
+import cats.laws.discipline.MonadTests
+import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 import munit.*
-import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
-import ResponseMonadTest.*
+import ResponseMonadSuite.*
 import DecisionTest.*
 
-class ResponseMonadTest extends FunSuite, ScalaCheckSuite {
+class ResponseMonadSuite extends DisciplineSuite {
+  private given [T: Arbitrary]: Arbitrary[Res[T]] = Arbitrary(
+    for {
+      n <- notifications
+      t <- Arbitrary.arbitrary[T]
+      d <- DecisionTest.anySut
+    } yield ResponseMonad(d.as(t), n)
+  )
+  private given Arbitrary[NonEmptyChain[String]] = Arbitrary(
+    necOf(Arbitrary.arbitrary[String])
+  )
+
+  checkAll(
+    "laws",
+    MonadTests[Res].monad[Int, Int, String]
+  )
+
+  checkAll("laws", EqTests[Res[Long]].eqv)
+
   property("Accumulates on accept") {
     forAll(notRejected, notifications, notRejected, notifications) {
       (a1, n1, a2, n2) =>
@@ -69,21 +88,11 @@ class ResponseMonadTest extends FunSuite, ScalaCheckSuite {
       assertEquals(r2.result, r1.result)
     }
   }
-
-  test("tail rec") {
-    val n = 10
-    val c = Monad[Res].tailRecM(0) { a =>
-      if (a < n) then ResponseMonad.acceptReturn(Left(a + 1))(a)
-      else ResponseMonad.pure(a.asRight)
-    }
-    assertEquals(c, ResponseMonad.acceptReturn(n)(0, (1 to n - 1): _*))
-  }
 }
 
-object ResponseMonadTest {
-  final case class Notification(value: String = "")
-
-  type Res[T] = ResponseMonad[Rejection, Event, Notification, T]
+object ResponseMonadSuite {
   val notifications: Gen[Seq[Notification]] =
-    Gen.containerOf[Seq, Notification](arbitrary[String].map(Notification(_)))
+    Gen.containerOf[Seq, Notification](
+      Arbitrary.arbitrary[String].map(Notification(_))
+    )
 }

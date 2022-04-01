@@ -47,7 +47,6 @@ final case class ResponseMonad[R, E, N, +A](
   ): ResponseMonad[R, E, N, A] = publish(result.fold(f, _ => Nil): _*)
   def publishOnRejection(ns: N*): ResponseMonad[R, E, N, A] =
     publishOnRejectionWith(_ => ns)
-
 }
 
 object ResponseMonad extends ResponseMonadConstructors {

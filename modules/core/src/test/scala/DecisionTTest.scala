@@ -36,12 +36,10 @@ class DecisionTTest extends ScalaCheckSuite {
 }
 
 object DecisionTTest {
-  type Rejection = String
-  type Event = Int
 
-  type SUT = DecisionT[Eval, Rejection, Event, Long]
+  type SUTT = DecisionT[Eval, Rejection, Event, Long]
 
-  private def lift[T <: DecisionTest.SUT](t: Gen[T]): Gen[(T, SUT)] =
+  private def lift[T <: SUT](t: Gen[T]): Gen[(T, SUTT)] =
     t.map(d => (d, DecisionT.lift(d)(using Applicative[Eval])))
 
   val accepted =

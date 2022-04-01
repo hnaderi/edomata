@@ -44,11 +44,6 @@ class DecisionTest extends ScalaCheckSuite {
 }
 
 object DecisionTest {
-  type Rejection = String
-  type Event = Int
-
-  type SUT = Decision[Rejection, Event, Long]
-
   val accepted: Gen[Decision.Accepted[Rejection, Event, Long]] = for {
     v <- Arbitrary.arbitrary[Long]
     l <- necOf(Arbitrary.arbitrary[Int])
