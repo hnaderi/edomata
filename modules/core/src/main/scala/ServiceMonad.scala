@@ -12,7 +12,7 @@ import cats.kernel.Eq
 
 import ServiceMonad.*
 
-final case class ServiceMonad[F[_], Env, R, E, N, A](
+final case class ServiceMonad[F[_], -Env, R, E, N, A](
     run: Env => F[ResponseMonad[R, E, N, A]]
 ) {
   def map[B](f: A => B)(using Functor[F]): ServiceMonad[F, Env, R, E, N, B] =
@@ -23,9 +23,9 @@ final case class ServiceMonad[F[_], Env, R, E, N, A](
       run.compose(f)
     )
 
-  def flatMap[B](
-      f: A => ServiceMonad[F, Env, R, E, N, B]
-  )(using Monad[F]): ServiceMonad[F, Env, R, E, N, B] =
+  def flatMap[Env2 <: Env, B](
+      f: A => ServiceMonad[F, Env2, R, E, N, B]
+  )(using Monad[F]): ServiceMonad[F, Env2, R, E, N, B] =
     ServiceMonad(env =>
       run(env).flatMap { r =>
         r.result.fold(
