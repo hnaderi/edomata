@@ -24,11 +24,11 @@ final case class DecisionT[F[_], R, E, A](run: F[Decision[R, E, A]]) {
           f(result).run.map {
             case e2 @ Accepted(events2, _) =>
               e2.copy(events = events1 ++ events2)
-            case InDecisive(result)     => e1.copy(result = result)
-            case r: Rejected[R2, E2, B] => r.copy()
+            case InDecisive(result) => e1.copy(result = result)
+            case r @ Rejected(_)    => r.copy()
           }
-        case InDecisive(result)   => f(result).run
-        case r: Rejected[R, E, A] => M.pure(r.copy())
+        case InDecisive(result) => f(result).run
+        case r @ Rejected(_)    => M.pure(r.copy())
       }
     }
 

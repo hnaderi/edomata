@@ -37,18 +37,18 @@ final case class Action[F[_], R, E, N, A](run: F[ActionResult[R, E, N, A]]) {
                     e1.copy(result = result),
                     notifs ++ res.notifications
                   )
-                case r: Rejected[R2, E2, B] => ActionResult(r.copy(), Nil)
+                case r @ Rejected(_) => ActionResult(r.copy(), Nil)
               }
             }
           case InDecisive(result) =>
             f(result).run.map(res =>
               res.decision match {
-                case r: Rejected[R2, E2, B] => res
+                case r @ Rejected(_) => res
                 case r =>
                   res.copy(notifications = notifs ++ res.notifications)
               }
             )
-          case r: Rejected[R, E, A] => M.pure(ActionResult(r.copy(), notifs))
+          case r @ Rejected(_) => M.pure(ActionResult(r.copy(), notifs))
         }
       }
     }

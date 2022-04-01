@@ -28,12 +28,12 @@ final case class ServiceMonad[F[_], -Env, R, E, N, A](
   )(using Monad[F]): ServiceMonad[F, Env2, R, E, N, B] =
     ServiceMonad(env =>
       run(env).flatMap { r =>
-        r.result.fold(
+        r.result.visit(
           err => r.copy(result = Decision.Rejected(err)).pure[F],
           f(_)
             .run(env)
             .map(o =>
-              o.result.fold(
+              o.result.visit(
                 _ => o,
                 _ => r >> o
               )
@@ -104,7 +104,7 @@ sealed trait ServiceMonadInstances {
           f: A => G[Either[A, B]]
       ): G[B] = ServiceMonad(env =>
         Monad[F].tailRecM(ResponseMonad.pure[R, E, N, A](a))(rma =>
-          rma.result.fold(
+          rma.result.visit(
             _ => ???, //This cannot happen
             a =>
               f(a)
@@ -112,7 +112,7 @@ sealed trait ServiceMonadInstances {
                 .map(rma >> _)
                 .map(o =>
                   o.result
-                    .fold(
+                    .visit(
                       rej => o.copy(result = Decision.Rejected(rej)).asRight,
                       {
                         case Left(a)  => o.as(a).asLeft

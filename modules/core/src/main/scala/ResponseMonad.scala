@@ -8,24 +8,24 @@ import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.data.ValidatedNec
 import cats.implicits.*
-
-import scala.annotation.tailrec
 import cats.kernel.Eq
 
-final case class ResponseMonad[R, E, N, +A](
+import scala.annotation.tailrec
+
+final case class ResponseMonad[+R, +E, +N, +A](
     result: Decision[R, E, A],
     notifications: Seq[N] = Nil
 ) {
   def map[B](f: A => B): ResponseMonad[R, E, N, B] =
     copy(result = result.map(f))
 
-  def flatMap[N2 >: N, B](
-      f: A => ResponseMonad[R, E, N2, B]
-  ): ResponseMonad[R, E, N2, B] = result.fold(
+  def flatMap[R2 >: R, E2 >: E, N2 >: N, B](
+      f: A => ResponseMonad[R2, E2, N2, B]
+  ): ResponseMonad[R2, E2, N2, B] = result.visit(
     rej => ResponseMonad(Decision.Rejected(rej), notifications),
     a => {
       val out = f(a)
-      (result >> out.result) match {
+      result.flatMap(_ => out.result) match {
         case d @ Decision.Rejected(_) => ResponseMonad(d, out.notifications)
         case other => ResponseMonad(other, notifications ++ out.notifications)
       }
@@ -34,18 +34,23 @@ final case class ResponseMonad[R, E, N, +A](
 
   def as[B](b: B): ResponseMonad[R, E, N, B] = map(_ => b)
 
+  inline def >>[R2 >: R, E2 >: E, N2 >: N, B](
+      f: A => ResponseMonad[R2, E2, N2, B]
+  ) = flatMap(f)
+
   /** Clears all notifications so far */
   def reset: ResponseMonad[R, E, N, A] =
     copy(notifications = Nil)
 
   /** Adds notification without considering decision state */
-  def publish(ns: N*): ResponseMonad[R, E, N, A] =
+  def publish[N2 >: N](ns: N2*): ResponseMonad[R, E, N2, A] =
     copy(notifications = notifications ++ ns)
 
-  def publishOnRejectionWith(
-      f: NonEmptyChain[R] => Seq[N]
-  ): ResponseMonad[R, E, N, A] = publish(result.fold(f, _ => Nil): _*)
-  def publishOnRejection(ns: N*): ResponseMonad[R, E, N, A] =
+  def publishOnRejectionWith[N2 >: N](
+      f: NonEmptyChain[R] => Seq[N2]
+  ): ResponseMonad[R, E, N2, A] = publish(result.visit(f, _ => Nil): _*)
+
+  def publishOnRejection[N2 >: N](ns: N2*): ResponseMonad[R, E, N2, A] =
     publishOnRejectionWith(_ => ns)
 }
 
