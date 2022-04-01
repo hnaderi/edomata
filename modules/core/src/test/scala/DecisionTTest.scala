@@ -43,13 +43,13 @@ object DecisionTTest {
     t.map(d => (d, DecisionT.lift(d)(using Applicative[Eval])))
 
   val accepted =
-    lift(DecisionTest.accepted)
+    lift(Generators.accepted)
 
   val rejected =
-    lift(DecisionTest.rejected)
+    lift(Generators.rejected)
 
   val indecisive =
-    lift(DecisionTest.indecisive)
+    lift(Generators.indecisive)
 
   val anySut = Gen.oneOf(accepted, rejected, indecisive)
   val notRejected = Gen.oneOf(accepted, indecisive)

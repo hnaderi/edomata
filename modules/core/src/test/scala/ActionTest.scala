@@ -156,9 +156,9 @@ object ActionTest {
       ns <- notifications
     } yield Action.liftD(dc).publish(ns: _*)
 
-  val accepted: Gen[SUT2] = actionFor(DecisionTest.accepted)
-  val rejected: Gen[SUT2] = actionFor(DecisionTest.rejected)
-  val indecisive: Gen[SUT2] = actionFor(DecisionTest.indecisive)
+  val accepted: Gen[SUT2] = actionFor(Generators.accepted)
+  val rejected: Gen[SUT2] = actionFor(Generators.rejected)
+  val indecisive: Gen[SUT2] = actionFor(Generators.indecisive)
   val notRejected: Gen[SUT2] = Gen.oneOf(accepted, indecisive)
   val anyAction: Gen[SUT2] = Gen.oneOf(accepted, rejected, indecisive)
 }

@@ -13,14 +13,14 @@ import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
 import ResponseMonadSuite.*
-import DecisionTest.*
+import Generators.*
 
 class ResponseMonadSuite extends DisciplineSuite {
   private given [T: Arbitrary]: Arbitrary[Res[T]] = Arbitrary(
     for {
       n <- notifications
       t <- Arbitrary.arbitrary[T]
-      d <- DecisionTest.anySut
+      d <- Generators.anySut
     } yield ResponseMonad(d.as(t), n)
   )
   private given Arbitrary[NonEmptyChain[String]] = Arbitrary(

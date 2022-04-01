@@ -12,9 +12,11 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
+import Generators.*
+
 class DecisionSuite extends DisciplineSuite {
   private given [T: Arbitrary]: Arbitrary[D[T]] = Arbitrary(
-    Arbitrary.arbitrary[T].flatMap(t => DecisionTest.anySut.map(_.as(t)))
+    Arbitrary.arbitrary[T].flatMap(t => Generators.anySut.map(_.as(t)))
   )
   private given Arbitrary[NonEmptyChain[String]] = Arbitrary(
     necOf(Arbitrary.arbitrary[String])
@@ -26,4 +28,27 @@ class DecisionSuite extends DisciplineSuite {
   )
 
   checkAll("laws", EqTests[D[Long]].eqv)
+
+  property("Accepted accumulates") {
+    forAll(accepted, accepted) { (a, b) =>
+      val c = a.flatMap(_ => b)
+
+      assertEquals(c, Decision.Accepted(a.events ++ b.events, b.result))
+    }
+  }
+
+  property("Rejected terminates") {
+    forAll(notRejected, rejected) { (a, b) =>
+      val c = a.flatMap(_ => b)
+
+      assertEquals(c, b)
+    }
+  }
+  property("Rejected does not change") {
+    forAll(rejected, notRejected) { (a, b) =>
+      val c = a.flatMap(_ => b)
+
+      assertEquals(c, a)
+    }
+  }
 }

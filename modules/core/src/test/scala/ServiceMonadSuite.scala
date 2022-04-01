@@ -19,7 +19,7 @@ class ServiceMonadSuite extends DisciplineSuite {
     for {
       n <- ResponseMonadSuite.notifications
       t <- Arbitrary.arbitrary[T]
-      d <- DecisionTest.anySut
+      d <- Generators.anySut
     } yield ServiceMonad(_ => Some(ResponseMonad(d.as(t), n)))
   )
 
