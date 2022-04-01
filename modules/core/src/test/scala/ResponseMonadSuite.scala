@@ -4,8 +4,8 @@ import cats.Monad
 import cats.data.NonEmptyChain
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
-import cats.laws.discipline.MonadErrorTests
 import cats.laws.discipline.MonadTests
+import cats.laws.discipline.TraverseTests
 import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 import munit.*
 import org.scalacheck.Arbitrary
@@ -30,6 +30,11 @@ class ResponseMonadSuite extends DisciplineSuite {
   checkAll(
     "laws",
     MonadTests[Res].monad[Int, Int, String]
+  )
+
+  checkAll(
+    "laws",
+    TraverseTests[Res].traverse[Int, Int, Int, Set[Int], Option, Option]
   )
 
   checkAll("laws", EqTests[Res[Long]].eqv)

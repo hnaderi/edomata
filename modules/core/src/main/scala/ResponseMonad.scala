@@ -1,9 +1,11 @@
 package edomata.core
 
 import cats.Applicative
+import cats.Eval
 import cats.Functor
 import cats.Monad
 import cats.MonadError
+import cats.Traverse
 import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.data.ValidatedNec
@@ -54,7 +56,44 @@ final case class ResponseMonad[+R, +E, +N, +A](
     publishOnRejectionWith(_ => ns)
 }
 
-object ResponseMonad extends ResponseMonadConstructors {
+object ResponseMonad
+    extends ResponseMonadConstructors
+    with ResponseMonadCatsInstances0
+
+sealed trait ResponseMonadConstructors {
+  def pure[R, E, N, T](t: T): ResponseMonad[R, E, N, T] = ResponseMonad(
+    Decision.pure(t)
+  )
+
+  def unit[R, E, N]: ResponseMonad[R, E, N, Unit] = pure(())
+
+  def lift[R, E, N, T](d: Decision[R, E, T]): ResponseMonad[R, E, N, T] =
+    ResponseMonad(d)
+
+  def publish[R, E, N](n: N*): ResponseMonad[R, E, N, Unit] =
+    ResponseMonad(Decision.unit, n)
+
+  def accept[R, E, N](ev: E, evs: E*): ResponseMonad[R, E, N, Unit] =
+    acceptReturn(())(ev, evs: _*)
+
+  def acceptReturn[R, E, N, T](
+      t: T
+  )(ev: E, evs: E*): ResponseMonad[R, E, N, T] =
+    ResponseMonad(Decision.Accepted(NonEmptyChain.of(ev, evs: _*), t))
+
+  def reject[R, E, N](
+      reason: R,
+      otherReasons: R*
+  ): ResponseMonad[R, E, N, Nothing] =
+    ResponseMonad(Decision.Rejected(NonEmptyChain.of(reason, otherReasons: _*)))
+
+  def validate[R, E, N, T](
+      validation: ValidatedNec[R, T]
+  ): ResponseMonad[R, E, N, T] =
+    ResponseMonad(Decision.validate(validation))
+}
+
+sealed trait ResponseMonadCatsInstances0 extends ResponseMonadCatsInstances1 {
   given [R, E, N]: Monad[[t] =>> ResponseMonad[R, E, N, t]] =
     new Monad {
       override def map[A, B](fa: ResponseMonad[R, E, N, A])(
@@ -115,35 +154,19 @@ object ResponseMonad extends ResponseMonadConstructors {
   given [R, E, N, T]: Eq[ResponseMonad[R, E, N, T]] = Eq.instance(_ == _)
 }
 
-sealed trait ResponseMonadConstructors {
-  def pure[R, E, N, T](t: T): ResponseMonad[R, E, N, T] = ResponseMonad(
-    Decision.pure(t)
-  )
+sealed trait ResponseMonadCatsInstances1 {
+  given [R, E, N]: Traverse[[t] =>> ResponseMonad[R, E, N, t]] = new Traverse {
+    def traverse[G[_]: Applicative, A, B](fa: ResponseMonad[R, E, N, A])(
+        f: A => G[B]
+    ): G[ResponseMonad[R, E, N, B]] =
+      fa.result.traverse(f).map(b => fa.copy(result = b))
 
-  def unit[R, E, N]: ResponseMonad[R, E, N, Unit] = pure(())
+    def foldLeft[A, B](fa: ResponseMonad[R, E, N, A], b: B)(f: (B, A) => B): B =
+      fa.result.foldLeft(b)(f)
 
-  def lift[R, E, N, T](d: Decision[R, E, T]): ResponseMonad[R, E, N, T] =
-    ResponseMonad(d)
-
-  def publish[R, E, N](n: N*): ResponseMonad[R, E, N, Unit] =
-    ResponseMonad(Decision.unit, n)
-
-  def accept[R, E, N](ev: E, evs: E*): ResponseMonad[R, E, N, Unit] =
-    acceptReturn(())(ev, evs: _*)
-
-  def acceptReturn[R, E, N, T](
-      t: T
-  )(ev: E, evs: E*): ResponseMonad[R, E, N, T] =
-    ResponseMonad(Decision.Accepted(NonEmptyChain.of(ev, evs: _*), t))
-
-  def reject[R, E, N](
-      reason: R,
-      otherReasons: R*
-  ): ResponseMonad[R, E, N, Nothing] =
-    ResponseMonad(Decision.Rejected(NonEmptyChain.of(reason, otherReasons: _*)))
-
-  def validate[R, E, N, T](
-      validation: ValidatedNec[R, T]
-  ): ResponseMonad[R, E, N, T] =
-    ResponseMonad(Decision.validate(validation))
+    def foldRight[A, B](fa: ResponseMonad[R, E, N, A], lb: Eval[B])(
+        f: (A, Eval[B]) => Eval[B]
+    ): Eval[B] =
+      fa.result.foldRight(lb)(f)
+  }
 }
