@@ -14,7 +14,14 @@ type CTX[D] = RequestContext2[CommandFor[D], StateFor[D], MetadataFor[D]]
 type SM[F[_], D, T] =
   ServiceMonad[F, CTX[D], RejectionFor[D], EventFor[D], NotificationFor[D], T]
 
-final class DomainServiceConstructors[C, S, E, R, N, M] private[core] (
+private[core] final class DomainServiceConstructors[
+    C,
+    S,
+    E,
+    R,
+    N,
+    M
+](
     private val dummy: Boolean = true
 ) extends AnyVal {
   def command[F[_]: Applicative]
