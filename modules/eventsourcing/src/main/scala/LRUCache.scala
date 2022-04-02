@@ -86,16 +86,16 @@ final class LRUCache[F[_], I, T] private (
     if (head.exists(_.next.isEmpty)) last = head
     if (last.contains(item)) last = item.prev
 
-    //joining
+    // joining
     item.prev.foreach(_.next = item.next)
     item.next.foreach(_.prev = item.prev)
 
-    //inserting
+    // inserting
     item.prev = None
     item.next = head
     head.foreach(_.prev = Some(item))
 
-    //replacing
+    // replacing
     head = Some(item)
   }
 }

@@ -62,7 +62,7 @@ CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, ver
         (uuid *: text *: timestamptz *: int8 *: evCodec).pimap[InsertRow[E]]
 
       sql"""insert into $table ("id", "stream", "time", "version", "payload") values ${codec.values
-        .list(n)}""".command
+          .list(n)}""".command
     }
 
     val readFields = sql"id, time, seqnr, version, stream, payload"

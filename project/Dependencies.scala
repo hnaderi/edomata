@@ -59,8 +59,8 @@ object Dependencies {
 
     val odin: Seq[ModuleID] = Seq(
       "com.github.valskalla" %% "odin-core",
-      "com.github.valskalla" %% "odin-json", //to enable JSON formatter if needed
-      "com.github.valskalla" %% "odin-extras", //to enable additional features if needed (see docs)
+      "com.github.valskalla" %% "odin-json", // to enable JSON formatter if needed
+      "com.github.valskalla" %% "odin-extras", // to enable additional features if needed (see docs)
       "com.github.valskalla" %% "odin-slf4j"
     ).map(_ % Versions.odin)
 
