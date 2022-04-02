@@ -5,7 +5,7 @@ import cats.implicits.*
 
 import java.time.Instant
 
-final case class RequestContext2[C, S, M](
+final case class RequestContext2[+C, +S, +M](
     id: String,
     aggregateId: String,
     command: C,
@@ -13,16 +13,21 @@ final case class RequestContext2[C, S, M](
     metadata: M
 )
 
-trait CommandMetadata[+C] {
-  val id: String
-  val time: java.time.Instant
-  val address: String
-  val payload: C
-}
-
-final case class CommandMessage[+C](
+final case class CommandMessage[+C, +M](
     id: String,
     time: Instant,
     address: String,
-    payload: C
-) extends CommandMetadata[C]
+    payload: C,
+    metadata: M
+)
+object CommandMessage {
+  extension [C, M](cmd: CommandMessage[C, M]) {
+    def buildContext[S](state: S): RequestContext2[C, S, M] = RequestContext2(
+      id = cmd.id,
+      aggregateId = cmd.address,
+      command = cmd.payload,
+      state = state,
+      metadata = cmd.metadata
+    )
+  }
+}
