@@ -1,12 +1,12 @@
-package edomata.backend
+package edomata.backend.rev2
 
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
-import cats.implicits.*
 import edomata.core.CommandMessage
+import edomata.core.Model
+import fs2.Stream
 
 import java.time.OffsetDateTime
-import edomata.eventsourcing.AggregateState
 
 /** Data access layer interface
   */
@@ -41,7 +41,7 @@ trait ESPersistence[F[_], S, E, R, N, M] {
     */
   def readFromJournal(streamId: String): F[EitherNec[R, AggregateState[S]]]
 
-  /** Write a message to outbox
+  /** Write messages to outbox
     *
     * @param msg
     *   message to outbox
@@ -50,7 +50,7 @@ trait ESPersistence[F[_], S, E, R, N, M] {
     * @return
     *   aggregate state for stream
     */
-  def outbox(msgs: Seq[N]): F[Unit]
+  def outbox(msgs: NonEmptyChain[N]): F[Unit]
 
   /** Append a command for idempotency check
     *
@@ -76,4 +76,51 @@ trait ESPersistence[F[_], S, E, R, N, M] {
     *   program that runs given program in trasaction
     */
   def transaction[T](f: F[T]): F[T]
+}
+
+trait ESRepository[F[_], S, E, R] extends Projection[F, S, E, R] {
+  def append(
+      streamId: StreamId,
+      time: OffsetDateTime,
+      version: EventVersion,
+      events: NonEmptyChain[E]
+  ): F[Unit]
+}
+
+trait Projection[F[_], P, E, R] {
+  def get(streamId: StreamId): F[EitherNec[R, AggregateState[P]]]
+  def history: Stream[F, AggregateState[P]]
+  def at(version: EventVersion): F[Option[AggregateState[P]]]
+}
+
+trait SnapshotStore[F[_], S] {
+  def get(id: StreamId): F[Option[S]]
+  def put(id: StreamId, state: S): F[Unit]
+}
+
+trait Journal[F[_], E] {
+  def append(
+      streamId: StreamId,
+      time: OffsetDateTime,
+      version: SeqNr,
+      events: NonEmptyChain[E]
+  ): F[Unit]
+  def readStream(streamId: StreamId): Stream[F, EventMessage[E]]
+  def readStreamAfter(
+      streamId: StreamId,
+      version: EventVersion
+  ): Stream[F, EventMessage[E]]
+  def readAll: Stream[F, EventMessage[E]]
+  def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]]
+  def notifications: Stream[F, Unit]
+}
+
+trait ConsumerController[F[_]] {
+  def seek(name: ConsumerName, seqNr: SeqNr): F[Unit]
+  def read(name: ConsumerName): F[Option[SeqNr]]
+}
+
+trait CommandStore2[F[_], M] {
+  def append(cmd: CommandMessage[?, M]): F[Unit]
+  def contains(id: String): F[Boolean]
 }

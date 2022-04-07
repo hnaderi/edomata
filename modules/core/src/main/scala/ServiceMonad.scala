@@ -78,15 +78,7 @@ final case class ServiceMonad[F[_], -Env, R, E, N, A](
     transform(_.publishOnRejection(ns: _*))
 }
 
-object ServiceMonad
-    extends ServiceMonadInstances
-    with ServiceMonadConstructors {
-  import Domain.*
-  def domain[D]: DomainServiceConstructors[CommandFor[D], StateFor[D], EventFor[
-    D
-  ], RejectionFor[D], NotificationFor[D], MetadataFor[D]] =
-    new DomainServiceConstructors
-}
+object ServiceMonad extends ServiceMonadInstances with ServiceMonadConstructors
 
 sealed trait ServiceMonadInstances {
   given [F[_]: Monad, Env, R, E, N]

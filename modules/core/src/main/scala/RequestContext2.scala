@@ -4,14 +4,17 @@ import cats.data.ValidatedNec
 import cats.implicits.*
 
 import java.time.Instant
+import cats.data.NonEmptyChain
 
-final case class RequestContext2[+C, +S, +M](
-    id: String,
-    aggregateId: String,
-    command: C,
-    state: S,
-    metadata: M
-)
+enum RequestContext2[+C, +S, +M, +R] {
+  case Valid(
+      command: CommandMessage[C, M],
+      state: S,
+      version: Long
+  )
+  case Conflict(err: NonEmptyChain[R])
+  case Redundant
+}
 
 final case class CommandMessage[+C, +M](
     id: String,
@@ -22,12 +25,14 @@ final case class CommandMessage[+C, +M](
 )
 object CommandMessage {
   extension [C, M](cmd: CommandMessage[C, M]) {
-    def buildContext[S](state: S): RequestContext2[C, S, M] = RequestContext2(
-      id = cmd.id,
-      aggregateId = cmd.address,
-      command = cmd.payload,
-      state = state,
-      metadata = cmd.metadata
-    )
+    def buildContext[S, R](
+        state: S,
+        version: Long
+    ): RequestContext2.Valid[C, S, M, R] =
+      RequestContext2.Valid(
+        command = cmd,
+        state = state,
+        version = version
+      )
   }
 }

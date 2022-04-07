@@ -1,4 +1,4 @@
-package edomata.backend
+package edomata.backend.rev2
 
 import cats.Monad
 import cats.data.EitherNec
@@ -9,7 +9,6 @@ import edomata.core.Decision
 import edomata.core.Domain.*
 import edomata.core.Response
 import edomata.core.*
-import edomata.eventsourcing.*
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -17,59 +16,40 @@ import java.time.ZoneOffset
 type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 object DomainService {
   def default[F[_]: Monad: Clock, C, S, E, R, N, M](
-      persistence: ESPersistence[F, S & Model[S, E, R], E, R, N, M],
-      app: ServiceMonad[F, RequestContext2[C, S, M], R, E, N, Unit]
+      cmdHandler: CommandHandler[F, C, S, E, R, N, M],
+      app: ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, Unit]
   ): DomainService[F, CommandMessage[C, M], R] = {
-    val F = Monad[F]
     val void: EitherNec[R, Unit] = Right(())
     val voidF = void.pure[F]
 
-    val currentTime = Clock[F].realTimeInstant.map(_.atOffset(ZoneOffset.UTC))
-    def handleDecision(
-        cmd: CommandMessage[C, M],
-        ctx: RequestContext2[C, S & Model[S, E, R], M],
-        version: Long,
-        decision: Decision[R, E, Unit],
-        notifs: Seq[N]
-    ): F[EitherNec[R, Unit]] =
-      currentTime.flatMap { now =>
-        val publish =
-          if (notifs.isEmpty) then F.unit else persistence.outbox(notifs)
-
-        ctx.state.perform(decision) match {
-          case Decision.Accepted(evs, newState) =>
-            persistence.appendJournal(ctx.id, now, version, evs) >>
-              persistence.appendCmdLog(cmd) >>
-              publish.as(void)
-          case Decision.InDecisive(_) =>
-            publish.as(void)
-          case Decision.Rejected(err) if decision.isRejected =>
-            publish.as(Left(err))
-          case Decision.Rejected(err) => ???
-        }
-      }
-
     def handle(cmd: CommandMessage[C, M]) =
-      persistence.readFromJournal(cmd.address).flatMap {
-        case Right(AggregateState(version, state)) =>
-          val ctx = cmd.buildContext(state)
+      cmdHandler.onRequest(cmd).flatMap {
+        case ctx @ RequestContext2.Valid(_, state, _) =>
           app.run(ctx).flatMap { case ResponseMonad(decision, notifs) =>
-            handleDecision(cmd, ctx, version, decision, notifs)
+            state.perform(decision) match {
+              case Decision.Accepted(evs, newState) =>
+                cmdHandler.onAccept(ctx, evs, notifs).as(void)
+              case Decision.InDecisive(_) =>
+                cmdHandler.onIndecisive(ctx, notifs).as(void)
+              case Decision.Rejected(errs) if decision.isRejected =>
+                cmdHandler.onReject(ctx, notifs, errs).as(errs.asLeft)
+              case Decision.Rejected(errs) =>
+                cmdHandler.onConflict(ctx, errs).as(errs.asLeft)
+            }
           }
-        case e @ Left(err) => Left(err).pure[F]
+        case ctx @ RequestContext2.Conflict(errs) =>
+          cmdHandler.onConflict(ctx, errs).as(errs.asLeft)
+        case RequestContext2.Redundant => voidF
       }
 
-    cmd =>
-      persistence.transaction(
-        persistence.containsCmd(cmd.id).ifM(voidF, handle(cmd))
-      )
+    handle(_)
   }
 
   extension [F[_]: Monad: Clock, C, S, E, R, N, M](
-      app: ServiceMonad[F, RequestContext2[C, S, M], R, E, N, Unit]
+      app: ServiceMonad[F, RequestContext2[C, S, M, R], R, E, N, Unit]
   ) {
     def compile(
-        persistence: ESPersistence[F, S & Model[S, E, R], E, R, N, M]
-    ): DomainService[F, CommandMessage[C, M], R] = default(persistence, app)
+        cmdHandler: CommandHandler[F, C, S, E, R, N, M]
+    ): DomainService[F, CommandMessage[C, M], R] = default(cmdHandler, app)
   }
 }
