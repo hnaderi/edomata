@@ -9,6 +9,26 @@ ThisBuild / scalaVersion := scala3
 ThisBuild / fork := true
 ThisBuild / git.useGitDescribe := true
 ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / publishTo := sonatypePublishToBundle.value
+ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
+ThisBuild / licenses := Seq(
+  "APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
+)
+ThisBuild / developers := List(
+  Developer(
+    id = "hnaderi",
+    name = "Hossein Naderi",
+    email = "hossein-naderi@hotmail.com",
+    url = url("https://hnaderi.ir")
+  )
+)
+
+publishMavenStyle := true
+
+import xerial.sbt.Sonatype._
+sonatypeProjectHosting := Some(
+  GitHubHosting("hnaderi", "edomata", "hossein-naderi@hotmail.com")
+)
 
 def module(name: String, deps: Seq[ModuleID] = Nil): Project = {
   val id = s"module-$name"
@@ -19,7 +39,6 @@ def module(name: String, deps: Seq[ModuleID] = Nil): Project = {
         Libraries.cats ++ Libraries.munit.map(_ % Test) ++ deps,
       moduleName := s"edomata-$name"
     )
-    .enablePlugins(GitlabPlugin)
 }
 
 def testkit(name: String, deps: Seq[ModuleID] = Nil): Project = {
@@ -31,7 +50,6 @@ def testkit(name: String, deps: Seq[ModuleID] = Nil): Project = {
         Libraries.cats ++ Libraries.munit ++ deps,
       moduleName := s"edomata-$name-testkit"
     )
-    .enablePlugins(GitlabPlugin)
 }
 
 lazy val modules: List[ProjectReference] = List(

@@ -3,7 +3,7 @@
 To install 
 
 ```scala
-libraryDependencies += "ir.hnaderi" %% "edomata-backend" % "@VERSION@"
+libraryDependencies += "io.github.hnaderi" %% "edomata-core" % "@VERSION@"
 ```
 
 ```scala mdoc
