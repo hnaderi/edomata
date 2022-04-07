@@ -7,6 +7,8 @@ import edomata.core.Model
 import fs2.Stream
 
 import java.time.OffsetDateTime
+import cats.effect.kernel.Resource
+import cats.Monad
 
 /** Data access layer interface
   */
@@ -75,7 +77,7 @@ trait ESPersistence[F[_], S, E, R, N, M] {
     * @return
     *   program that runs given program in trasaction
     */
-  def transaction[T](f: F[T]): F[T]
+  def transaction: Resource[F, Unit]
 }
 
 trait ESRepository[F[_], S, E, R] extends Projection[F, S, E, R] {
@@ -85,6 +87,42 @@ trait ESRepository[F[_], S, E, R] extends Projection[F, S, E, R] {
       version: EventVersion,
       events: NonEmptyChain[E]
   ): F[Unit]
+}
+
+object ESRepository {
+  import cats.implicits.*
+
+  def apply[F[_]: Monad, S, E, R](
+      initial: S & Model[S, E, R],
+      journal: Journal[F, E]
+  ): ESRepository[F, S & Model[S, E, R], E, R] = new ESRepository {
+    def append(
+        streamId: StreamId,
+        time: OffsetDateTime,
+        version: EventVersion,
+        events: NonEmptyChain[E]
+    ): F[Unit] = journal.append(streamId, time, version, events)
+    def get(
+        streamId: StreamId
+    ): F[EitherNec[R, AggregateState[S & Model[S, E, R]]]] = ???
+
+    def history: Stream[F, AggregateState[S & Model[S, E, R]]] = journal.readAll
+      .scan(AggregateState(0, initial).asRight[NonEmptyChain[R]]) {
+        case (Right(s), e) =>
+          s.state
+            .transition(e.payload)
+            .toEither
+            .map(newS => s.copy(state = newS, version = s.version + 1))
+        case (other, _) => other
+      }
+      .flatMap {
+        case Left(r)  => Stream.empty
+        case Right(s) => Stream.emit(s)
+      }
+    def at(
+        version: EventVersion
+    ): F[Option[AggregateState[S & Model[S, E, R]]]] = ???
+  }
 }
 
 trait Projection[F[_], P, E, R] {

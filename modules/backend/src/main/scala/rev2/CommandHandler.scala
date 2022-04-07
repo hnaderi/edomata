@@ -10,11 +10,12 @@ import edomata.core.*
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import cats.effect.kernel.Resource
 
 trait CommandHandler[F[_], C, S, E, R, N, M] {
   def onRequest(
       cmd: CommandMessage[C, M]
-  ): F[RequestContext2[C, S & Model[S, E, R], M, R]]
+  ): Resource[F, RequestContext2[C, S & Model[S, E, R], M, R]]
 
   def onAccept(
       ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
@@ -53,20 +54,22 @@ object CommandHandler {
 
     def onRequest(
         cmd: CommandMessage[C, M]
-    ): F[RequestContext2[C, S & Model[S, E, R], M, R]] =
-      persistence
-        .containsCmd(cmd.id)
-        .ifM(
-          persistence
-            .readFromJournal(cmd.id)
-            .map {
-              case Right(AggregateState(v, s)) =>
-                cmd.buildContext(s, v)
-              case Left(errs) =>
-                RequestContext2.Conflict(errs)
-            },
-          RequestContext2.Redundant.pure[F]
-        )
+    ): Resource[F, RequestContext2[C, S & Model[S, E, R], M, R]] =
+      persistence.transaction.evalMap(_ =>
+        persistence
+          .containsCmd(cmd.id)
+          .ifM(
+            persistence
+              .readFromJournal(cmd.id)
+              .map {
+                case Right(AggregateState(v, s)) =>
+                  cmd.buildContext(s, v)
+                case Left(errs) =>
+                  RequestContext2.Conflict(errs)
+              },
+            RequestContext2.Redundant.pure[F]
+          )
+      )
 
     def onAccept(
         ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
