@@ -1,22 +1,18 @@
-package edomata.backend.rev2
+package edomata.core
 
 import cats.Monad
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
-import cats.effect.Concurrent
-import cats.effect.kernel.Clock
 import cats.implicits.*
-import edomata.core.Decision
-import edomata.core.Domain.*
-import edomata.core.Response
-import edomata.core.*
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
+import Domain.*
+
 type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 object DomainService {
-  def default[F[_]: Concurrent: Clock, C, S, E, R, N, M](
+  def default[F[_]: Monad, C, S, E, R, N, M](
       cmdHandler: CommandHandler[F, C, S, E, R, N, M],
       app: ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, Unit]
   ): DomainService[F, CommandMessage[C, M], R] = {
@@ -24,7 +20,7 @@ object DomainService {
     val voidF = void.pure[F]
 
     def handle(cmd: CommandMessage[C, M]) =
-      cmdHandler.onRequest(cmd).use {
+      cmdHandler.onRequest(cmd) {
         case ctx @ RequestContext2.Valid(_, state, _) =>
           app.run(ctx).flatMap { case ResponseMonad(decision, notifs) =>
             state.perform(decision) match {
@@ -45,12 +41,13 @@ object DomainService {
 
     handle(_)
   }
+}
 
-  extension [F[_]: Concurrent: Clock, C, S, E, R, N, M](
-      app: ServiceMonad[F, RequestContext2[C, S, M, R], R, E, N, Unit]
-  ) {
-    def compile(
-        cmdHandler: CommandHandler[F, C, S, E, R, N, M]
-    ): DomainService[F, CommandMessage[C, M], R] = default(cmdHandler, app)
-  }
+extension [F[_]: Monad, C, S, E, R, N, M](
+    app: ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, Unit]
+) {
+  def compile(
+      cmdHandler: CommandHandler[F, C, S, E, R, N, M]
+  ): DomainService[F, CommandMessage[C, M], R] =
+    DomainService.default(cmdHandler, app)
 }

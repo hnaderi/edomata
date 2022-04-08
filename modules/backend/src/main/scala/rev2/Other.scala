@@ -37,12 +37,14 @@ trait Journal[F[_], E] {
   def notifications: Stream[F, Unit]
 }
 
-trait ConsumerController[F[_]] {
-  def seek(name: ConsumerName, seqNr: SeqNr): F[Unit]
-  def read(name: ConsumerName): F[Option[SeqNr]]
-}
-
 trait CommandStore2[F[_], M] {
   def append(cmd: CommandMessage[?, M]): F[Unit]
   def contains(id: String): F[Boolean]
+}
+
+trait DomainBackend[F[_], E, N, M] {
+  val outbox: Outbox[F, N]
+  val commands: CommandStore2[F, M]
+  val journal: Journal[F, E]
+  val transaction: Resource[F, Unit]
 }

@@ -21,7 +21,7 @@ final case class EventMetadata(
 final case class EventMessage[+T](metadata: EventMetadata, payload: T)
 
 import AggregateState.*
-sealed trait AggregateState[+S, +E, +R] extends Product with Serializable {
+sealed trait AggregateState[+S, +E, +R] extends Serializable {
   def isValid: Boolean
   def isFailed: Boolean
   def fold[T](fv: Valid[S] => T, ff: Failed[S, E, R] => T): T

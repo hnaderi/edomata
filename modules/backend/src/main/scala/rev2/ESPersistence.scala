@@ -83,7 +83,7 @@ object ESPersistence {
       trx: Resource[F, Unit],
       repo: ESRepository[F, Model.Of[S, E, R], E, R],
       cmdStore: CommandStore2[F, M],
-      n: N //TODO: add correct notification store
+      notifications: Outbox[F, N]
   ): ESPersistence[F, Model.Of[S, E, R], E, R, N, M] =
     new ESPersistence {
       def appendJournal(
@@ -98,7 +98,7 @@ object ESPersistence {
       ): F[AggregateState[Model.Of[S, E, R], E, R]] =
         repo.get(streamId)
 
-      def outbox(msgs: NonEmptyChain[N]): F[Unit] = ???
+      def outbox(msgs: NonEmptyChain[N]): F[Unit] = notifications.outbox(msgs)
 
       def appendCmdLog(cmd: CommandMessage[?, M]): F[Unit] =
         cmdStore.append(cmd)
