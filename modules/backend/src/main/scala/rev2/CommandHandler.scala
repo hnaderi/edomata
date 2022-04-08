@@ -104,4 +104,23 @@ object CommandHandler {
         reasons: NonEmptyChain[R]
     ): F[Unit] = Monad[F].unit
   }
+
+  private[backend] final class Partial[D](private val dummy: Boolean = true)
+      extends AnyVal {
+    import Domain.*
+    def build[F[_]: Monad: Clock](
+        persistence: ESPersistence[
+          F,
+          Model.Of[StateFor[D], EventFor[D], RejectionFor[D]],
+          EventFor[D],
+          RejectionFor[D],
+          NotificationFor[D],
+          MetadataFor[D]
+        ]
+    ): CommandHandler[F, CommandFor[D], StateFor[D], EventFor[D], RejectionFor[
+      D
+    ], NotificationFor[D], MetadataFor[D]] = default(persistence)
+  }
+
+  def in[Domain]: Partial[Domain] = Partial()
 }
