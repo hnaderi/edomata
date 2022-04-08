@@ -11,7 +11,7 @@ import java.time.Instant
 
 import Domain.*
 type CTX[D] =
-  RequestContext2.Valid[CommandFor[D], StateFor[D], MetadataFor[
+  RequestContext.Valid[CommandFor[D], StateFor[D], MetadataFor[
     D
   ], RejectionFor[D]]
 
@@ -20,18 +20,18 @@ type SM[F[_], D, T] =
 
 object ServiceMonadHelpers {
   def state[F[_]: Monad, C, M, S, R, E, N, T]
-      : ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, S] =
+      : ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, S] =
     ServiceMonad.read.map(_.state)
   def aggregateId[F[_]: Monad, C, M, S, R, E, N, T]
-      : ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, String] =
+      : ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, String] =
     ServiceMonad.read.map(_.command.address)
   def metadata[F[_]: Monad, C, M, S, R, E, N, T]
-      : ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, M] =
+      : ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, M] =
     ServiceMonad.read.map(_.command.metadata)
   def messageId[F[_]: Monad, C, M, S, R, E, N, T]
-      : ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, String] =
+      : ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, String] =
     ServiceMonad.read.map(_.command.id)
   def command[F[_]: Monad, C, M, S, R, E, N, T]
-      : ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, C] =
+      : ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, C] =
     ServiceMonad.read.map(_.command.payload)
 }

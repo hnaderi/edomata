@@ -6,7 +6,7 @@ import cats.implicits.*
 
 import java.time.Instant
 
-enum RequestContext2[+C, +S, +M, +R] {
+enum RequestContext[+C, +S, +M, +R] {
   case Valid(
       command: CommandMessage[C, M],
       state: S,
@@ -28,8 +28,8 @@ object CommandMessage {
     def buildContext[S, R](
         state: S,
         version: Long
-    ): RequestContext2.Valid[C, S, M, R] =
-      RequestContext2.Valid(
+    ): RequestContext.Valid[C, S, M, R] =
+      RequestContext.Valid(
         command = cmd,
         state = state,
         version = version

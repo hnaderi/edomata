@@ -10,7 +10,7 @@ import cats.implicits.*
 import edomata.core.CommandHandler
 import edomata.core.CommandMessage
 import edomata.core.Model
-import edomata.core.RequestContext2
+import edomata.core.RequestContext
 import fs2.Chunk
 import fs2.Pipe
 import fs2.Stream
@@ -32,7 +32,7 @@ object SQLCommandHandler {
 
     def onRequest[T](
         cmd: CommandMessage[C, M]
-    )(f: RequestContext2[C, Model.Of[S, E, R], M, R] => F[T]): F[T] =
+    )(f: RequestContext[C, Model.Of[S, E, R], M, R] => F[T]): F[T] =
       persistence.transaction.use(_ =>
         persistence
           .containsCmd(cmd.id)
@@ -43,15 +43,15 @@ object SQLCommandHandler {
                 case AggregateState.Valid(v, s) =>
                   cmd.buildContext(s, v)
                 case AggregateState.Failed(lastState, event, errs) =>
-                  RequestContext2.Conflict(errs)
+                  RequestContext.Conflict(errs)
               },
-            RequestContext2.Redundant.pure[F]
+            RequestContext.Redundant.pure[F]
           )
           .flatMap(f)
       )
 
     def onAccept(
-        ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
+        ctx: RequestContext.Valid[C, Model.Of[S, E, R], M, R],
         events: NonEmptyChain[E],
         notifications: Seq[N]
     ): F[Unit] =
@@ -67,19 +67,19 @@ object SQLCommandHandler {
       )
 
     def onIndecisive(
-        ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
+        ctx: RequestContext.Valid[C, Model.Of[S, E, R], M, R],
         notifications: Seq[N]
     ): F[Unit] =
       publish(notifications) >> persistence.appendCmdLog(ctx.command)
 
     def onReject(
-        ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
+        ctx: RequestContext.Valid[C, Model.Of[S, E, R], M, R],
         notifications: Seq[N],
         reasons: NonEmptyChain[R]
     ): F[Unit] = publish(notifications)
 
     def onConflict(
-        ctx: RequestContext2[C, Model.Of[S, E, R], M, R],
+        ctx: RequestContext[C, Model.Of[S, E, R], M, R],
         reasons: NonEmptyChain[R]
     ): F[Unit] = Monad[F].unit
   }

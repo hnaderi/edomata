@@ -14,14 +14,14 @@ type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 object DomainService {
   def default[F[_]: Monad, C, S, E, R, N, M](
       cmdHandler: CommandHandler[F, C, S, E, R, N, M],
-      app: ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, Unit]
+      app: ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, Unit]
   ): DomainService[F, CommandMessage[C, M], R] = {
     val void: EitherNec[R, Unit] = Right(())
     val voidF = void.pure[F]
 
     def handle(cmd: CommandMessage[C, M]) =
       cmdHandler.onRequest(cmd) {
-        case ctx @ RequestContext2.Valid(_, state, _) =>
+        case ctx @ RequestContext.Valid(_, state, _) =>
           app.run(ctx).flatMap { case ResponseMonad(decision, notifs) =>
             state.perform(decision) match {
               case Decision.Accepted(evs, newState) =>
@@ -34,9 +34,9 @@ object DomainService {
                 cmdHandler.onConflict(ctx, errs).as(errs.asLeft)
             }
           }
-        case ctx @ RequestContext2.Conflict(errs) =>
+        case ctx @ RequestContext.Conflict(errs) =>
           cmdHandler.onConflict(ctx, errs).as(errs.asLeft)
-        case RequestContext2.Redundant => voidF
+        case RequestContext.Redundant => voidF
       }
 
     handle(_)
@@ -44,7 +44,7 @@ object DomainService {
 }
 
 extension [F[_]: Monad, C, S, E, R, N, M](
-    app: ServiceMonad[F, RequestContext2.Valid[C, S, M, R], R, E, N, Unit]
+    app: ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, Unit]
 ) {
   def compile(
       cmdHandler: CommandHandler[F, C, S, E, R, N, M]
