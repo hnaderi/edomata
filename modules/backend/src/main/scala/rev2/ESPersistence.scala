@@ -93,9 +93,9 @@ object ESRepository {
   import cats.implicits.*
 
   def apply[F[_]: Monad, S, E, R](
-      initial: S & Model[S, E, R],
+      initial: Model.Of[S, E, R],
       journal: Journal[F, E]
-  ): ESRepository[F, S & Model[S, E, R], E, R] = new ESRepository {
+  ): ESRepository[F, Model.Of[S, E, R], E, R] = new ESRepository {
     def append(
         streamId: StreamId,
         time: OffsetDateTime,
@@ -104,9 +104,9 @@ object ESRepository {
     ): F[Unit] = journal.append(streamId, time, version, events)
     def get(
         streamId: StreamId
-    ): F[EitherNec[R, AggregateState[S & Model[S, E, R]]]] = ???
+    ): F[EitherNec[R, AggregateState[Model.Of[S, E, R]]]] = ???
 
-    def history: Stream[F, AggregateState[S & Model[S, E, R]]] = journal.readAll
+    def history: Stream[F, AggregateState[Model.Of[S, E, R]]] = journal.readAll
       .scan(AggregateState(0, initial).asRight[NonEmptyChain[R]]) {
         case (Right(s), e) =>
           s.state
@@ -121,7 +121,7 @@ object ESRepository {
       }
     def at(
         version: EventVersion
-    ): F[Option[AggregateState[S & Model[S, E, R]]]] = ???
+    ): F[Option[AggregateState[Model.Of[S, E, R]]]] = ???
   }
 }
 

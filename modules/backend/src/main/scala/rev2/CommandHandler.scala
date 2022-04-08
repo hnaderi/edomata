@@ -1,48 +1,48 @@
 package edomata.backend.rev2
 
 import cats.Monad
-import cats.data.NonEmptyChain
 import cats.data.EitherNec
+import cats.data.NonEmptyChain
 import cats.effect.kernel.Clock
+import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.core.CommandMessage
 import edomata.core.*
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import cats.effect.kernel.Resource
 
 trait CommandHandler[F[_], C, S, E, R, N, M] {
   def onRequest(
       cmd: CommandMessage[C, M]
-  ): Resource[F, RequestContext2[C, S & Model[S, E, R], M, R]]
+  ): Resource[F, RequestContext2[C, Model.Of[S, E, R], M, R]]
 
   def onAccept(
-      ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
+      ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ): F[Unit]
 
   def onIndecisive(
-      ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
+      ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
       notifications: Seq[N]
   ): F[Unit]
 
   def onReject(
-      ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
+      ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
       notifications: Seq[N],
       reasons: NonEmptyChain[R]
   ): F[Unit]
 
   def onConflict(
-      ctx: RequestContext2[C, S & Model[S, E, R], M, R],
+      ctx: RequestContext2[C, Model.Of[S, E, R], M, R],
       reasons: NonEmptyChain[R]
   ): F[Unit]
 }
 
 object CommandHandler {
   def default[F[_]: Monad: Clock, C, S, E, R, N, M](
-      persistence: ESPersistence[F, S & Model[S, E, R], E, R, N, M]
+      persistence: ESPersistence[F, Model.Of[S, E, R], E, R, N, M]
   ): CommandHandler[F, C, S, E, R, N, M] = new CommandHandler {
     private val currentTime =
       Clock[F].realTimeInstant.map(_.atOffset(ZoneOffset.UTC))
@@ -54,7 +54,7 @@ object CommandHandler {
 
     def onRequest(
         cmd: CommandMessage[C, M]
-    ): Resource[F, RequestContext2[C, S & Model[S, E, R], M, R]] =
+    ): Resource[F, RequestContext2[C, Model.Of[S, E, R], M, R]] =
       persistence.transaction.evalMap(_ =>
         persistence
           .containsCmd(cmd.id)
@@ -72,7 +72,7 @@ object CommandHandler {
       )
 
     def onAccept(
-        ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
+        ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
         events: NonEmptyChain[E],
         notifications: Seq[N]
     ): F[Unit] =
@@ -88,20 +88,20 @@ object CommandHandler {
       )
 
     def onIndecisive(
-        ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
+        ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
         notifications: Seq[N]
     ): F[Unit] =
       publish(notifications) >> persistence.appendCmdLog(ctx.command)
 
     def onReject(
-        ctx: RequestContext2.Valid[C, S & Model[S, E, R], M, R],
+        ctx: RequestContext2.Valid[C, Model.Of[S, E, R], M, R],
         notifications: Seq[N],
         reasons: NonEmptyChain[R]
     ): F[Unit] = publish(notifications)
 
     def onConflict(
-        ctx: RequestContext2[C, S & Model[S, E, R], M, R],
+        ctx: RequestContext2[C, Model.Of[S, E, R], M, R],
         reasons: NonEmptyChain[R]
-    ): F[Unit] = ???
+    ): F[Unit] = Monad[F].unit
   }
 }

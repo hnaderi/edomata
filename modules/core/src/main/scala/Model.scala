@@ -28,12 +28,12 @@ trait Model[S, Event, Rejection] { self: S =>
 
   private def applyNec(
       es: NonEmptyChain[Event]
-  ): EitherNec[Rejection, S & Model[S, Event, Rejection]] =
+  ): EitherNec[Rejection, Model.Of[S, Event, Rejection]] =
     es.foldM(self)((ns, e) => ns.transition(e).toEither)
 
   type F[T] = Decision[Rejection, Event, T]
   type Transition =
-    Event => ValidatedNec[Rejection, S & Model[S, Event, Rejection]]
+    Event => ValidatedNec[Rejection, Model.Of[S, Event, Rejection]]
 
   def transition: Transition
 }
@@ -46,4 +46,6 @@ object Model {
   type RejectionFrom[T] = T match {
     case Model[_, _, r] => r
   }
+
+  type Of[S, E, R] = S & Model[S, E, R]
 }
