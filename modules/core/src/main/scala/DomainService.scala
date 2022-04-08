@@ -22,7 +22,7 @@ object DomainService {
     def handle(cmd: CommandMessage[C, M]) =
       cmdHandler.onRequest(cmd) {
         case ctx @ RequestContext.Valid(_, state, _) =>
-          app.run(ctx).flatMap { case ResponseMonad(decision, notifs) =>
+          app.run(ctx).flatMap { case Response(decision, notifs) =>
             state.perform(decision) match {
               case Decision.Accepted(evs, newState) =>
                 cmdHandler.onAccept(ctx, evs, notifs).as(void)

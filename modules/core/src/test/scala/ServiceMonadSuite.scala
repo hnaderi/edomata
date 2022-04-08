@@ -17,10 +17,10 @@ class ServiceMonadSuite extends DisciplineSuite {
 
   private given [Env, T: Arbitrary]: Arbitrary[AppG[Env, T]] = Arbitrary(
     for {
-      n <- ResponseMonadSuite.notifications
+      n <- ResponseSuite.notifications
       t <- Arbitrary.arbitrary[T]
       d <- Generators.anySut
-    } yield ServiceMonad(_ => Some(ResponseMonad(d.as(t), n)))
+    } yield ServiceMonad(_ => Some(Response(d.as(t), n)))
   )
 
   private given ExhaustiveCheck[Int] = ExhaustiveCheck.instance(List(1, 2, 3))

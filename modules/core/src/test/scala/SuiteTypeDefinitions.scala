@@ -11,6 +11,6 @@ type Event = Int
 
 type SUT = D[Long]
 
-type Res[T] = ResponseMonad[Rejection, Event, Notification, T]
+type Res[T] = Response[Rejection, Event, Notification, T]
 
 final case class Notification(value: String = "")

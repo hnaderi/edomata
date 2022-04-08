@@ -13,7 +13,7 @@ import cats.kernel.Eq
 import ServiceMonad.*
 
 final case class ServiceMonad[F[_], -Env, R, E, N, A](
-    run: Env => F[ResponseMonad[R, E, N, A]]
+    run: Env => F[Response[R, E, N, A]]
 ) {
   def map[B](f: A => B)(using Functor[F]): ServiceMonad[F, Env, R, E, N, B] =
     transform(_.map(f))
@@ -42,8 +42,8 @@ final case class ServiceMonad[F[_], -Env, R, E, N, A](
       }
     )
 
-  def transform[B](f: ResponseMonad[R, E, N, A] => ResponseMonad[R, E, N, B])(
-      using Functor[F]
+  def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
+      Functor[F]
   ): ServiceMonad[F, Env, R, E, N, B] =
     ServiceMonad(run.andThen(_.map(f)))
 
@@ -53,7 +53,7 @@ final case class ServiceMonad[F[_], -Env, R, E, N, A](
   def andThen[B](f: A => F[B])(using
       Monad[F]
   ): ServiceMonad[F, Env, R, E, N, B] =
-    flatMap(a => liftF(f(a).map(ResponseMonad.pure)))
+    flatMap(a => liftF(f(a).map(Response.pure)))
 
   def as[B](b: B)(using Functor[F]): ServiceMonad[F, Env, R, E, N, B] =
     map(_ => b)
@@ -86,7 +86,7 @@ sealed trait ServiceMonadInstances {
     new Monad {
       type G[T] = ServiceMonad[F, Env, R, E, N, T]
       override def pure[A](x: A): G[A] =
-        ServiceMonad(_ => ResponseMonad.pure(x).pure[F])
+        ServiceMonad(_ => Response.pure(x).pure[F])
 
       override def map[A, B](fa: G[A])(f: A => B): G[B] = fa.map(f)
 
@@ -95,7 +95,7 @@ sealed trait ServiceMonadInstances {
       override def tailRecM[A, B](a: A)(
           f: A => G[Either[A, B]]
       ): G[B] = ServiceMonad(env =>
-        Monad[F].tailRecM(ResponseMonad.pure[R, E, N, A](a))(rma =>
+        Monad[F].tailRecM(Response.pure[R, E, N, A](a))(rma =>
           rma.result.visit(
             _ => ???, // This cannot happen
             a =>
@@ -118,7 +118,7 @@ sealed trait ServiceMonadInstances {
     }
 
   given [F[_], Env, R, E, N, T](using
-      Eq[Env => F[ResponseMonad[R, E, N, T]]]
+      Eq[Env => F[Response[R, E, N, T]]]
   ): Eq[ServiceMonad[F, Env, R, E, N, T]] =
     Eq.by(_.run)
 
@@ -136,27 +136,27 @@ sealed trait ServiceMonadConstructors {
   def pure[F[_]: Monad, Env, R, E, N, T](
       t: T
   ): ServiceMonad[F, Env, R, E, N, T] =
-    ServiceMonad(_ => ResponseMonad.pure(t).pure)
+    ServiceMonad(_ => Response.pure(t).pure)
 
   def unit[F[_]: Monad, Env, R, E, N, T]: ServiceMonad[F, Env, R, E, N, Unit] =
     pure(())
 
   def liftF[F[_], Env, R, E, N, T](
-      f: F[ResponseMonad[R, E, N, T]]
+      f: F[Response[R, E, N, T]]
   ): ServiceMonad[F, Env, R, E, N, T] = ServiceMonad(_ => f)
 
   def lift[F[_]: Applicative, Env, R, E, N, T](
-      f: ResponseMonad[R, E, N, T]
+      f: Response[R, E, N, T]
   ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.pure)
 
   def eval[F[_]: Applicative, Env, R, E, N, T](
       f: F[T]
-  ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.map(ResponseMonad.pure))
+  ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.map(Response.pure))
 
   def run[F[_]: Applicative, Env, R, E, N, T](
       f: Env => F[T]
   ): ServiceMonad[F, Env, R, E, N, T] = ServiceMonad(
-    f.andThen(_.map(ResponseMonad.pure))
+    f.andThen(_.map(Response.pure))
   )
 
   def map[F[_]: Applicative, Env, R, E, N, T](
@@ -169,15 +169,15 @@ sealed trait ServiceMonadConstructors {
 
   def publish[F[_]: Applicative, Env, R, E, N](
       ns: N*
-  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(ResponseMonad.publish(ns: _*))
+  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(Response.publish(ns: _*))
 
   def reject[F[_]: Applicative, Env, R, E, N](
       r: R,
       rs: R*
-  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(ResponseMonad.reject(r, rs: _*))
+  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(Response.reject(r, rs: _*))
 
   def perform[F[_]: Applicative, Env, R, E, N, T](
       d: Decision[R, E, T]
-  ): ServiceMonad[F, Env, R, E, N, T] = lift(ResponseMonad.lift(d))
+  ): ServiceMonad[F, Env, R, E, N, T] = lift(Response.lift(d))
 
 }
