@@ -9,6 +9,7 @@ import edomata.core.Model
 import fs2.Stream
 
 import java.time.OffsetDateTime
+import edomata.core.CommandHandler
 
 trait Projection[F[_], P, E, R] {
   def get(streamId: StreamId): F[AggregateState[P, E, R]]
@@ -42,9 +43,9 @@ trait CommandStore2[F[_], M] {
   def contains(id: String): F[Boolean]
 }
 
-trait DomainBackend[F[_], E, N, M] {
+trait DomainBackend[F[_], C, S, E, R, N, M] {
   val outbox: Outbox[F, N]
   val commands: CommandStore2[F, M]
   val journal: Journal[F, E]
-  val transaction: Resource[F, Unit]
+  val handler: CommandHandler[F, C, S, E, R, N, M]
 }
