@@ -3,8 +3,8 @@ package edomata.backend.rev2
 import cats.Monad
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
-import cats.effect.kernel.Clock
 import cats.effect.Concurrent
+import cats.effect.kernel.Clock
 import cats.implicits.*
 import edomata.core.Decision
 import edomata.core.Domain.*

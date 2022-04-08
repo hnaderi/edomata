@@ -1,10 +1,10 @@
 package edomata.core
 
+import cats.data.NonEmptyChain
 import cats.data.ValidatedNec
 import cats.implicits.*
 
 import java.time.Instant
-import cats.data.NonEmptyChain
 
 enum RequestContext2[+C, +S, +M, +R] {
   case Valid(

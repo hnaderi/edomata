@@ -62,9 +62,9 @@ object CommandHandler {
             persistence
               .readFromJournal(cmd.id)
               .map {
-                case Right(AggregateState(v, s)) =>
+                case AggregateState.Valid(v, s) =>
                   cmd.buildContext(s, v)
-                case Left(errs) =>
+                case AggregateState.Failed(lastState, event, errs) =>
                   RequestContext2.Conflict(errs)
               },
             RequestContext2.Redundant.pure[F]
