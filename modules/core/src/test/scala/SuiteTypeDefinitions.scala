@@ -2,7 +2,7 @@ package edomata.core
 
 type D[T] = Decision[String, Int, T]
 type AppG[Env, T] =
-  ServiceMonad[Option, Env, Rejection, Event, Notification, T]
+  Edomaton[Option, Env, Rejection, Event, Notification, T]
 type App[T] = AppG[Int, T]
 type AppContra[T] = AppG[T, Unit]
 

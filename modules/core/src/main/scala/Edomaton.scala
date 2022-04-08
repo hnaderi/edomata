@@ -10,23 +10,23 @@ import cats.data.NonEmptyChain
 import cats.implicits.*
 import cats.kernel.Eq
 
-import ServiceMonad.*
+import Edomaton.*
 
-final case class ServiceMonad[F[_], -Env, R, E, N, A](
+final case class Edomaton[F[_], -Env, R, E, N, A](
     run: Env => F[Response[R, E, N, A]]
 ) {
-  def map[B](f: A => B)(using Functor[F]): ServiceMonad[F, Env, R, E, N, B] =
+  def map[B](f: A => B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     transform(_.map(f))
 
-  def contramap[Env2](f: Env2 => Env): ServiceMonad[F, Env2, R, E, N, A] =
-    ServiceMonad(
+  def contramap[Env2](f: Env2 => Env): Edomaton[F, Env2, R, E, N, A] =
+    Edomaton(
       run.compose(f)
     )
 
   def flatMap[Env2 <: Env, B](
-      f: A => ServiceMonad[F, Env2, R, E, N, B]
-  )(using Monad[F]): ServiceMonad[F, Env2, R, E, N, B] =
-    ServiceMonad(env =>
+      f: A => Edomaton[F, Env2, R, E, N, B]
+  )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] =
+    Edomaton(env =>
       run(env).flatMap { r =>
         r.result.visit(
           err => r.copy(result = Decision.Rejected(err)).pure[F],
@@ -44,49 +44,49 @@ final case class ServiceMonad[F[_], -Env, R, E, N, A](
 
   def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
       Functor[F]
-  ): ServiceMonad[F, Env, R, E, N, B] =
-    ServiceMonad(run.andThen(_.map(f)))
+  ): Edomaton[F, Env, R, E, N, B] =
+    Edomaton(run.andThen(_.map(f)))
 
-  def mapK[G[_]](fk: FunctionK[F, G]): ServiceMonad[G, Env, R, E, N, A] =
-    ServiceMonad(run.andThen(fk.apply))
+  def mapK[G[_]](fk: FunctionK[F, G]): Edomaton[G, Env, R, E, N, A] =
+    Edomaton(run.andThen(fk.apply))
 
   def andThen[B](f: A => F[B])(using
       Monad[F]
-  ): ServiceMonad[F, Env, R, E, N, B] =
+  ): Edomaton[F, Env, R, E, N, B] =
     flatMap(a => liftF(f(a).map(Response.pure)))
 
-  def as[B](b: B)(using Functor[F]): ServiceMonad[F, Env, R, E, N, B] =
+  def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
 
   /** Clears all notifications so far */
-  def reset(using Functor[F]): ServiceMonad[F, Env, R, E, N, A] =
+  def reset(using Functor[F]): Edomaton[F, Env, R, E, N, A] =
     transform(_.reset)
 
   /** Adds notification without considering decision state */
-  def publish(ns: N*)(using Functor[F]): ServiceMonad[F, Env, R, E, N, A] =
+  def publish(ns: N*)(using Functor[F]): Edomaton[F, Env, R, E, N, A] =
     transform(_.publish(ns: _*))
 
   def publishOnRejectionWith(
       f: NonEmptyChain[R] => Seq[N]
-  )(using Functor[F]): ServiceMonad[F, Env, R, E, N, A] = transform(
+  )(using Functor[F]): Edomaton[F, Env, R, E, N, A] = transform(
     _.publishOnRejectionWith(f)
   )
 
   def publishOnRejection(ns: N*)(using
       Functor[F]
-  ): ServiceMonad[F, Env, R, E, N, A] =
+  ): Edomaton[F, Env, R, E, N, A] =
     transform(_.publishOnRejection(ns: _*))
 }
 
-object ServiceMonad extends ServiceMonadInstances with ServiceMonadConstructors
+object Edomaton extends ServiceMonadInstances with ServiceMonadConstructors
 
 sealed trait ServiceMonadInstances {
   given [F[_]: Monad, Env, R, E, N]
-      : Monad[[t] =>> ServiceMonad[F, Env, R, E, N, t]] =
+      : Monad[[t] =>> Edomaton[F, Env, R, E, N, t]] =
     new Monad {
-      type G[T] = ServiceMonad[F, Env, R, E, N, T]
+      type G[T] = Edomaton[F, Env, R, E, N, T]
       override def pure[A](x: A): G[A] =
-        ServiceMonad(_ => Response.pure(x).pure[F])
+        Edomaton(_ => Response.pure(x).pure[F])
 
       override def map[A, B](fa: G[A])(f: A => B): G[B] = fa.map(f)
 
@@ -94,7 +94,7 @@ sealed trait ServiceMonadInstances {
 
       override def tailRecM[A, B](a: A)(
           f: A => G[Either[A, B]]
-      ): G[B] = ServiceMonad(env =>
+      ): G[B] = Edomaton(env =>
         Monad[F].tailRecM(Response.pure[R, E, N, A](a))(rma =>
           rma.result.visit(
             _ => ???, // This cannot happen
@@ -119,15 +119,15 @@ sealed trait ServiceMonadInstances {
 
   given [F[_], Env, R, E, N, T](using
       Eq[Env => F[Response[R, E, N, T]]]
-  ): Eq[ServiceMonad[F, Env, R, E, N, T]] =
+  ): Eq[Edomaton[F, Env, R, E, N, T]] =
     Eq.by(_.run)
 
   given [F[_], R, E, N, T]
-      : Contravariant[[env] =>> ServiceMonad[F, env, R, E, N, T]] =
+      : Contravariant[[env] =>> Edomaton[F, env, R, E, N, T]] =
     new Contravariant {
-      override def contramap[A, B](fa: ServiceMonad[F, A, R, E, N, T])(
+      override def contramap[A, B](fa: Edomaton[F, A, R, E, N, T])(
           f: B => A
-      ): ServiceMonad[F, B, R, E, N, T] = fa.contramap(f)
+      ): Edomaton[F, B, R, E, N, T] = fa.contramap(f)
     }
 
 }
@@ -135,49 +135,49 @@ sealed trait ServiceMonadInstances {
 sealed trait ServiceMonadConstructors {
   def pure[F[_]: Monad, Env, R, E, N, T](
       t: T
-  ): ServiceMonad[F, Env, R, E, N, T] =
-    ServiceMonad(_ => Response.pure(t).pure)
+  ): Edomaton[F, Env, R, E, N, T] =
+    Edomaton(_ => Response.pure(t).pure)
 
-  def unit[F[_]: Monad, Env, R, E, N, T]: ServiceMonad[F, Env, R, E, N, Unit] =
+  def unit[F[_]: Monad, Env, R, E, N, T]: Edomaton[F, Env, R, E, N, Unit] =
     pure(())
 
   def liftF[F[_], Env, R, E, N, T](
       f: F[Response[R, E, N, T]]
-  ): ServiceMonad[F, Env, R, E, N, T] = ServiceMonad(_ => f)
+  ): Edomaton[F, Env, R, E, N, T] = Edomaton(_ => f)
 
   def lift[F[_]: Applicative, Env, R, E, N, T](
       f: Response[R, E, N, T]
-  ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.pure)
+  ): Edomaton[F, Env, R, E, N, T] = liftF(f.pure)
 
   def eval[F[_]: Applicative, Env, R, E, N, T](
       f: F[T]
-  ): ServiceMonad[F, Env, R, E, N, T] = liftF(f.map(Response.pure))
+  ): Edomaton[F, Env, R, E, N, T] = liftF(f.map(Response.pure))
 
   def run[F[_]: Applicative, Env, R, E, N, T](
       f: Env => F[T]
-  ): ServiceMonad[F, Env, R, E, N, T] = ServiceMonad(
+  ): Edomaton[F, Env, R, E, N, T] = Edomaton(
     f.andThen(_.map(Response.pure))
   )
 
   def map[F[_]: Applicative, Env, R, E, N, T](
       f: Env => T
-  ): ServiceMonad[F, Env, R, E, N, T] =
+  ): Edomaton[F, Env, R, E, N, T] =
     run(f.andThen(_.pure))
 
-  def read[F[_]: Applicative, Env, R, E, N, T]
-      : ServiceMonad[F, Env, R, E, N, Env] = run(_.pure[F])
+  def read[F[_]: Applicative, Env, R, E, N, T]: Edomaton[F, Env, R, E, N, Env] =
+    run(_.pure[F])
 
   def publish[F[_]: Applicative, Env, R, E, N](
       ns: N*
-  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(Response.publish(ns: _*))
+  ): Edomaton[F, Env, R, E, N, Unit] = lift(Response.publish(ns: _*))
 
   def reject[F[_]: Applicative, Env, R, E, N](
       r: R,
       rs: R*
-  ): ServiceMonad[F, Env, R, E, N, Unit] = lift(Response.reject(r, rs: _*))
+  ): Edomaton[F, Env, R, E, N, Unit] = lift(Response.reject(r, rs: _*))
 
   def perform[F[_]: Applicative, Env, R, E, N, T](
       d: Decision[R, E, T]
-  ): ServiceMonad[F, Env, R, E, N, T] = lift(Response.lift(d))
+  ): Edomaton[F, Env, R, E, N, T] = lift(Response.lift(d))
 
 }

@@ -14,7 +14,7 @@ type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 object DomainService {
   def default[F[_]: Monad, C, S, E, R, N, M](
       cmdHandler: CommandHandler[F, C, S, E, R, N, M],
-      app: ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, Unit]
+      app: Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, Unit]
   ): DomainService[F, CommandMessage[C, M], R] = {
     val void: EitherNec[R, Unit] = Right(())
     val voidF = void.pure[F]
@@ -44,7 +44,7 @@ object DomainService {
 }
 
 extension [F[_]: Monad, C, S, E, R, N, M](
-    app: ServiceMonad[F, RequestContext.Valid[C, S, M, R], R, E, N, Unit]
+    app: Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, Unit]
 ) {
   def compile(
       cmdHandler: CommandHandler[F, C, S, E, R, N, M]

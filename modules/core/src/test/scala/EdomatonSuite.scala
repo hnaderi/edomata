@@ -13,14 +13,14 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
-class ServiceMonadSuite extends DisciplineSuite {
+class EdomatonSuite extends DisciplineSuite {
 
   private given [Env, T: Arbitrary]: Arbitrary[AppG[Env, T]] = Arbitrary(
     for {
       n <- ResponseSuite.notifications
       t <- Arbitrary.arbitrary[T]
       d <- Generators.anySut
-    } yield ServiceMonad(_ => Some(Response(d.as(t), n)))
+    } yield Edomaton(_ => Some(Response(d.as(t), n)))
   )
 
   private given ExhaustiveCheck[Int] = ExhaustiveCheck.instance(List(1, 2, 3))
