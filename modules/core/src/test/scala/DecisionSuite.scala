@@ -7,6 +7,7 @@ import cats.kernel.laws.discipline.EqTests
 import cats.kernel.laws.discipline.SerializableTests
 import cats.laws.discipline.FunctorTests
 import cats.laws.discipline.MonadErrorTests
+import cats.laws.discipline.TraverseTests
 import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 import munit.*
 import org.scalacheck.Arbitrary
@@ -14,7 +15,6 @@ import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
 import Generators.*
-import cats.laws.discipline.TraverseTests
 
 class DecisionSuite extends DisciplineSuite {
   private given [T: Arbitrary]: Arbitrary[D[T]] = Arbitrary(

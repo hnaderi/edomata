@@ -78,9 +78,12 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
     transform(_.publishOnRejection(ns: _*))
 }
 
-object Edomaton extends ServiceMonadInstances with ServiceMonadConstructors
+object Edomaton
+    extends ServiceMonadInstances,
+      ServiceMonadConstructors,
+      EdomatonHelpers
 
-sealed trait ServiceMonadInstances {
+sealed transparent trait ServiceMonadInstances {
   given [F[_]: Monad, Env, R, E, N]
       : Monad[[t] =>> Edomaton[F, Env, R, E, N, t]] =
     new Monad {
@@ -132,7 +135,7 @@ sealed trait ServiceMonadInstances {
 
 }
 
-sealed trait ServiceMonadConstructors {
+sealed transparent trait ServiceMonadConstructors {
   def pure[F[_]: Monad, Env, R, E, N, T](
       t: T
   ): Edomaton[F, Env, R, E, N, T] =
@@ -180,4 +183,19 @@ sealed trait ServiceMonadConstructors {
       d: Decision[R, E, T]
   ): Edomaton[F, Env, R, E, N, T] = lift(Response.lift(d))
 
+}
+
+sealed transparent trait EdomatonHelpers {
+  def state[F[_]: Monad, C, M, S, R, E, N, T]
+      : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, S] =
+    Edomaton.read.map(_.state)
+  def aggregateId[F[_]: Monad, C, M, S, R, E, N, T]
+      : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, String] =
+    Edomaton.read.map(_.command.address)
+  def metadata[F[_]: Monad, C, M, S, R, E, N, T]
+      : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, M] =
+    Edomaton.read.map(_.command.metadata)
+  def messageId[F[_]: Monad, C, M, S, R, E, N, T]
+      : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, String] =
+    Edomaton.read.map(_.command.id)
 }
