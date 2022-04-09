@@ -2,10 +2,13 @@ package edomata.core
 
 import Domain.*
 
-type CTX[D] =
-  RequestContext.Valid[CommandFor[D], StateFor[D], MetadataFor[
-    D
-  ], RejectionFor[D]]
+type ContextOf[D] =
+  RequestContext.Valid[
+    CommandFor[D],
+    StateFor[D],
+    MetadataFor[D],
+    RejectionFor[D]
+  ]
 
-type SM[F[_], D, T] =
-  Edomaton[F, CTX[D], RejectionFor[D], EventFor[D], NotificationFor[D], T]
+type EdomatonOf[F[_], D, T] =
+  Edomaton[F, ContextOf[D], RejectionFor[D], EventFor[D], NotificationFor[D], T]
