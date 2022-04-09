@@ -7,6 +7,7 @@ import cats.implicits.*
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import scala.util.NotGiven
 
 import Domain.*
 
@@ -50,4 +51,13 @@ extension [F[_]: Monad, C, S, E, R, N, M](
       cmdHandler: CommandHandler[F, C, S, E, R, N, M]
   ): DomainService[F, CommandMessage[C, M], R] =
     DomainService.default(cmdHandler, app)
+}
+
+extension [F[_]: Monad, C, S, E, R, N, M, T](
+    app: Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, T]
+)(using NotGiven[T =:= Unit]) {
+  def compile(
+      cmdHandler: CommandHandler[F, C, S, E, R, N, M]
+  ): DomainService[F, CommandMessage[C, M], R] =
+    DomainService.default(cmdHandler, app.void)
 }

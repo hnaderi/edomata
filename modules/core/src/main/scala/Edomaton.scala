@@ -42,6 +42,14 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
       }
     )
 
+  inline def >>=[Env2 <: Env, B](
+      f: A => Edomaton[F, Env2, R, E, N, B]
+  )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(f)
+
+  inline def >>[Env2 <: Env, B](
+      f: Edomaton[F, Env2, R, E, N, B]
+  )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(_ => f)
+
   def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
       Functor[F]
   ): Edomaton[F, Env, R, E, N, B] =
@@ -55,7 +63,7 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   ): Edomaton[F, Env, R, E, N, B] =
     flatMap(a => liftF(f(a).map(Response.pure)))
 
-  def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
+  inline def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
 
   /** Clears all notifications so far */
@@ -174,10 +182,10 @@ sealed transparent trait ServiceMonadConstructors {
       ns: N*
   ): Edomaton[F, Env, R, E, N, Unit] = lift(Response.publish(ns: _*))
 
-  def reject[F[_]: Applicative, Env, R, E, N](
+  def reject[F[_]: Applicative, Env, R, E, N, T](
       r: R,
       rs: R*
-  ): Edomaton[F, Env, R, E, N, Unit] = lift(Response.reject(r, rs: _*))
+  ): Edomaton[F, Env, R, E, N, T] = lift(Response.reject(r, rs: _*))
 
   def perform[F[_]: Applicative, Env, R, E, N, T](
       d: Decision[R, E, T]
@@ -186,16 +194,23 @@ sealed transparent trait ServiceMonadConstructors {
 }
 
 sealed transparent trait EdomatonHelpers {
-  def state[F[_]: Monad, C, M, S, R, E, N, T]
+  def state[F[_]: Monad, C, M, S, R, E, N]
       : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, S] =
     Edomaton.read.map(_.state)
-  def aggregateId[F[_]: Monad, C, M, S, R, E, N, T]
+  def aggregateId[F[_]: Monad, C, M, S, R, E, N]
       : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, String] =
     Edomaton.read.map(_.command.address)
-  def metadata[F[_]: Monad, C, M, S, R, E, N, T]
+  def metadata[F[_]: Monad, C, M, S, R, E, N]
       : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, M] =
     Edomaton.read.map(_.command.metadata)
-  def messageId[F[_]: Monad, C, M, S, R, E, N, T]
+  def messageId[F[_]: Monad, C, M, S, R, E, N]
       : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, String] =
     Edomaton.read.map(_.command.id)
+  def command[F[_]: Monad, C, M, S, R, E, N]
+      : Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, C] =
+    Edomaton.read.map(_.command.payload)
+  def router[F[_]: Monad, C, M, S, R, E, N, T](
+      f: C => Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, T]
+  ): Edomaton[F, RequestContext.Valid[C, S, M, R], R, E, N, T] =
+    command.flatMap(f)
 }

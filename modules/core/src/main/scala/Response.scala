@@ -34,11 +34,11 @@ final case class Response[+R, +E, +N, +A](
     }
   )
 
-  def as[B](b: B): Response[R, E, N, B] = map(_ => b)
+  inline def as[B](b: B): Response[R, E, N, B] = map(_ => b)
 
   inline def >>[R2 >: R, E2 >: E, N2 >: N, B](
       f: A => Response[R2, E2, N2, B]
-  ) = flatMap(f)
+  ): Response[R2, E2, N2, B] = flatMap(f)
 
   /** Clears all notifications so far */
   def reset: Response[R, E, N, A] =
