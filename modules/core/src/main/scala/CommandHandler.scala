@@ -8,30 +8,33 @@ import cats.implicits.*
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-trait CommandHandler[F[_], C, S, E, R, N, M] {
-  def onRequest[T](
-      cmd: CommandMessage[C, M]
-  )(f: RequestContext[C, Model.Of[S, E, R], M, R] => F[T]): F[T]
+trait Compiler[F[_], C, S, E, R, N, M] {
+  def onRequest(cmd: CommandMessage[C, M])(
+      run: RequestContext[C, Model.Of[S, E, R], M] => F[
+        ProgramResult[S, E, R, N]
+      ]
+  ): F[EitherNec[R, Unit]]
+}
 
-  def onAccept(
-      ctx: RequestContext.Valid[C, Model.Of[S, E, R], M, R],
+sealed trait ProgramResult[+S, +E, +R, +N]
+object ProgramResult {
+  final case class Accepted[S, E, R, N](
+      newState: Model.Of[S, E, R],
       events: NonEmptyChain[E],
       notifications: Seq[N]
-  ): F[Unit]
+  ) extends ProgramResult[S, E, R, N]
 
-  def onIndecisive(
-      ctx: RequestContext.Valid[C, Model.Of[S, E, R], M, R],
+  final case class Indecisive[N](
       notifications: Seq[N]
-  ): F[Unit]
+  ) extends ProgramResult[Nothing, Nothing, Nothing, N]
 
-  def onReject(
-      ctx: RequestContext.Valid[C, Model.Of[S, E, R], M, R],
+  final case class Rejected[R, N](
       notifications: Seq[N],
       reasons: NonEmptyChain[R]
-  ): F[Unit]
+  ) extends ProgramResult[Nothing, Nothing, R, N]
 
-  def onConflict(
-      ctx: RequestContext[C, Model.Of[S, E, R], M, R],
+  final case class Conflicted[R](
       reasons: NonEmptyChain[R]
-  ): F[Unit]
+  ) extends ProgramResult[Nothing, Nothing, R, Nothing]
+
 }

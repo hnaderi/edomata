@@ -3,11 +3,10 @@ package edomata.core
 import Domain.*
 
 type ContextOf[D] =
-  RequestContext.Valid[
+  RequestContext[
     CommandFor[D],
     StateFor[D],
-    MetadataFor[D],
-    RejectionFor[D]
+    MetadataFor[D]
   ]
 
 type EdomatonOf[F[_], D, T] =

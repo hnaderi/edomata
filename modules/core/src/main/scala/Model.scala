@@ -10,7 +10,7 @@ import Decision.*
 trait Model[S, Event, Rejection] { self: S =>
   def handle[T](
       dec: Decision[Rejection, Event, T]
-  ): Decision[Rejection, Event, (S, T)] =
+  ): Decision[Rejection, Event, (Model.Of[S, Event, Rejection], T)] =
     dec match {
       case d @ Decision.Accepted(es, v) =>
         applyNec(es).fold(
@@ -23,7 +23,7 @@ trait Model[S, Event, Rejection] { self: S =>
 
   def perform(
       dec: Decision[Rejection, Event, Unit]
-  ): Decision[Rejection, Event, S] =
+  ): Decision[Rejection, Event, Model.Of[S, Event, Rejection]] =
     handle(dec).map(_._1)
 
   private def applyNec(

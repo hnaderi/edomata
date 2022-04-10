@@ -5,11 +5,11 @@ import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.kernel.Resource
 import edomata.core.CommandMessage
+import edomata.core.Compiler
 import edomata.core.Model
 import fs2.Stream
 
 import java.time.OffsetDateTime
-import edomata.core.CommandHandler
 
 trait Projection[F[_], P, E, R] {
   def get(streamId: StreamId): F[AggregateState[P, E, R]]
@@ -47,5 +47,5 @@ trait DomainBackend[F[_], C, S, E, R, N, M] {
   val outbox: Outbox[F, N]
   val commands: CommandStore2[F, M]
   val journal: Journal[F, E]
-  val handler: CommandHandler[F, C, S, E, R, N, M]
+  val handler: Compiler[F, C, S, E, R, N, M]
 }
