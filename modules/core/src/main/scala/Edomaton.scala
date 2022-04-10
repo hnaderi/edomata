@@ -48,6 +48,10 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
 
   inline def >>[Env2 <: Env, B](
       f: Edomaton[F, Env2, R, E, N, B]
+  )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = andThen(f)
+
+  inline def andThen[Env2 <: Env, B](
+      f: Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(_ => f)
 
   def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
@@ -58,10 +62,18 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   def mapK[G[_]](fk: FunctionK[F, G]): Edomaton[G, Env, R, E, N, A] =
     Edomaton(run.andThen(fk.apply))
 
-  def andThen[B](f: A => F[B])(using
+  def evalMap[B](f: A => F[B])(using
       Monad[F]
   ): Edomaton[F, Env, R, E, N, B] =
     flatMap(a => liftF(f(a).map(Response.pure)))
+
+  def evalTap[B](f: A => F[B])(using
+      Monad[F]
+  ): Edomaton[F, Env, R, E, N, A] =
+    flatMap(a => liftF(f(a).map(Response.pure)).as(a))
+
+  def eval[B](f: => F[B])(using Monad[F]): Edomaton[F, Env, R, E, N, A] =
+    evalTap(_ => f)
 
   inline def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
