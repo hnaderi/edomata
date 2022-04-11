@@ -47,11 +47,11 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(f)
 
   inline def >>[Env2 <: Env, B](
-      f: Edomaton[F, Env2, R, E, N, B]
+      f: => Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = andThen(f)
 
   inline def andThen[Env2 <: Env, B](
-      f: Edomaton[F, Env2, R, E, N, B]
+      f: => Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(_ => f)
 
   def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
