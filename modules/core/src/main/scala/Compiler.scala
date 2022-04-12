@@ -16,7 +16,7 @@ trait Compiler[F[_], C, S, E, R, N, M] {
   ): F[EitherNec[R, Unit]]
 }
 
-sealed trait ProgramResult[+S, +E, +R, +N]
+sealed trait ProgramResult[S, E, R, N]
 object ProgramResult {
   final case class Accepted[S, E, R, N](
       newState: Model.Of[S, E, R],
@@ -24,17 +24,17 @@ object ProgramResult {
       notifications: Seq[N]
   ) extends ProgramResult[S, E, R, N]
 
-  final case class Indecisive[N](
+  final case class Indecisive[S, E, R, N](
       notifications: Seq[N]
-  ) extends ProgramResult[Nothing, Nothing, Nothing, N]
+  ) extends ProgramResult[S, E, R, N]
 
-  final case class Rejected[R, N](
+  final case class Rejected[S, E, R, N](
       notifications: Seq[N],
       reasons: NonEmptyChain[R]
-  ) extends ProgramResult[Nothing, Nothing, R, N]
+  ) extends ProgramResult[S, E, R, N]
 
-  final case class Conflicted[R](
+  final case class Conflicted[S, E, R, N](
       reasons: NonEmptyChain[R]
-  ) extends ProgramResult[Nothing, Nothing, R, Nothing]
+  ) extends ProgramResult[S, E, R, N]
 
 }
