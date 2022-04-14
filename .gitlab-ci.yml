@@ -19,13 +19,6 @@ stages:
   image: hseeberger/scala-sbt:11.0.13_1.6.2_3.1.1
 
 .test_dependencies:
-  services:
-    - postgres:14
-  variables:
-    POSTGRES_HOST: postgres
-    POSTGRES_DB: postgres
-    POSTGRES_USER: postgres
-    POSTGRES_PASSWORD: postgres
   artifacts:
     when: always
     reports:

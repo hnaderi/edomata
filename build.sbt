@@ -36,7 +36,7 @@ def module(name: String, deps: Seq[ModuleID] = Nil): Project = {
     .settings(
       Common.settings,
       libraryDependencies ++=
-        Libraries.cats ++ Libraries.munit.map(_ % Test) ++ deps,
+        Libraries.munit.map(_ % Test) ++ deps,
       moduleName := s"edomata-$name"
     )
 }
@@ -54,11 +54,6 @@ def testkit(name: String, deps: Seq[ModuleID] = Nil): Project = {
 
 lazy val modules: List[ProjectReference] = List(
   core,
-  backend,
-  endpoint,
-  eventsourcing,
-  skunkBackend,
-  backendTestkit,
   docs,
   mdocPlantuml
 )
@@ -98,8 +93,6 @@ lazy val docs = (project in file("docs-build"))
   .enablePlugins(MdocPlugin)
   .dependsOn(
     core,
-    backend,
-    eventsourcing,
     mdocPlantuml
   )
 
@@ -108,21 +101,6 @@ import Libraries._
 lazy val core = module("core").settings(
   libraryDependencies ++= cats ++ catsLaws
 )
-
-lazy val eventsourcing = module("eventsourcing", fs2 ++ odin)
-  .dependsOn(core)
-
-lazy val backend = module("backend")
-  .dependsOn(core, eventsourcing)
-
-lazy val endpoint = module("endpoint", http4s)
-  .dependsOn(backend)
-  .dependsOn(backendTestkit % Test)
-
-lazy val skunkBackend = module("skunk", skunk ++ odin)
-  .dependsOn(backend)
-
-lazy val backendTestkit = testkit("backend").dependsOn(backend)
 
 def addAlias(name: String)(tasks: String*) =
   addCommandAlias(name, tasks.mkString(" ;"))
