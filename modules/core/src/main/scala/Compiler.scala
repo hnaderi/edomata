@@ -8,9 +8,9 @@ import cats.implicits.*
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-trait Compiler[F[_], C, S, E, R, N, M] {
-  def onRequest(cmd: CommandMessage[C, M])(
-      run: RequestContext[C, Model.Of[S, E, R], M] => F[
+trait Compiler[F[_], C, S, E, R, N] {
+  def onRequest(cmd: CommandMessage[C])(
+      run: RequestContext[C, Model.Of[S, E, R]] => F[
         ProgramResult[S, E, R, N]
       ]
   ): F[EitherNec[R, Unit]]

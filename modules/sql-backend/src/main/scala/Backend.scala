@@ -11,11 +11,11 @@ type SeqNr = Long
 type EventVersion = Long
 type StreamId = String
 
-final case class Backend[F[_], C, S, E, R, N, M](
+final case class Backend[F[_], C, S, E, R, N](
     journal: JournalReader[F, E],
     outbox: OutboxReader[F, N],
     repository: Repository[F, S, E, R],
-    compiler: Compiler[F, C, S, E, R, N, M]
+    compiler: Compiler[F, C, S, E, R, N]
 )
 
 object Backend {
@@ -26,7 +26,6 @@ object Backend {
     StateFor[D],
     EventFor[D],
     RejectionFor[D],
-    NotificationFor[D],
-    MetadataFor[D]
+    NotificationFor[D]
   ]
 }

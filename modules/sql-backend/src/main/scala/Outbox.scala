@@ -10,7 +10,7 @@ import java.util.UUID
 trait Outbox[F[_], T] extends OutboxReader[F, T], OutboxWriter[F, T]
 
 trait OutboxWriter[F[_], T] {
-  def write(t: T, time: OffsetDateTime): F[Unit]
+  def write(t: T, time: OffsetDateTime, meta: MessageMetadata): F[Unit]
 }
 trait OutboxReader[F[_], T] {
   def read: Stream[F, OutboxItem[T]]
@@ -22,5 +22,6 @@ trait OutboxReader[F[_], T] {
 final case class OutboxItem[T](
     seqNr: SeqNr,
     time: OffsetDateTime,
-    data: T
+    data: T,
+    metadata: MessageMetadata
 )

@@ -11,7 +11,7 @@ object DomainTest {
 
   type ExampleDomain = HasModel[State] And
     HasCommand[Command] And
-    HasMetadata[Map[String, String]] And HasNotification[Notification]
+    HasNotification[Notification]
 
   summon[ModelFor[ExampleDomain] =:= Model[State, Event, Rejection]]
   summon[StateFor[ExampleDomain] =:= State]
@@ -23,7 +23,6 @@ object DomainTest {
   type AltDomain = (
       HasModel[State],
       HasCommand[Command],
-      HasMetadata[Map[String, String]],
       HasNotification[Notification]
   )
 

@@ -5,8 +5,7 @@ import Domain.*
 type ContextOf[D] =
   RequestContext[
     CommandFor[D],
-    StateFor[D],
-    MetadataFor[D]
+    StateFor[D]
   ]
 
 type EdomatonOf[F[_], D, T] =

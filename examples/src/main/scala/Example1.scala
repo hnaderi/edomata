@@ -36,13 +36,12 @@ object Example1 {
   type CounterDomain =
     HasModel[Counter] And
       HasCommand[String] And
-      HasNotification[Updates] And
-      HasMetadata[Unit]
+      HasNotification[Updates]
 
   val dsl = Edomaton.of[CounterDomain]
 
   def app: EdomatonOf[IO, CounterDomain, Unit] = dsl.router {
-    case "" => dsl.unit
+    case "" => dsl.read[IO].map(_.command).map(_.deriveMeta).void
     case _  => dsl.reject(Rejection.Unknown)
   }
 
@@ -55,7 +54,9 @@ object Example1 {
       backend.outbox.markAsSent(i)
   )
 
-  val resp = service(CommandMessage("abc", ???, "a", "hello", ()))
+  val resp = service(
+    CommandMessage("abc", ???, "a", "hello", MessageMetadata("user"))
+  )
 
   val h = backend.repository.history("a").printlns
 

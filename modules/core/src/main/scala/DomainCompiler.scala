@@ -14,12 +14,12 @@ import Domain.*
 type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 
 object DomainCompiler {
-  def default[F[_]: Monad, C, S, E, R, N, M](
-      compiler: Compiler[F, C, S, E, R, N, M],
-      app: Edomaton[F, RequestContext[C, S, M], R, E, N, Unit]
-  ): DomainService[F, CommandMessage[C, M], R] = {
+  def default[F[_]: Monad, C, S, E, R, N](
+      compiler: Compiler[F, C, S, E, R, N],
+      app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
+  ): DomainService[F, CommandMessage[C], R] = {
 
-    def handle(cmd: CommandMessage[C, M]) =
+    def handle(cmd: CommandMessage[C]) =
       compiler.onRequest(cmd) { ctx =>
         app.run(ctx).map { case Response(decision, notifs) =>
           ctx.state.perform(decision) match {
@@ -39,20 +39,20 @@ object DomainCompiler {
   }
 }
 
-extension [F[_]: Monad, C, S, E, R, N, M](
-    app: Edomaton[F, RequestContext[C, S, M], R, E, N, Unit]
+extension [F[_]: Monad, C, S, E, R, N](
+    app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
 ) {
   def compile(
-      compiler: Compiler[F, C, S, E, R, N, M]
-  ): DomainService[F, CommandMessage[C, M], R] =
+      compiler: Compiler[F, C, S, E, R, N]
+  ): DomainService[F, CommandMessage[C], R] =
     DomainCompiler.default(compiler, app)
 }
 
-extension [F[_]: Monad, C, S, E, R, N, M, T](
-    app: Edomaton[F, RequestContext[C, S, M], R, E, N, T]
+extension [F[_]: Monad, C, S, E, R, N, T](
+    app: Edomaton[F, RequestContext[C, S], R, E, N, T]
 )(using NotGiven[T =:= Unit]) {
   def compile(
-      compiler: Compiler[F, C, S, E, R, N, M]
-  ): DomainService[F, CommandMessage[C, M], R] =
+      compiler: Compiler[F, C, S, E, R, N]
+  ): DomainService[F, CommandMessage[C], R] =
     DomainCompiler.default(compiler, app.void)
 }

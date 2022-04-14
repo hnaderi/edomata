@@ -63,7 +63,7 @@ private final class DomainDSL[D](
   def aggregateId[F[_]: Monad]: EdomatonOf[F, D, String] =
     Edomaton.read.map(_.command.address)
 
-  def metadata[F[_]: Monad]: EdomatonOf[F, D, MetadataFor[D]] =
+  def metadata[F[_]: Monad]: EdomatonOf[F, D, MessageMetadata] =
     Edomaton.read.map(_.command.metadata)
 
   def messageId[F[_]: Monad]: EdomatonOf[F, D, String] =
