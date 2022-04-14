@@ -54,7 +54,11 @@ def testkit(name: String, deps: Seq[ModuleID] = Nil): Project = {
 
 lazy val modules: List[ProjectReference] = List(
   core,
+  sqlBackend,
+  skunkBackend,
+  doobieBackend,
   docs,
+  examples,
   mdocPlantuml
 )
 
@@ -101,6 +105,16 @@ import Libraries._
 lazy val core = module("core").settings(
   libraryDependencies ++= cats ++ catsLaws
 )
+
+lazy val sqlBackend = module("sql-backend")
+  .dependsOn(core)
+  .settings(libraryDependencies ++= catsEffect ++ fs2)
+
+lazy val skunkBackend = module("skunk").dependsOn(sqlBackend)
+
+lazy val doobieBackend = module("doobie").dependsOn(sqlBackend)
+
+lazy val examples = project.dependsOn(skunkBackend, doobieBackend)
 
 def addAlias(name: String)(tasks: String*) =
   addCommandAlias(name, tasks.mkString(" ;"))
