@@ -11,6 +11,7 @@ object Dependencies {
     val MUnit = "0.7.29"
     val CatsEffectMunit = "1.0.7"
     val scalacheckEffectVersion = "1.0.3"
+    val doobie = "1.0.0-RC2"
   }
 
   object Libraries {
@@ -33,6 +34,11 @@ object Dependencies {
       "org.tpolecat" %% "skunk-core" % Versions.skunk,
       "org.tpolecat" %% "skunk-circe" % Versions.skunk
     )
+
+    val doobiePG = Seq(
+      "org.tpolecat" %% "doobie-core",
+      "org.tpolecat" %% "doobie-postgres"
+    ).map(_ % Versions.doobie)
 
     val scalaCheck: Seq[ModuleID] = Seq(
       "org.scalacheck" %% "scalacheck" % Versions.scalaCheck % Test

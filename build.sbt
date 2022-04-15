@@ -116,7 +116,9 @@ lazy val skunkBackend = module("skunk")
     libraryDependencies ++= skunk
   )
 
-lazy val doobieBackend = module("doobie").dependsOn(sqlBackend)
+lazy val doobieBackend = module("doobie")
+  .dependsOn(sqlBackend)
+  .settings(libraryDependencies ++= doobiePG)
 
 lazy val examples = project.dependsOn(skunkBackend, doobieBackend)
 
