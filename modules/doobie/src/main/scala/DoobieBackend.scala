@@ -13,6 +13,7 @@ import doobie.implicits.*
 import edomata.core.CommandMessage
 import edomata.core.Compiler
 import edomata.core.Domain
+import edomata.core.DomainModel
 import edomata.core.ModelTC
 import edomata.core.ProgramResult
 import edomata.core.RequestContext
@@ -100,7 +101,8 @@ private final class DoobieJournalReader[F[_]: Concurrent, E](
   def readAll: Stream[F, EventMessage[E]] = reader.readAll.transact(trx)
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
     reader.readAllAfter(seqNr).transact(trx)
-  def notifications: Stream[F, StreamId] = ???
+  def notifications: Stream[F, StreamId] =
+    ??? // TODO how to implement the doobie version?
 }
 
 private final class DoobieOutboxReader[F[_]: Concurrent, N](
@@ -113,13 +115,22 @@ private final class DoobieOutboxReader[F[_]: Concurrent, N](
 }
 
 object DoobieBackend {
-  def of[S, N]: Builder[S, N] = Builder()
 
-  private[backend] final class Builder[S, N](
-      private val dummy: Boolean = true
-  ) extends AnyVal {
+  def apply[F[_]: Concurrent](): Builder[F] = Builder()
 
-    def build[F[_]: Concurrent, E, R]()(using
+  final class Builder[F[_]: Concurrent] {
+
+    def build[C, S, E, R, N](
+        domain: Domain[C, S, E, R, N],
+        namespace: String
+    )(using
+        m: ModelTC[S, E, R]
+    ): F[DoobieBackend[F, S, E, R, N]] = ???
+
+    def buildNoSetup[C, S, E, R, N](
+        domain: Domain[C, S, E, R, N],
+        namespace: String
+    )(using
         m: ModelTC[S, E, R]
     ): DoobieBackend[F, S, E, R, N] = ???
   }

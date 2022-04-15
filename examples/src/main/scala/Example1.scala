@@ -58,6 +58,9 @@ object Example1 {
 
   def backend = CounterDomain.skunkBackend[IO](???)
 
+  val doobieBLD = DoobieBackend[IO]()
+  val backend2 = doobieBLD.buildNoSetup(CounterDomain, "counter")
+
   val service = app.compile(backend.compiler)
 
   val publisher = backend.outbox.read.evalMap(i =>
