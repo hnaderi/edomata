@@ -110,7 +110,11 @@ lazy val sqlBackend = module("sql-backend")
   .dependsOn(core)
   .settings(libraryDependencies ++= catsEffect ++ fs2)
 
-lazy val skunkBackend = module("skunk").dependsOn(sqlBackend)
+lazy val skunkBackend = module("skunk")
+  .dependsOn(sqlBackend)
+  .settings(
+    libraryDependencies ++= skunk
+  )
 
 lazy val doobieBackend = module("doobie").dependsOn(sqlBackend)
 

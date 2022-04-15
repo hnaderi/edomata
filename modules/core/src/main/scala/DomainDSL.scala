@@ -4,85 +4,83 @@ import cats.Applicative
 import cats.Monad
 import cats.implicits.*
 
-import Domain.*
+extension [S, E, R](self: DomainModel[S, E, R]) {
+  def dsl[C, N]: DomainDSL[C, S, E, R, N] = DomainDSL()
+  def domain[C, N]: Domain[C, S, E, R, N] = Domain()
+}
 
-private final class DomainDSL[D](
+private[edomata] final class Domain[C, S, E, R, N](
     private val dummy: Boolean = true
 ) extends AnyVal {
+  def dsl: DomainDSL[C, S, E, R, N] = DomainDSL()
+}
+
+private final class DomainDSL[C, S, E, R, N](
+    private val dummy: Boolean = true
+) extends AnyVal {
+  type App[F[_], T] = Edomaton[F, RequestContext[C, S], R, E, N, T]
+
   inline def pure[F[_]: Monad, T](
       t: T
-  ): EdomatonOf[F, D, T] =
+  ): App[F, T] =
     Edomaton.pure(t)
 
-  inline def unit[F[_]: Monad]: EdomatonOf[F, D, Unit] =
+  inline def unit[F[_]: Monad]: App[F, Unit] =
     Edomaton.unit
 
   inline def liftF[F[_], T](
-      f: F[Response[RejectionFor[D], EventFor[D], NotificationFor[D], T]]
-  ): EdomatonOf[F, D, T] = Edomaton.liftF(f)
+      f: F[Response[R, E, N, T]]
+  ): App[F, T] = Edomaton.liftF(f)
 
   inline def lift[F[_]: Applicative, T](
-      f: Response[RejectionFor[D], EventFor[D], NotificationFor[D], T]
-  ): EdomatonOf[F, D, T] = Edomaton.lift(f)
+      f: Response[R, E, N, T]
+  ): App[F, T] = Edomaton.lift(f)
 
   inline def eval[F[_]: Applicative, T](
       f: F[T]
-  ): EdomatonOf[F, D, T] = Edomaton.eval(f)
+  ): App[F, T] = Edomaton.eval(f)
 
   inline def run[F[_]: Applicative, T](
-      f: ContextOf[D] => F[T]
-  ): EdomatonOf[F, D, T] = Edomaton.run(f)
+      f: RequestContext[C, S] => F[T]
+  ): App[F, T] = Edomaton.run(f)
 
-  inline def map[F[_]: Applicative, T](
-      f: ContextOf[D] => T
-  ): EdomatonOf[F, D, T] =
-    Edomaton.map(f)
-
-  inline def read[F[_]: Applicative]: EdomatonOf[F, D, ContextOf[D]] =
+  inline def read[F[_]: Applicative]: App[F, RequestContext[C, S]] =
     Edomaton.read
 
   inline def publish[F[_]: Applicative](
-      ns: NotificationFor[D]*
-  ): EdomatonOf[F, D, Unit] =
+      ns: N*
+  ): App[F, Unit] =
     Edomaton.publish(ns: _*)
 
   inline def reject[F[_]: Applicative, T](
-      r: RejectionFor[D],
-      rs: RejectionFor[D]*
-  ): EdomatonOf[F, D, T] =
+      r: R,
+      rs: R*
+  ): App[F, T] =
     Edomaton.reject(r, rs: _*)
 
   inline def perform[F[_]: Applicative, T](
-      d: Decision[RejectionFor[D], EventFor[D], T]
-  ): EdomatonOf[F, D, T] =
+      d: Decision[R, E, T]
+  ): App[F, T] =
     Edomaton.perform(d)
 
-  def state[F[_]: Monad]: EdomatonOf[F, D, StateFor[D]] =
+  def state[F[_]: Monad]: App[F, S] =
     Edomaton.read.map(_.state)
 
-  def aggregateId[F[_]: Monad]: EdomatonOf[F, D, String] =
+  def aggregateId[F[_]: Monad]: App[F, String] =
     Edomaton.read.map(_.command.address)
 
-  def metadata[F[_]: Monad]: EdomatonOf[F, D, MessageMetadata] =
+  def metadata[F[_]: Monad]: App[F, MessageMetadata] =
     Edomaton.read.map(_.command.metadata)
 
-  def messageId[F[_]: Monad]: EdomatonOf[F, D, String] =
+  def messageId[F[_]: Monad]: App[F, String] =
     Edomaton.read.map(_.command.id)
 
-  def command[F[_]: Monad]: EdomatonOf[F, D, CommandFor[D]] =
+  def command[F[_]: Monad]: App[F, C] =
     Edomaton.read.map(_.command.payload)
 
   def router[F[_]: Monad, T](
-      f: CommandFor[D] => EdomatonOf[F, D, T]
-  ): EdomatonOf[F, D, T] =
+      f: C => App[F, T]
+  ): App[F, T] =
     command.flatMap(f)
 
-}
-
-object DomainDSL {
-  def apply[D]: DomainDSL[D] = new DomainDSL()
-}
-
-extension (unused: Edomaton.type) {
-  def of[D]: DomainDSL[D] = new DomainDSL()
 }

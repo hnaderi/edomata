@@ -10,16 +10,14 @@ import java.time.ZoneOffset
 
 trait Compiler[F[_], C, S, E, R, N] {
   def onRequest(cmd: CommandMessage[C])(
-      run: RequestContext[C, Model.Of[S, E, R]] => F[
-        ProgramResult[S, E, R, N]
-      ]
+      run: RequestContext[C, S] => F[ProgramResult[S, E, R, N]]
   ): F[EitherNec[R, Unit]]
 }
 
 sealed trait ProgramResult[S, E, R, N]
 object ProgramResult {
   final case class Accepted[S, E, R, N](
-      newState: Model.Of[S, E, R],
+      newState: S,
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ) extends ProgramResult[S, E, R, N]

@@ -5,15 +5,37 @@ import cats.data.NonEmptyChain
 import cats.data.ValidatedNec
 import cats.implicits.*
 
+import scala.annotation.implicitAmbiguous
+import scala.annotation.implicitNotFound
+
 import Decision.*
 
-trait Model[State, Event, Rejection] { self: State =>
-  def handle[T](
+@implicitNotFound("Cannot find domain model definition")
+@implicitAmbiguous("Domain model definition must be unique!")
+sealed trait ModelTC[State, Event, Rejection] {
+  def initial: State
+  def transition: Event => State => ValidatedNec[Rejection, State]
+}
+
+abstract class DomainModel[State, Event, Rejection] { self =>
+  def initial: State
+  def transition: Event => State => ValidatedNec[Rejection, State]
+
+  given ModelTC[State, Event, Rejection] = new {
+    def initial = self.initial
+    def transition = self.transition
+  }
+}
+
+extension [State, Event, Rejection](
+    self: State
+)(using m: ModelTC[State, Event, Rejection]) {
+  final def handle[T](
       dec: Decision[Rejection, Event, T]
-  ): Decision[Rejection, Event, (Model.Of[State, Event, Rejection], T)] =
+  ): Decision[Rejection, Event, (State, T)] =
     dec match {
       case d @ Decision.Accepted(es, v) =>
-        applyNec(es).fold(
+        applyNec(es)(self).fold(
           Decision.Rejected(_),
           s => Decision.Accepted(es, (s, v))
         )
@@ -21,31 +43,13 @@ trait Model[State, Event, Rejection] { self: State =>
       case d @ Decision.Rejected(_)   => d.copy()
     }
 
-  def perform(
+  final def perform(
       dec: Decision[Rejection, Event, Unit]
-  ): Decision[Rejection, Event, Model.Of[State, Event, Rejection]] =
+  ): Decision[Rejection, Event, State] =
     handle(dec).map(_._1)
 
   private def applyNec(
       es: NonEmptyChain[Event]
-  ): EitherNec[Rejection, Model.Of[State, Event, Rejection]] =
-    es.foldM(self)((ns, e) => ns.transition(e).toEither)
-
-  type F[T] = Decision[Rejection, Event, T]
-  type Transition =
-    Event => ValidatedNec[Rejection, Model.Of[State, Event, Rejection]]
-
-  def transition: Transition
-}
-
-object Model {
-  type EventFrom[T] = T match {
-    case Model[_, e, _] => e
-  }
-
-  type RejectionFrom[T] = T match {
-    case Model[_, _, r] => r
-  }
-
-  type Of[S, E, R] = S & Model[S, E, R]
+  ): State => EitherNec[Rejection, State] = self =>
+    es.foldM(self)((ns, e) => m.transition(e)(ns).toEither)
 }

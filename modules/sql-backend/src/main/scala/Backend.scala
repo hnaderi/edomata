@@ -11,21 +11,9 @@ type SeqNr = Long
 type EventVersion = Long
 type StreamId = String
 
-final case class Backend[F[_], C, S, E, R, N](
-    journal: JournalReader[F, E],
-    outbox: OutboxReader[F, N],
-    repository: Repository[F, S, E, R],
-    compiler: Compiler[F, C, S, E, R, N]
-)
-
-object Backend {
-  import Domain.*
-  type Of[F[_], D] = Backend[
-    F,
-    CommandFor[D],
-    StateFor[D],
-    EventFor[D],
-    RejectionFor[D],
-    NotificationFor[D]
-  ]
+trait Backend[F[_], S, E, R, N] {
+  def compiler[C]: edomata.core.Compiler[F, C, S, E, R, N]
+  val outbox: OutboxReader[F, N]
+  val journal: JournalReader[F, E]
+  val repository: Repository[F, S, E, R]
 }

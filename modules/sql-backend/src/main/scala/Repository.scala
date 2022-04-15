@@ -11,10 +11,9 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 enum AggregateState[S, E, R](val isValid: Boolean) {
-  case Valid(state: Model.Of[S, E, R], version: SeqNr)
-      extends AggregateState[S, E, R](true)
+  case Valid(state: S, version: SeqNr) extends AggregateState[S, E, R](true)
   case Conflicted(
-      last: Model.Of[S, E, R],
+      last: S,
       onEvent: EventMessage[E],
       errors: NonEmptyChain[R]
   ) extends AggregateState[S, E, R](false)
@@ -27,10 +26,9 @@ trait Repository[F[_], S, E, R] {
 
 object Repository {
   def apply[F[_]: Concurrent, S, E, R](
-      initial: Model.Of[S, E, R],
       journal: JournalReader[F, E],
       snapshot: SnapshotStore[F, S, E, R]
-  ): Repository[F, S, E, R] = new Repository {
+  )(using m: ModelTC[S, E, R]): Repository[F, S, E, R] = new Repository {
     private val F = Concurrent[F]
 
     def get(streamId: StreamId): F[AggregateState[S, E, R]] =
@@ -55,7 +53,7 @@ object Repository {
     ): Pipe[F, EventMessage[E], AggregateState[S, E, R]] =
       _.scan(last) {
         case (AggregateState.Valid(s, version), ev) =>
-          s.transition(ev.payload)
+          m.transition(ev.payload)(s)
             .fold(
               AggregateState.Conflicted(s, ev, _),
               AggregateState.Valid(_, version + 1)
@@ -66,7 +64,7 @@ object Repository {
     def history(streamId: StreamId): Stream[F, AggregateState[S, E, R]] =
       journal
         .readStream(streamId)
-        .through(read(AggregateState.Valid(initial, 0L)))
+        .through(read(AggregateState.Valid(m.initial, 0L)))
         .takeWhile(_.isValid, true)
   }
 }

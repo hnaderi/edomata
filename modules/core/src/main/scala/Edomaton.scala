@@ -179,11 +179,6 @@ sealed transparent trait ServiceMonadConstructors {
     f.andThen(_.map(Response.pure))
   )
 
-  def map[F[_]: Applicative, Env, R, E, N, T](
-      f: Env => T
-  ): Edomaton[F, Env, R, E, N, T] =
-    run(f.andThen(_.pure))
-
   def read[F[_]: Applicative, Env, R, E, N, T]: Edomaton[F, Env, R, E, N, Env] =
     run(_.pure[F])
 

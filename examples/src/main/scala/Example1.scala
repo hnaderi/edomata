@@ -1,11 +1,11 @@
 package edomata.examples
 
 import cats.effect.IO
+import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.Backend
+import edomata.backend.*
 import edomata.core.*
-
-import Domain.*
+import skunk.Session
 
 object Example1 {
   enum Event {
@@ -17,35 +17,46 @@ object Example1 {
     case Unknown
   }
 
-  sealed trait Counter extends Model[Counter, Event, Rejection] { self =>
+  enum Counter {
+    case Empty
+    case Open(i: Int)
+    case Closed
+  }
+  object Counter extends DomainModel[Counter, Event, Rejection] {
+    def initial = Empty
     def transition = {
-      case Event.Opened      => self.valid
-      case Event.Received(i) => self.valid
-      case Event.Closed      => self.valid
+      case Event.Opened      => _.valid
+      case Event.Received(i) => _.valid
+      case Event.Closed      => _.valid
+    }
+    extension (self: Counter) {
+      def receive(i: Int): Decision[Rejection, Event, Counter] = self.perform(
+        self match {
+          case Empty   => Decision.accept(Event.Opened, Event.Received(i))
+          case Open(_) => Decision.accept(Event.Received(i))
+          case Closed  => Decision.reject(Rejection.Unknown)
+        }
+      )
     }
   }
-  case object Empty extends Counter
-  final case class Open(i: Int) extends Counter
-  case object Closed extends Counter
 
   enum Updates {
     case Updated()
     case Closed()
   }
 
-  type CounterDomain =
-    HasModel[Counter] And
-      HasCommand[String] And
-      HasNotification[Updates]
+  val ns = Counter.Empty.perform(Decision.accept(Event.Opened))
 
-  val dsl = Edomaton.of[CounterDomain]
+  val CounterDomain = Counter.domain[String, Updates]
 
-  def app: EdomatonOf[IO, CounterDomain, Unit] = dsl.router {
+  private val dsl = CounterDomain.dsl
+
+  def app: dsl.App[IO, Unit] = dsl.router {
     case "" => dsl.read[IO].map(_.command).map(_.deriveMeta).void
     case _  => dsl.reject(Rejection.Unknown)
   }
 
-  def backend: Backend.Of[IO, CounterDomain] = ???
+  def backend = CounterDomain.skunkBackend[IO](???)
 
   val service = app.compile(backend.compiler)
 

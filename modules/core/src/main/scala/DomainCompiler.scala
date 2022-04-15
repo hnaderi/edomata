@@ -9,15 +9,13 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import scala.util.NotGiven
 
-import Domain.*
-
 type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 
 object DomainCompiler {
   def default[F[_]: Monad, C, S, E, R, N](
       compiler: Compiler[F, C, S, E, R, N],
       app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
-  ): DomainService[F, CommandMessage[C], R] = {
+  )(using ModelTC[S, E, R]): DomainService[F, CommandMessage[C], R] = {
 
     def handle(cmd: CommandMessage[C]) =
       compiler.onRequest(cmd) { ctx =>
@@ -44,13 +42,13 @@ extension [F[_]: Monad, C, S, E, R, N](
 ) {
   def compile(
       compiler: Compiler[F, C, S, E, R, N]
-  ): DomainService[F, CommandMessage[C], R] =
+  )(using ModelTC[S, E, R]): DomainService[F, CommandMessage[C], R] =
     DomainCompiler.default(compiler, app)
 }
 
 extension [F[_]: Monad, C, S, E, R, N, T](
     app: Edomaton[F, RequestContext[C, S], R, E, N, T]
-)(using NotGiven[T =:= Unit]) {
+)(using NotGiven[T =:= Unit], ModelTC[S, E, R]) {
   def compile(
       compiler: Compiler[F, C, S, E, R, N]
   ): DomainService[F, CommandMessage[C], R] =
