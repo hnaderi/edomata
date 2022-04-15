@@ -18,6 +18,19 @@ final case class CommandMessage[+C](
     metadata: MessageMetadata
 )
 object CommandMessage {
+  def apply[C](
+      id: String,
+      time: Instant,
+      address: String,
+      payload: C
+  ): CommandMessage[C] = CommandMessage(
+    id = id,
+    time = time,
+    address = address,
+    payload,
+    MessageMetadata(id)
+  )
+
   extension [C, M](cmd: CommandMessage[C]) {
     def buildContext[S, R](
         state: S

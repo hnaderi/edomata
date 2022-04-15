@@ -53,7 +53,12 @@ object Example1 {
 
   def app: dsl.App[IO, Unit] = dsl.router {
     case "" => dsl.read[IO].map(_.command).map(_.deriveMeta).void
-    case _  => dsl.reject(Rejection.Unknown)
+    case "receive" =>
+      for {
+        s <- dsl.state[IO]
+        ns <- dsl.perform(s.receive(2))
+      } yield ()
+    case _ => dsl.reject(Rejection.Unknown)
   }
 
   def backend = CounterDomain.skunkBackend[IO](???)
@@ -69,7 +74,7 @@ object Example1 {
   )
 
   val resp = service(
-    CommandMessage("abc", ???, "a", "hello", MessageMetadata("user"))
+    CommandMessage("abc", ???, "a", "hello")
   )
 
   val h = backend.repository.history("a").printlns
