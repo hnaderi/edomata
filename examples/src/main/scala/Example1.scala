@@ -55,13 +55,15 @@ object Example1 {
     case "" => dsl.read[IO].map(_.command).map(_.deriveMeta).void
     case "receive" =>
       for {
-        s <- dsl.state[IO]
+        s <- dsl.state
         ns <- dsl.perform(s.receive(2))
+        _ <- dsl.publish(Updates.Updated())
       } yield ()
     case _ => dsl.reject(Rejection.Unknown)
   }
 
-  def backend = CounterDomain.skunkBackend[IO](???)
+  val skunkBLD = SkunkBackend[IO](???)
+  def backend = skunkBLD.buildUnsafe(CounterDomain, "counter")
 
   val doobieBLD = DoobieBackend[IO]()
   val backend2 = doobieBLD.buildNoSetup(CounterDomain, "counter")

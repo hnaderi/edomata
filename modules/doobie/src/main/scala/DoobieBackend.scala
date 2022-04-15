@@ -136,9 +136,3 @@ object DoobieBackend {
   }
 
 }
-
-extension [C, S, E, R, N](domain: Domain[C, S, E, R, N]) {
-  def doobiePGBackend[F[_]: Concurrent](using
-      m: ModelTC[S, E, R]
-  ): DoobieBackend[F, S, E, R, N] = ???
-}

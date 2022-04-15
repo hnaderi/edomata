@@ -43,21 +43,20 @@ private final class SkunkOutboxReader[F[_]: Concurrent, N](
 }
 
 object SkunkBackend {
-  def of[S, N]: Builder[S, N] = Builder()
+  def apply[F[_]: Concurrent](pool: Resource[F, Session[F]]): Builder[F] =
+    Builder(pool)
 
-  private[backend] final class Builder[S, N](
-      private val dummy: Boolean = true
-  ) extends AnyVal {
+  final class Builder[F[_]: Concurrent](pool: Resource[F, Session[F]]) {
+    def build[C, S, E, R, N](domain: Domain[C, S, E, R, N], namespace: String)(
+        using m: ModelTC[S, E, R]
+    ): Resource[F, SkunkBackend[F, S, E, R, N]] = ???
 
-    def build[F[_]: Concurrent, E, R](pool: Resource[F, Session[F]])(using
+    def buildUnsafe[C, S, E, R, N](
+        domain: Domain[C, S, E, R, N],
+        namespace: String
+    )(using
         m: ModelTC[S, E, R]
     ): SkunkBackend[F, S, E, R, N] = ???
   }
 
-}
-
-extension [C, S, E, R, N](domain: Domain[C, S, E, R, N]) {
-  def skunkBackend[F[_]: Concurrent](pool: Resource[F, Session[F]])(using
-      m: ModelTC[S, E, R]
-  ): SkunkBackend[F, S, E, R, N] = ???
 }
