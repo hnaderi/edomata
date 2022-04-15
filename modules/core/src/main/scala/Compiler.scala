@@ -14,25 +14,20 @@ trait Compiler[F[_], C, S, E, R, N] {
   ): F[EitherNec[R, Unit]]
 }
 
-sealed trait ProgramResult[S, E, R, N]
-object ProgramResult {
-  final case class Accepted[S, E, R, N](
+enum ProgramResult[S, E, R, N] {
+  case Accepted(
       newState: S,
       events: NonEmptyChain[E],
       notifications: Seq[N]
-  ) extends ProgramResult[S, E, R, N]
-
-  final case class Indecisive[S, E, R, N](
+  )
+  case Indecisive(
       notifications: Seq[N]
-  ) extends ProgramResult[S, E, R, N]
-
-  final case class Rejected[S, E, R, N](
+  )
+  case Rejected(
       notifications: Seq[N],
       reasons: NonEmptyChain[R]
-  ) extends ProgramResult[S, E, R, N]
-
-  final case class Conflicted[S, E, R, N](
+  )
+  case Conflicted(
       reasons: NonEmptyChain[R]
-  ) extends ProgramResult[S, E, R, N]
-
+  )
 }
