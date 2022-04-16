@@ -1,6 +1,7 @@
 package edomata.backend
 
 import cats.effect.Concurrent
+import cats.effect.Resource
 import cats.effect.Sync
 import cats.effect.kernel.Async
 import cats.effect.std.Semaphore
@@ -21,23 +22,27 @@ private final class LRUCache[F[_], I, T] private (
     private val sem: Semaphore[F],
     val maxSize: Int
 )(using F: Sync[F]) {
-  def size: Int = values.size
+  def size: F[Int] = sem.permit.use(_ => values.size.pure)
 
-  def allValues: Iterable[T] = values.values.map(_.value)
+  def allValues: Resource[F, Iterable[T]] =
+    sem.permit.map(_ => values.values.map(_.value))
 
-  def iterator: Iterator[(I, T)] = values.view.mapValues(_.value).iterator
+  def iterator: Resource[F, Iterator[(I, T)]] =
+    sem.permit.map(_ => values.view.mapValues(_.value).iterator)
 
-  def firstValue: Option[T] = head.map(_.value)
-  def lastValue: Option[T] = last.map(_.value)
+  def firstValue: F[Option[T]] = sem.permit.use(_ => head.map(_.value).pure)
+  def lastValue: F[Option[T]] = sem.permit.use(_ => last.map(_.value).pure)
 
-  def valuesByUsage: Iterator[T] =
-    LazyList
-      .iterate(head)(_.flatMap(_.next))
-      .takeWhile(_.isDefined)
-      .collect { case Some(v) =>
-        v.value
-      }
-      .iterator
+  def valuesByUsage: Resource[F, Iterator[T]] =
+    sem.permit.map(_ =>
+      LazyList
+        .iterate(head)(_.flatMap(_.next))
+        .takeWhile(_.isDefined)
+        .collect { case Some(v) =>
+          v.value
+        }
+        .iterator
+    )
 
   def add(key: I, value: T): F[Option[(I, T)]] =
     sem.permit.use { _ =>
