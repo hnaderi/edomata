@@ -11,7 +11,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 private[backend] object Queries {
-  final class Journal[E](namespace: String, codec: BackendCodec[E]) {
+  final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
     private val table = sql"#$namespace.journal"
     private val event = codec.codec
 
@@ -71,7 +71,7 @@ CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, ver
         .query(readCodec)
   }
 
-  final class Outbox[N](namespace: String, codec: BackendCodec[N]) {
+  final class Outbox[N](namespace: PGNamespace, codec: BackendCodec[N]) {
     private val table = sql"#$namespace.outbox"
     private val notification = codec.codec
 
@@ -116,7 +116,10 @@ insert into $table (payload, created) values ($notification, $timestamptz)
 """.command
   }
 
-  final class Snapshot[S, E, R](namespace: String, codec: BackendCodec[S]) {
+  final class Snapshot[S, E, R](
+      namespace: PGNamespace,
+      codec: BackendCodec[S]
+  ) {
     private val table = sql"#$namespace.snapshots"
     private val state = codec.codec
 
@@ -145,7 +148,7 @@ CREATE TABLE IF NOT EXISTS $table (
       )
   }
 
-  final class Commands(namespace: String) {
+  final class Commands(namespace: PGNamespace) {
     private val table = sql"#$namespace.commands"
 
     val setup: Command[Void] = sql"""

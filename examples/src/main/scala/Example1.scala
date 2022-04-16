@@ -62,12 +62,10 @@ object Example1 {
     case _ => dsl.reject(Rejection.Unknown)
   }
 
-  val skunkBLD = SkunkBackend[IO](???)
-
   given BackendCodec[Event] = ???
   given BackendCodec[Updates] = ???
 
-  def backendRes = skunkBLD
+  def backendRes = SkunkBackend[IO](???)
     .builder(CounterDomain, "counter")
     .persistedSnapshot(???, maxInMem = 200)
     .withRetryConfig(retryInitialDelay = ???)

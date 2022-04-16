@@ -1,13 +1,19 @@
 package edomata.backend
 
+import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
+import cats.effect.implicits.*
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Temporal
+import cats.implicits.*
+import edomata.core.CommandMessage
 import edomata.core.Compiler
 import edomata.core.Domain
 import edomata.core.ModelTC
+import edomata.core.ProgramResult
+import edomata.core.RequestContext
 import fs2.Stream
 import skunk.Codec
 import skunk.Session
@@ -23,7 +29,23 @@ final class SkunkBackend[F[_], S, E, R, N] private (
     m: ModelTC[S, E, R],
     F: Temporal[F]
 ) extends Backend[F, S, E, R, N] {
-  def compiler[C]: Compiler[F, C, S, E, R, N] = ???
+  private val jW: JournalWriter[F, E] = ???
+  private val oW: OutboxWriter[F, N] = ???
+  private val cmds: CommandStore[F] = ???
+
+  def compiler[C]: Compiler[F, C, S, E, R, N] = new {
+    def onRequest(cmd: CommandMessage[C])(
+        run: RequestContext[C, S] => F[ProgramResult[S, E, R, N]]
+    ): F[EitherNec[R, Unit]] = repository.get(cmd.address).flatMap {
+      case AggregateState.Valid(s, rev) =>
+        val ctx = cmd.buildContext(s)
+        run(ctx).flatMap {
+          ???
+        }
+      case AggregateState.Conflicted(ls, lev, errs) => errs.asLeft.pure
+    }
+
+  }
 
   lazy val outbox: OutboxReader[F, N] = SkunkOutboxReader(pool, nQ)
   lazy val journal: JournalReader[F, E] = SkunkJournalReader(pool, evQ)
@@ -75,10 +97,11 @@ object SkunkBackend {
   def apply[F[_]: Async](pool: Resource[F, Session[F]]): PartialBuilder[F] =
     PartialBuilder(pool)
 
+  import scala.compiletime.error
   final class PartialBuilder[F[_]: Async](pool: Resource[F, Session[F]]) {
-    def builder[C, S, E, R, N](
+    inline def builder[C, S, E, R, N](
         domain: Domain[C, S, E, R, N],
-        namespace: String
+        inline namespace: String
     )(using
         model: ModelTC[S, E, R]
     ): DomainBuilder[F, C, S, E, R, N] =
@@ -86,7 +109,7 @@ object SkunkBackend {
         pool,
         domain,
         model,
-        namespace,
+        PGNamespace(namespace),
         Resource.eval(SnapshotStore.inMem(1000))
       )
   }
@@ -102,7 +125,7 @@ object SkunkBackend {
       private val pool: Resource[F, Session[F]],
       private val domain: Domain[C, S, E, R, N],
       private val model: ModelTC[S, E, R],
-      private val namespace: String,
+      private val namespace: PGNamespace,
       private val snapshot: Resource[F, SnapshotStore[F, S, E, R]],
       private val maxRetry: Int = 5,
       private val retryInitialDelay: FiniteDuration = 2.seconds
