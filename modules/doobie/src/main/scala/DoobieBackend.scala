@@ -82,9 +82,9 @@ final class DoobieBackend[F[_], S, E, R, N] private (
       }
   }
 
-  val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
-  val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
-  val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
+  lazy val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
+  lazy val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
+  lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
 }
 
 private final class DoobieJournalReader[F[_]: Concurrent, E](

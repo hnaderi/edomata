@@ -63,22 +63,39 @@ object Example1 {
   }
 
   val skunkBLD = SkunkBackend[IO](???)
-  def backend = skunkBLD.buildUnsafe(CounterDomain, "counter")
+
+  given BackendCodec[Event] = ???
+  given BackendCodec[Updates] = ???
+
+  def backendRes = skunkBLD
+    .builder(CounterDomain, "counter")
+    .persistedSnapshot(???, maxInMem = 200)
+    .withRetryConfig(retryInitialDelay = ???)
+    .build
 
   val doobieBLD = DoobieBackend[IO]()
   val backend2 = doobieBLD.buildNoSetup(CounterDomain, "counter")
 
-  val service = app.compile(backend.compiler)
+  val application = backendRes.use { backend =>
+    val service = app.compile(backend.compiler)
 
-  val publisher = backend.outbox.read.evalMap(i =>
-    IO.println(i) >>
-      backend.outbox.markAsSent(i)
-  )
+    val publisher = backend.outbox.read.evalMap(i =>
+      IO.println(i) >>
+        backend.outbox.markAsSent(i)
+    )
 
-  val resp = service(
-    CommandMessage("abc", ???, "a", "hello")
-  )
+    val view = backend.repository.get("abc").flatMap {
+      case AggregateState.Valid(s, rev)            => ???
+      case AggregateState.Conflicted(ls, lev, err) => ???
+    }
 
-  val h = backend.repository.history("a").printlns
+    val resp = service(
+      CommandMessage("abc", ???, "a", "hello")
+    )
+
+    val h = backend.repository.history("a").printlns
+
+    ???
+  }
 
 }

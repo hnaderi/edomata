@@ -13,7 +13,7 @@ type StreamId = String
 
 trait Backend[F[_], S, E, R, N] {
   def compiler[C]: edomata.core.Compiler[F, C, S, E, R, N]
-  val outbox: OutboxReader[F, N]
-  val journal: JournalReader[F, E]
-  val repository: Repository[F, S, E, R]
+  lazy val outbox: OutboxReader[F, N]
+  lazy val journal: JournalReader[F, E]
+  lazy val repository: Repository[F, S, E, R]
 }
