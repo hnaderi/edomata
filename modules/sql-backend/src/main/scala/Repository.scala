@@ -25,46 +25,45 @@ trait Repository[F[_], S, E, R] {
 }
 
 object Repository {
-  def apply[F[_]: Concurrent, S, E, R](
+  def apply[F[_], S, E, R](
       journal: JournalReader[F, E],
       snapshot: SnapshotStore[F, S, E, R]
-  )(using m: ModelTC[S, E, R]): Repository[F, S, E, R] = new Repository {
-    private val F = Concurrent[F]
+  )(using F: Concurrent[F], m: ModelTC[S, E, R]): Repository[F, S, E, R] =
+    new Repository {
 
-    def get(streamId: StreamId): F[AggregateState[S, E, R]] =
-      snapshot
-        .get(streamId)
-        .flatMap {
-          case Some(last) =>
-            journal
-              .readStreamAfter(streamId, last.version)
-              .through(read(last))
-              .compile
-              .lastOrError
-          case None => history(streamId).compile.lastOrError
-        }
-        .flatTap {
-          case s @ AggregateState.Valid(_, _) => snapshot.put(streamId, s)
-          case _                              => F.unit
-        }
+      def get(streamId: StreamId): F[AggregateState[S, E, R]] =
+        snapshot
+          .get(streamId)
+          .flatMap {
+            case Some(last) =>
+              journal
+                .readStreamAfter(streamId, last.version)
+                .through(read(last))
+                .compile
+                .lastOrError
+            case None => history(streamId).compile.lastOrError
+          }
+          .flatTap {
+            case s @ AggregateState.Valid(_, _) => snapshot.put(streamId, s)
+            case _                              => F.unit
+          }
 
-    def read(
-        last: AggregateState[S, E, R]
-    ): Pipe[F, EventMessage[E], AggregateState[S, E, R]] =
-      _.scan(last) {
-        case (AggregateState.Valid(s, version), ev) =>
-          m.transition(ev.payload)(s)
-            .fold(
-              AggregateState.Conflicted(s, ev, _),
-              AggregateState.Valid(_, version + 1)
-            )
-        case (other, ev) => other
-      }
+      private def read(
+          last: AggregateState[S, E, R]
+      ): Pipe[F, EventMessage[E], AggregateState[S, E, R]] =
+        _.scan(last) {
+          case (AggregateState.Valid(s, version), ev) =>
+            m.transition(ev.payload)(s)
+              .fold(
+                AggregateState.Conflicted(s, ev, _),
+                AggregateState.Valid(_, version + 1)
+              )
+          case (other, ev) => other
+        }.takeWhile(_.isValid, true)
 
-    def history(streamId: StreamId): Stream[F, AggregateState[S, E, R]] =
-      journal
-        .readStream(streamId)
-        .through(read(AggregateState.Valid(m.initial, 0L)))
-        .takeWhile(_.isValid, true)
-  }
+      def history(streamId: StreamId): Stream[F, AggregateState[S, E, R]] =
+        journal
+          .readStream(streamId)
+          .through(read(AggregateState.Valid(m.initial, 0L)))
+    }
 }
