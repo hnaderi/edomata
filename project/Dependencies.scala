@@ -31,8 +31,7 @@ object Dependencies {
     )
 
     val skunk = Seq(
-      "org.tpolecat" %% "skunk-core" % Versions.skunk,
-      "org.tpolecat" %% "skunk-circe" % Versions.skunk
+      "org.tpolecat" %% "skunk-core" % Versions.skunk
     )
 
     val doobiePG = Seq(
