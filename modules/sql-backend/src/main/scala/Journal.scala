@@ -24,6 +24,11 @@ trait JournalReader[F[_], E] {
       streamId: StreamId,
       version: EventVersion
   ): Stream[F, EventMessage[E]]
+  def readStreamBefore(
+      streamId: StreamId,
+      version: EventVersion
+  ): Stream[F, EventMessage[E]]
+
   def readAll: Stream[F, EventMessage[E]]
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]]
   def notifications: Stream[F, StreamId]

@@ -98,6 +98,13 @@ private final class DoobieJournalReader[F[_]: Concurrent, E](
       version: EventVersion
   ): Stream[F, EventMessage[E]] =
     reader.readStreamAfter(streamId, version).transact(trx)
+
+  def readStreamBefore(
+      streamId: StreamId,
+      version: EventVersion
+  ): Stream[F, EventMessage[E]] =
+    reader.readStreamBefore(streamId, version).transact(trx)
+
   def readAll: Stream[F, EventMessage[E]] = reader.readAll.transact(trx)
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
     reader.readAllAfter(seqNr).transact(trx)
