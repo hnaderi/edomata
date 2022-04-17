@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.NonEmptyList
 import edomata.core.CommandMessage
 import edomata.core.MessageMetadata
 import skunk.*
@@ -9,7 +10,7 @@ import skunk.implicits.*
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import cats.data.NonEmptyList
+import java.util.UUID
 
 private[backend] object Queries {
   final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
@@ -36,15 +37,22 @@ CREATE INDEX IF NOT EXISTS journal_seqnr_idx ON $table USING btree (seqnr);
 CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, version);
 """.command
 
-    // def append(
-    //     n: List[InsertRow[E]]
-    // )(using evCodec: Codec[E]): Command[n.type] = {
-    //   val codec: Codec[InsertRow[E]] =
-    //     (uuid *: text *: timestamptz *: int8 *: evCodec).pimap[InsertRow[E]]
+    final case class InsertRow(
+        id: UUID,
+        streamId: String,
+        time: OffsetDateTime,
+        version: SeqNr,
+        event: E
+    )
 
-    //   sql"""insert into $table ("id", "stream", "time", "version", "payload") values ${codec.values
-    //       .list(n)}""".command
-    // }
+    private val insertRow: Codec[InsertRow] =
+      (uuid *: text *: timestamptz *: int8 *: event).pimap[InsertRow]
+
+    def append(
+        n: List[InsertRow]
+    ): Command[n.type] =
+      sql"""insert into $table ("id", "stream", "time", "version", "payload") values ${insertRow.values
+          .list(n)}""".command
 
     private val readFields = sql"id, time, seqnr, version, stream, payload"
     private val metaCodec: Codec[EventMetadata] =
@@ -118,10 +126,10 @@ limit 10
 insert into $table (payload, created) values ($notification, $timestamptz)
 """.command
 
+    private val insertCodec = notification.product(timestamptz)
     def insertAll(items: BatchInsert): Command[items.type] =
-      val insertCodec = notification.product(timestamptz).list(items)
       sql"""
-insert into $table (payload, created) values ($insertCodec)
+insert into $table (payload, created) values (${insertCodec.values.list(items)})
 """.command
   }
 
