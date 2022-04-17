@@ -34,16 +34,18 @@ private final class LRUCache[F[_], I, T] private (
   def lastValue: F[Option[T]] = sem.permit.use(_ => last.map(_.value).pure)
 
   def valuesByUsage: Resource[F, Iterator[T]] =
+    byUsage.map(_.map(_._2))
+
+  def byUsage: Resource[F, Iterator[(I, T)]] =
     sem.permit.map(_ =>
       LazyList
         .iterate(head)(_.flatMap(_.next))
         .takeWhile(_.isDefined)
         .collect { case Some(v) =>
-          v.value
+          (v.key, v.value)
         }
         .iterator
     )
-
   def add(key: I, value: T): F[Option[(I, T)]] =
     sem.permit.use { _ =>
       F.delay {
