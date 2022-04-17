@@ -21,6 +21,14 @@ object Example1 {
     case Empty
     case Open(i: Int)
     case Closed
+
+    def receive(i: Int): Decision[Rejection, Event, Counter] = this.perform(
+      this match {
+        case Empty   => Decision.accept(Event.Opened, Event.Received(i))
+        case Open(_) => Decision.accept(Event.Received(i))
+        case Closed  => Decision.reject(Rejection.Unknown)
+      }
+    )
   }
   object Counter extends DomainModel[Counter, Event, Rejection] {
     def initial = Empty
@@ -28,15 +36,6 @@ object Example1 {
       case Event.Opened      => _.valid
       case Event.Received(i) => _.valid
       case Event.Closed      => _.valid
-    }
-    extension (self: Counter) {
-      def receive(i: Int): Decision[Rejection, Event, Counter] = self.perform(
-        self match {
-          case Empty   => Decision.accept(Event.Opened, Event.Received(i))
-          case Open(_) => Decision.accept(Event.Received(i))
-          case Closed  => Decision.reject(Rejection.Unknown)
-        }
-      )
     }
   }
 
