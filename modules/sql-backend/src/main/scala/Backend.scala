@@ -1,14 +1,14 @@
 package edomata.backend
 
+import cats.Monad
+import cats.data.EitherNec
 import cats.data.NonEmptyChain
+import cats.implicits.*
 import edomata.core.*
 import fs2.Stream
-import cats.implicits.*
-import cats.data.EitherNec
 
 import java.time.OffsetDateTime
 import java.util.UUID
-import cats.Monad
 
 type SeqNr = Long
 type EventVersion = Long
@@ -50,17 +50,4 @@ abstract class Backend[F[_], S, E, R, N](compiler: Compiler[F, E, N])(using
   lazy val outbox: OutboxReader[F, N]
   lazy val journal: JournalReader[F, E]
   lazy val repository: Repository[F, S, E, R]
-}
-
-trait Compiler[F[_], E, N] {
-  def append(
-      ctx: RequestContext[?, ?],
-      events: NonEmptyChain[E],
-      notifications: Seq[N]
-  ): F[Unit]
-
-  def notify(
-      ctx: RequestContext[?, ?],
-      notifications: NonEmptyChain[N]
-  ): F[Unit]
 }
