@@ -1,55 +1,55 @@
-package edomata.examples
+package edomata.examples.nr1
 
 import cats.effect.IO
+import cats.effect.IOApp
 import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.*
 import edomata.core.*
+import natchez.Trace.Implicits.noop
 import skunk.Session
+import upickle.default.*
 
-object Example1 {
-  enum Event {
-    case Opened
-    case Received(i: Int)
-    case Closed
-  }
-  enum Rejection {
-    case Unknown
-  }
+import java.time.Instant
+import scala.concurrent.duration.*
 
-  enum Counter {
-    case Empty
-    case Open(i: Int)
-    case Closed
+enum Event {
+  case Opened
+  case Received(i: Int)
+  case Closed
+}
+enum Rejection {
+  case Unknown
+}
 
-    def receive(i: Int): Decision[Rejection, Event, Counter] = this.perform(
-      this match {
-        case Empty   => Decision.accept(Event.Opened, Event.Received(i))
-        case Open(_) => Decision.accept(Event.Received(i))
-        case Closed  => Decision.reject(Rejection.Unknown)
-      }
-    )
-  }
-  object Counter extends DomainModel[Counter, Event, Rejection] {
-    def initial = Empty
-    def transition = {
-      case Event.Opened      => _.valid
-      case Event.Received(i) => _.valid
-      case Event.Closed      => _.valid
+enum Counter {
+  case Empty
+  case Open(i: Int)
+  case Closed
+
+  def receive(i: Int): Decision[Rejection, Event, Counter] = this.perform(
+    this match {
+      case Empty   => Decision.accept(Event.Opened, Event.Received(i))
+      case Open(_) => Decision.accept(Event.Received(i))
+      case Closed  => Decision.reject(Rejection.Unknown)
     }
+  )
+}
+object Counter extends DomainModel[Counter, Event, Rejection] {
+  def initial = Empty
+  def transition = {
+    case Event.Opened      => _.valid
+    case Event.Received(i) => _.valid
+    case Event.Closed      => _.valid
   }
+}
 
-  enum C2 extends DomainModel[C2, Event, Rejection] {
-    case Empty, Started, Full
+enum Updates {
+  case Updated()
+  case Closed()
+}
 
-    def initial: C2 = Empty
-    def transition = ???
-  }
-
-  enum Updates {
-    case Updated()
-    case Closed()
-  }
+object Application extends IOApp.Simple {
 
   val ns = Counter.Empty.perform(Decision.accept(Event.Opened))
 
@@ -63,43 +63,41 @@ object Example1 {
       for {
         s <- dsl.state
         ns <- dsl.perform(s.receive(2))
+        _ <- dsl.eval(IO.println(ns))
         _ <- dsl.publish(Updates.Updated())
       } yield ()
     case _ => dsl.reject(Rejection.Unknown)
   }
 
-  given BackendCodec[Event] = CirceCodec.jsonb(using ???, ???)
-  given BackendCodec[Updates] = UpickleCodec.msgpack(using ???, ???)
+  // given BackendCodec[Event] = CirceCodec.jsonb(using ???, ???)
+  given ReadWriter[Event.Opened.type] = macroRW
+  given ReadWriter[Event.Received] = macroRW
+  given ReadWriter[Event.Closed.type] = macroRW
+  given ReadWriter[Event] = macroRW
+  given ReadWriter[Updates.Updated] = macroRW
+  given ReadWriter[Updates.Closed] = macroRW
+  given ReadWriter[Updates] = macroRW
 
-  def backendRes = SkunkBackend[IO](???)
+  given BackendCodec[Event] = UpickleCodec.jsonb
+  given BackendCodec[Updates] = UpickleCodec.msgpack
+
+  def backendRes(pool: Resource[IO, Session[IO]]) = SkunkBackend(pool)
     .builder(CounterDomain, "counter")
-    .persistedSnapshot(???, maxInMem = 200)
-    .withRetryConfig(retryInitialDelay = ???)
+    // .persistedSnapshot(???, maxInMem = 200)
+    .inMemSnapshot(200)
+    .withRetryConfig(retryInitialDelay = 2.seconds)
     .build
 
-  val doobieBLD = DoobieBackend[IO]()
-  val backend2 = doobieBLD.buildNoSetup(CounterDomain, "counter")
+  val database = Session
+    .pooled[IO]("localhost", 5432, "postgres", "postgres", Some("postgres"), 10)
 
-  val application = backendRes.use { backend =>
+  val application = database.flatMap(backendRes).use { backend =>
     val service = backend.compile(app)
 
-    val publisher = backend.outbox.read.evalMap(i =>
-      IO.println(i) >>
-        backend.outbox.markAsSent(i)
-    )
-
-    val view = backend.repository.get("abc").flatMap {
-      case AggregateState.Valid(s, rev)            => ???
-      case AggregateState.Conflicted(ls, lev, err) => ???
-    }
-
-    val resp = service(
-      CommandMessage("abc", ???, "a", "hello")
-    )
-
-    val h = backend.repository.history("a").printlns
-
-    ???
+    service(
+      CommandMessage("abc", Instant.now, "a", "receive")
+    ).flatMap(IO.println)
   }
 
+  def run: IO[Unit] = application
 }

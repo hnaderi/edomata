@@ -6,6 +6,7 @@ import edomata.core.*
 trait Compiler[F[_], E, N] {
   def append(
       ctx: RequestContext[?, ?],
+      version: SeqNr,
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ): F[Unit]

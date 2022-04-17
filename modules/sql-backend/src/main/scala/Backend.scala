@@ -47,7 +47,7 @@ abstract class Backend[F[_], S, E, R, N](
 
           res.flatMap {
             case ProgramResult.Accepted(_, evs, notifs) =>
-              compiler.append(ctx, evs, notifs).as(void)
+              compiler.append(ctx, rev, evs, notifs).as(void)
             case ProgramResult.Indecisive(notifs) =>
               NonEmptyChain
                 .fromSeq(notifs)

@@ -36,6 +36,7 @@ private final class DoobieCompiler[F[_], E, N](trx: Transactor[F])(using
 ) extends Compiler[F, E, N] {
   def append(
       ctx: RequestContext[?, ?],
+      version: SeqNr,
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ): F[Unit] = ???

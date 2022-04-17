@@ -141,9 +141,36 @@ object SkunkBackend {
     ): DomainBuilder[F, C, S, E, R, N] =
       copy(maxRetry = maxRetry, retryInitialDelay = retryInitialDelay)
 
+    private def _setup(using
+        event: BackendCodec[E],
+        notifs: BackendCodec[N]
+    ) = {
+      val jQ = Queries.Journal(namespace, event)
+      val nQ = Queries.Outbox(namespace, notifs)
+      val cQ = Queries.Commands(namespace)
+
+      pool
+        .use(s =>
+          s.execute(Queries.setupSchema(namespace)) >>
+            s.execute(jQ.setup) >> s.execute(nQ.setup) >> s.execute(cQ.setup)
+        )
+        .as((jQ, nQ, cQ))
+    }
+
+    def setup(using
+        event: BackendCodec[E],
+        notifs: BackendCodec[N]
+    ): F[Unit] = _setup.void
+
     def build(using
         event: BackendCodec[E],
         notifs: BackendCodec[N]
-    ): Resource[F, SkunkBackend[F, S, E, R, N]] = ???
+    ): Resource[F, SkunkBackend[F, S, E, R, N]] = for {
+      qs <- Resource.eval(_setup)
+      (jQ, nQ, cQ) = qs
+      given ModelTC[S, E, R] = model
+      compiler = SkunkCompiler(pool, jQ, nQ, cQ)
+      s <- snapshot
+    } yield new SkunkBackend(s, pool, compiler, jQ, nQ, cQ)
   }
 }

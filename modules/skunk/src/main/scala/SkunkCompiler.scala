@@ -28,19 +28,20 @@ private final class SkunkCompiler[F[_], E, N](
 
   def append(
       ctx: RequestContext[?, ?],
+      version: SeqNr,
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ): F[Unit] = trx
     .use { s =>
       for {
         now <- currentTime
-        evs <- events.toList.traverse(e =>
+        evs <- events.toList.zipWithIndex.traverse((e, i) =>
           newId.map(uid =>
             journal.InsertRow(
               uid,
               streamId = ctx.command.address,
               time = now,
-              version = ???,
+              version = version + i,
               e
             )
           )
@@ -50,12 +51,15 @@ private final class SkunkCompiler[F[_], E, N](
           .use(_.execute(evs))
           .assertInserted(evs.size)
         _ <- NonEmptyChain.fromSeq(notifications).fold(F.unit) { n =>
-          val ns = notifications.toList.map((_, now))
+          val ns = notifications.toList.map((_, now, ctx.command.metadata))
           s.prepare(outbox.insertAll(ns))
             .use(_.execute(ns))
             .assertInserted(ns.size)
         }
-        _ <- s.prepare(cmds.insert).use(_.execute(ctx.command)).assertInserted
+        _ <- s
+          .prepare(cmds.insert)
+          .use(_.execute(ctx.command))
+          .assertInserted
       } yield ()
     }
     .adaptErr { case SqlState.UniqueViolation(ex) =>
@@ -68,7 +72,7 @@ private final class SkunkCompiler[F[_], E, N](
   ): F[Unit] = trx.use { s =>
     for {
       now <- currentTime
-      ns = notifications.toList.map((_, now))
+      ns = notifications.toList.map((_, now, ctx.command.metadata))
       _ <- s
         .prepare(outbox.insertAll(ns))
         .use(_.execute(ns))

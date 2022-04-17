@@ -13,11 +13,16 @@ import java.time.ZoneOffset
 import java.util.UUID
 
 private[backend] object Queries {
+  def setupSchema(namespace: PGNamespace): Command[Void] =
+    sql"""create schema if not exists #$namespace;""".command
+
   final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
     private val table = sql"#$namespace.journal"
     private val event = codec.codec
 
     def setup: Command[Void] = sql"""
+DO $$$$ begin
+
 CREATE TABLE IF NOT EXISTS $table (
   id uuid NOT NULL,
   "time" timestamptz NOT NULL,
@@ -28,13 +33,12 @@ CREATE TABLE IF NOT EXISTS $table (
   CONSTRAINT journal_pk PRIMARY KEY (id),
   CONSTRAINT journal_un UNIQUE (stream, version)
 );
-""".command
 
-    val createSeqNrIndex: Command[Void] = sql"""
 CREATE INDEX IF NOT EXISTS journal_seqnr_idx ON $table USING btree (seqnr);
-""".command
-    val createStreamIndex: Command[Void] = sql"""
+
 CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, version);
+
+END $$$$;
 """.command
 
     final case class InsertRow(
@@ -87,6 +91,8 @@ CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, ver
     val setup = sql"""
 CREATE TABLE IF NOT EXISTS $table(
   seqnr bigserial NOT NULL,
+  correlation text NULL,
+  causation text NULL,
   payload #${codec.oid.name} NOT NULL,
   created timestamptz NOT NULL,
   published timestamptz NULL,
@@ -107,29 +113,26 @@ set published = $timestamptz
 where seqnr = $int8
 """.command
 
-    private val metadata: Codec[MessageMetadata] = ???
+    private val metadata: Codec[MessageMetadata] = (text.opt *: text.opt).pimap
     private val itemCodec: Codec[OutboxItem[N]] =
       (int8 *: timestamptz *: notification *: metadata).pimap
 
     val read: Query[Void, OutboxItem[N]] =
       sql"""
-select seqnr, created, payload
+select seqnr, created, payload, correlation, causation
 from $table
 where published is NULL
 order by seqnr asc
 limit 10
 """.query(itemCodec)
 
-    type BatchInsert = List[(N, OffsetDateTime)]
+    type BatchInsert = List[(N, OffsetDateTime, MessageMetadata)]
 
-    val insert: Command[(N, OffsetDateTime)] = sql"""
-insert into $table (payload, created) values ($notification, $timestamptz)
-""".command
-
-    private val insertCodec = notification.product(timestamptz)
+    private val insertCodec = (notification *: timestamptz *: metadata)
     def insertAll(items: BatchInsert): Command[items.type] =
       sql"""
-insert into $table (payload, created) values (${insertCodec.values.list(items)})
+insert into $table (payload, created, correlation, causation) values ${insertCodec.values
+          .list(items)}
 """.command
   }
 
@@ -169,7 +172,7 @@ CREATE TABLE IF NOT EXISTS $table (
     private val table = sql"#$namespace.commands"
 
     val setup: Command[Void] = sql"""
-CREATE TABLE IF NOT EXISTS commands (
+CREATE TABLE IF NOT EXISTS $table (
   id text NOT NULL,
   "time" timestamptz NOT NULL,
   address text NOT NULL,
@@ -178,11 +181,16 @@ CREATE TABLE IF NOT EXISTS commands (
 """.command
 
     val count: Query[String, Long] =
-      sql"select count(*) from commands where id = $text".query(int8)
+      sql"select count(*) from $table where id = $text".query(int8)
 
     private val instant: Codec[Instant] =
       timestamptz.imap(_.toInstant)(_.atOffset(ZoneOffset.UTC))
 
-    def insert: Command[CommandMessage[?]] = ???
+    private val command: Encoder[CommandMessage[?]] =
+      (text *: text *: instant).contramap(c => (c.id, c.address, c.time))
+
+    def insert: Command[CommandMessage[?]] = sql"""
+insert into $table (id, address, "time") values ($command);
+""".command
   }
 }
