@@ -17,22 +17,6 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import scala.concurrent.duration.*
 
-final class SkunkBackend[F[_], S, E, R, N] private (
-    snapshot: SnapshotStore[F, S, E, R],
-    pool: Resource[F, Session[F]],
-    compiler: Compiler[F, E, N],
-    evQ: Queries.Journal[E],
-    nQ: Queries.Outbox[N],
-    cmdQ: Queries.Commands
-)(using
-    m: ModelTC[S, E, R],
-    F: Temporal[F]
-) extends Backend[F, S, E, R, N](compiler) {
-  lazy val outbox: OutboxReader[F, N] = SkunkOutboxReader(pool, nQ)
-  lazy val journal: JournalReader[F, E] = SkunkJournalReader(pool, evQ)
-  lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
-}
-
 private final class SkunkJournalReader[F[_]: Concurrent, E](
     pool: Resource[F, Session[F]],
     q: Queries.Journal[E]
@@ -78,7 +62,6 @@ object SkunkBackend {
   def apply[F[_]: Async](pool: Resource[F, Session[F]]): PartialBuilder[F] =
     PartialBuilder(pool)
 
-  import scala.compiletime.error
   final class PartialBuilder[F[_]: Async](pool: Resource[F, Session[F]]) {
     inline def builder[C, S, E, R, N](
         domain: Domain[C, S, E, R, N],
@@ -165,12 +148,15 @@ object SkunkBackend {
     def build(using
         event: BackendCodec[E],
         notifs: BackendCodec[N]
-    ): Resource[F, SkunkBackend[F, S, E, R, N]] = for {
+    ): Resource[F, Backend[F, S, E, R, N]] = for {
       qs <- Resource.eval(_setup)
       (jQ, nQ, cQ) = qs
       given ModelTC[S, E, R] = model
       compiler = SkunkCompiler(pool, jQ, nQ, cQ)
+      outbox = SkunkOutboxReader(pool, nQ)
+      journal = SkunkJournalReader(pool, jQ)
       s <- snapshot
-    } yield new SkunkBackend(s, pool, compiler, jQ, nQ, cQ)
+      repository = Repository(journal, s)
+    } yield new DefaultBackend(compiler, outbox, journal, repository)
   }
 }

@@ -2,8 +2,8 @@ package edomata.backend
 
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
-import cats.effect.Temporal
 import cats.effect.Concurrent
+import cats.effect.Temporal
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.implicits.*
@@ -17,18 +17,18 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-final class DoobieBackend[F[_], S, E, R, N] private (
-    _journal: JournalReader[ConnectionIO, E],
-    _outbox: OutboxReader[ConnectionIO, N],
-    compiler: Compiler[F, E, N],
-    snapshot: SnapshotStore[F, S, E, R],
-    trx: Transactor[F]
-)(using m: ModelTC[S, E, R], F: Temporal[F], clock: Clock[F])
-    extends Backend[F, S, E, R, N](compiler) {
-  lazy val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
-  lazy val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
-  lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
-}
+// final class DoobieBackend[F[_], S, E, R, N] private (
+//     _journal: JournalReader[ConnectionIO, E],
+//     _outbox: OutboxReader[ConnectionIO, N],
+//     compiler: Compiler[F, E, N],
+//     snapshot: SnapshotStore[F, S, E, R],
+//     trx: Transactor[F]
+// )(using m: ModelTC[S, E, R], F: Temporal[F], clock: Clock[F])
+//     extends Backend[F, S, E, R, N](compiler) {
+//   lazy val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
+//   lazy val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
+//   lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
+// }
 
 private final class DoobieCompiler[F[_], E, N](trx: Transactor[F])(using
     F: Concurrent[F],
@@ -92,14 +92,8 @@ object DoobieBackend {
         namespace: String
     )(using
         m: ModelTC[S, E, R]
-    ): F[DoobieBackend[F, S, E, R, N]] = ???
+    ): F[Backend[F, S, E, R, N]] = ???
 
-    def buildNoSetup[C, S, E, R, N](
-        domain: Domain[C, S, E, R, N],
-        namespace: String
-    )(using
-        m: ModelTC[S, E, R]
-    ): DoobieBackend[F, S, E, R, N] = ???
   }
 
 }
