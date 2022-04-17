@@ -37,3 +37,21 @@ extension [F[_]: Monad, C, S, E, R, N, T](
   def execute(ctx: RequestContext[C, S]): F[ProgramResult[S, E, R, N]] =
     app.void.execute(ctx)
 }
+
+enum ProgramResult[S, E, R, N] {
+  case Accepted(
+      newState: S,
+      events: NonEmptyChain[E],
+      notifications: Seq[N]
+  )
+  case Indecisive(
+      notifications: Seq[N]
+  )
+  case Rejected(
+      notifications: Seq[N],
+      reasons: NonEmptyChain[R]
+  )
+  case Conflicted(
+      reasons: NonEmptyChain[R]
+  )
+}
