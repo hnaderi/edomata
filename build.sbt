@@ -56,6 +56,8 @@ lazy val modules: List[ProjectReference] = List(
   core,
   sqlBackend,
   skunkBackend,
+  skunkCirceCodecs,
+  skunkUpickeCodec,
   doobieBackend,
   docs,
   examples,
@@ -120,7 +122,20 @@ lazy val doobieBackend = module("doobie")
   .dependsOn(sqlBackend)
   .settings(libraryDependencies ++= doobiePG)
 
-lazy val examples = project.dependsOn(skunkBackend, doobieBackend)
+lazy val skunkCirceCodecs = module("skunk-circe")
+  .dependsOn(skunkBackend)
+  .settings(libraryDependencies ++= skunkCirce)
+
+lazy val skunkUpickeCodec = module("skunk-upickle")
+  .dependsOn(skunkBackend)
+  .settings(libraryDependencies ++= upickle)
+
+lazy val examples = project.dependsOn(
+  skunkBackend,
+  doobieBackend,
+  skunkCirceCodecs,
+  skunkUpickeCodec
+)
 
 def addAlias(name: String)(tasks: String*) =
   addCommandAlias(name, tasks.mkString(" ;"))

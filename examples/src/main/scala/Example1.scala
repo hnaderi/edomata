@@ -40,6 +40,13 @@ object Example1 {
     }
   }
 
+  enum C2 extends DomainModel[C2, Event, Rejection] {
+    case Empty, Started, Full
+
+    def initial: C2 = Empty
+    def transition = ???
+  }
+
   enum Updates {
     case Updated()
     case Closed()
@@ -62,8 +69,8 @@ object Example1 {
     case _ => dsl.reject(Rejection.Unknown)
   }
 
-  given BackendCodec[Event] = ???
-  given BackendCodec[Updates] = ???
+  given BackendCodec[Event] = CirceCodec.jsonb(using ???, ???)
+  given BackendCodec[Updates] = UpickleCodec.msgpack(using ???, ???)
 
   def backendRes = SkunkBackend[IO](???)
     .builder(CounterDomain, "counter")

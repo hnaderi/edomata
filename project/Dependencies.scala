@@ -12,6 +12,8 @@ object Dependencies {
     val CatsEffectMunit = "1.0.7"
     val scalacheckEffectVersion = "1.0.3"
     val doobie = "1.0.0-RC2"
+    val circe = "0.14.1"
+    val upickle = "1.6.0"
   }
 
   object Libraries {
@@ -32,6 +34,14 @@ object Dependencies {
 
     val skunk = Seq(
       "org.tpolecat" %% "skunk-core" % Versions.skunk
+    )
+
+    val skunkCirce = Seq(
+      "org.tpolecat" %% "skunk-circe" % Versions.skunk
+    )
+
+    val upickle = Seq(
+      "com.lihaoyi" %% "upickle" % Versions.upickle
     )
 
     val doobiePG = Seq(
