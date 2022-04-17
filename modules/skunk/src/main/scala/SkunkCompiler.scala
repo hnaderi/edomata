@@ -59,7 +59,7 @@ private final class SkunkCompiler[F[_], E, N](
       } yield ()
     }
     .adaptErr { case SqlState.UniqueViolation(ex) =>
-      ???
+      BackendError.VersionConflict
     }
 
   def notify(
@@ -79,8 +79,19 @@ private final class SkunkCompiler[F[_], E, N](
   extension (self: F[Completion]) {
     def assertInserted(size: Int): F[Unit] = self.flatMap {
       case Completion.Insert(i) =>
-        if i == size then F.unit else F.raiseError(???)
-      case _ => F.raiseError(???)
+        if i == size then F.unit
+        else
+          F.raiseError(
+            BackendError.PersistenceError(
+              s"expected to insert exactly $size, but inserted $i"
+            )
+          )
+      case other =>
+        F.raiseError(
+          BackendError.PersistenceError(
+            s"expected to receive insert response, but received: $other"
+          )
+        )
     }
     def assertInserted: F[Unit] = assertInserted(1)
   }

@@ -2,6 +2,7 @@ package edomata.backend
 
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
+import cats.effect.Temporal
 import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
@@ -22,7 +23,7 @@ final class DoobieBackend[F[_], S, E, R, N] private (
     compiler: Compiler[F, E, N],
     snapshot: SnapshotStore[F, S, E, R],
     trx: Transactor[F]
-)(using m: ModelTC[S, E, R], F: Concurrent[F], clock: Clock[F])
+)(using m: ModelTC[S, E, R], F: Temporal[F], clock: Clock[F])
     extends Backend[F, S, E, R, N](compiler) {
   lazy val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
   lazy val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
