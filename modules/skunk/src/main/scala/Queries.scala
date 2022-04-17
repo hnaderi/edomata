@@ -9,6 +9,7 @@ import skunk.implicits.*
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import cats.data.NonEmptyList
 
 private[backend] object Queries {
   final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
@@ -111,8 +112,16 @@ order by seqnr asc
 limit 10
 """.query(itemCodec)
 
+    type BatchInsert = List[(N, OffsetDateTime)]
+
     val insert: Command[(N, OffsetDateTime)] = sql"""
 insert into $table (payload, created) values ($notification, $timestamptz)
+""".command
+
+    def insertAll(items: BatchInsert): Command[items.type] =
+      val insertCodec = notification.product(timestamptz).list(items)
+      sql"""
+insert into $table (payload, created) values ($insertCodec)
 """.command
   }
 

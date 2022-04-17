@@ -8,45 +8,26 @@ import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Temporal
 import cats.implicits.*
-import edomata.core.CommandMessage
-import edomata.core.Compiler
-import edomata.core.Domain
-import edomata.core.ModelTC
-import edomata.core.ProgramResult
-import edomata.core.RequestContext
+import edomata.core.*
 import fs2.Stream
 import skunk.Codec
 import skunk.Session
 
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import scala.concurrent.duration.*
 
 final class SkunkBackend[F[_], S, E, R, N] private (
     snapshot: SnapshotStore[F, S, E, R],
     pool: Resource[F, Session[F]],
+    compiler: Compiler[F, E, N],
     evQ: Queries.Journal[E],
-    nQ: Queries.Outbox[N]
+    nQ: Queries.Outbox[N],
+    cmdQ: Queries.Commands
 )(using
     m: ModelTC[S, E, R],
     F: Temporal[F]
-) extends Backend[F, S, E, R, N] {
-  private val jW: JournalWriter[F, E] = ???
-  private val oW: OutboxWriter[F, N] = ???
-  private val cmds: CommandStore[F] = ???
-
-  def compiler[C]: Compiler[F, C, S, E, R, N] = new {
-    def onRequest(cmd: CommandMessage[C])(
-        run: RequestContext[C, S] => F[ProgramResult[S, E, R, N]]
-    ): F[EitherNec[R, Unit]] = repository.get(cmd.address).flatMap {
-      case AggregateState.Valid(s, rev) =>
-        val ctx = cmd.buildContext(s)
-        run(ctx).flatMap {
-          ???
-        }
-      case AggregateState.Conflicted(ls, lev, errs) => errs.asLeft.pure
-    }
-
-  }
-
+) extends Backend[F, S, E, R, N](compiler) {
   lazy val outbox: OutboxReader[F, N] = SkunkOutboxReader(pool, nQ)
   lazy val journal: JournalReader[F, E] = SkunkJournalReader(pool, evQ)
   lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)

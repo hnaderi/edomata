@@ -75,7 +75,7 @@ object Example1 {
   val backend2 = doobieBLD.buildNoSetup(CounterDomain, "counter")
 
   val application = backendRes.use { backend =>
-    val service = app.compile(backend.compiler)
+    val service = backend.compile(app)
 
     val publisher = backend.outbox.read.evalMap(i =>
       IO.println(i) >>

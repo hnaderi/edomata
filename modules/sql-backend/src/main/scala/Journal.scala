@@ -7,17 +7,6 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.util.UUID
 
-trait Journal[F[_], E] extends JournalReader[F, E], JournalWriter[F, E]
-
-trait JournalWriter[F[_], E] {
-  def append(
-      streamId: StreamId,
-      time: OffsetDateTime,
-      version: SeqNr,
-      events: NonEmptyChain[E]
-  ): F[Unit]
-}
-
 trait JournalReader[F[_], E] {
   def readStream(streamId: StreamId): Stream[F, EventMessage[E]]
   def readStreamAfter(
