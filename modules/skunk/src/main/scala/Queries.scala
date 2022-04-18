@@ -100,17 +100,11 @@ CREATE TABLE IF NOT EXISTS $table(
 );
 """.command
 
-    val publish: Command[(OffsetDateTime, Long)] = sql"""
+    def markAsPublished(l: List[Long]): Command[(OffsetDateTime, l.type)] =
+      sql"""
 update $table
 set published = $timestamptz
-where seqnr <= $int8
-  and published is NULL
-""".command
-
-    val markAsPublished: Command[(OffsetDateTime, Long)] = sql"""
-update $table
-set published = $timestamptz
-where seqnr = $int8
+where seqnr in ${int8.values.list(l)}
 """.command
 
     private val metadata: Codec[MessageMetadata] = (text.opt *: text.opt).pimap

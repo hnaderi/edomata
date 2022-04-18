@@ -22,8 +22,6 @@ private final class SkunkCompiler[F[_], E, N](
     extends Compiler[F, E, N] {
 
   private val trx = pool.flatTap(_.transaction)
-  private val currentTime =
-    clock.realTimeInstant.map(_.atOffset(ZoneOffset.UTC))
   private val newId = F.delay(UUID.randomUUID)
 
   def append(
@@ -34,7 +32,7 @@ private final class SkunkCompiler[F[_], E, N](
   ): F[Unit] = trx
     .use { s =>
       for {
-        now <- currentTime
+        now <- currentTime[F]
         evs <- events.toList.zipWithIndex.traverse((e, i) =>
           newId.map(uid =>
             journal.InsertRow(
