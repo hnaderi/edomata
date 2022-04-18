@@ -5,7 +5,6 @@ import cats.effect.IO
 import cats.implicits.*
 import edomata.core.*
 import munit.CatsEffectSuite
-import munit.ScalaCheckEffectSuite
 
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -14,7 +13,7 @@ import java.util.UUID
 import CommandHandlerSuite.*
 import SUT.given_ModelTC_State_Event_Rejection
 
-class CommandHandlerSuite extends CatsEffectSuite, ScalaCheckEffectSuite {
+class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Ignores redundant command") {
     for {
@@ -137,6 +136,20 @@ class CommandHandlerSuite extends CatsEffectSuite, ScalaCheckEffectSuite {
       )
       s = CommandHandler(r, app)
       _ <- s.apply(cmd).assertEquals(rejection.leftNec)
+      _ <- r.listActions.assertEquals(Nil)
+    } yield ()
+  }
+
+  test("Must not change raised errors") {
+    val exception = new Exception("Some error!")
+    val app: APP = SUT.dsl.eval(IO.raiseError(exception))
+    val cmd = CommandMessage("", Instant.MAX, "", 1)
+    val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
+
+    for {
+      r <- repo(AggregateState.Valid("", 0))
+      s = CommandHandler(r, app)
+      _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
   }
