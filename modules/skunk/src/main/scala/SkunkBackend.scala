@@ -163,7 +163,7 @@ object SkunkBackend {
       _journal = SkunkJournalReader(pool, jQ)
       _repo = RepositoryReader(_journal, s)
       cmds <- Resource.eval(CommandStore.inMem(100))
-      compiler = SkunkRepository(pool, jQ, nQ, cQ, cmds, s, _repo)
+      compiler = SkunkRepository(pool, jQ, nQ, cQ, _repo)
     } yield new {
       def compile[C](
           app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]

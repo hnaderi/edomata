@@ -9,10 +9,12 @@ import FakeRepository.*
 
 final class FakeRepository[S, E, R, N](
     actions: Ref[IO, List[Actions[S, E, R, N]]],
-    state: CommandState[S, E, R]
+    state: CommandState[S, E, R],
+    loaded: Ref[IO, List[CommandMessage[?]]]
 ) extends Repository[IO, S, E, R, N] {
 
-  def load(cmd: CommandMessage[?]): IO[CommandState[S, E, R]] = IO(state)
+  def load(cmd: CommandMessage[?]): IO[CommandState[S, E, R]] =
+    loaded.update(_.prepended(cmd)).as(state)
 
   def append(
       ctx: RequestContext[?, ?],
@@ -40,12 +42,15 @@ final class FakeRepository[S, E, R, N](
   )
 
   def listActions: IO[List[Actions[S, E, R, N]]] = actions.get
+  def listLoaded: IO[List[CommandMessage[?]]] = loaded.get
 }
 object FakeRepository {
   def apply[S, E, R, N](
       state: CommandState[S, E, R]
-  ): IO[FakeRepository[S, E, R, N]] =
-    IO.ref(List.empty[Actions[S, E, R, N]]).map(new FakeRepository(_, state))
+  ): IO[FakeRepository[S, E, R, N]] = for {
+    actions <- IO.ref(List.empty[Actions[S, E, R, N]])
+    loaded <- IO.ref(List.empty[CommandMessage[?]])
+  } yield new FakeRepository(actions, state, loaded)
 
   enum Actions[S, E, R, N] {
     case Appended(

@@ -20,6 +20,10 @@ trait Repository[F[_], S, E, R, N] {
   ): F[Unit]
 }
 
+object Repository {
+  // def cached[F[_]:Concurrent, S,E,R]
+}
+
 type CommandState[S, E, R] =
   AggregateState[S, E, R] | CommandState.Redundant.type
 object CommandState {

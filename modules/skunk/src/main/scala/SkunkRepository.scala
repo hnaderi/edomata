@@ -18,8 +18,6 @@ private final class SkunkRepository[F[_], S, E, R, N](
     journal: Queries.Journal[E],
     outbox: Queries.Outbox[N],
     cmds: Queries.Commands,
-    commands: CommandStore[F],
-    snapshot: SnapshotStore[F, S, E, R],
     repository: RepositoryReader[F, S, E, R]
 )(using F: Sync[F], clock: Clock[F])
     extends Repository[F, S, E, R, N] {
@@ -28,14 +26,13 @@ private final class SkunkRepository[F[_], S, E, R, N](
   private val newId = F.delay(UUID.randomUUID)
 
   def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] =
-    commands.contains(cmd.id).flatMap { redundant =>
-      if redundant then CommandState.Redundant.pure
-      else
-        snapshot.get(cmd.address).flatMap {
-          case Some(s) => s.pure
-          case None    => repository.get(cmd.address).widen
-        }
-    }
+    pool
+      .flatMap(_.prepare(cmds.count))
+      .use(_.unique(cmd.id))
+      .flatMap(c =>
+        if c != 0 then CommandState.Redundant.pure
+        else repository.get(cmd.address).widen
+      )
 
   def append(
       ctx: RequestContext[?, ?],
