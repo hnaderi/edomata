@@ -9,5 +9,5 @@ trait Backend[F[_], S, E, R, N] {
   ): DomainService[F, CommandMessage[C], R]
   val outbox: OutboxReader[F, N]
   val journal: JournalReader[F, E]
-  val repository: Repository[F, S, E, R]
+  val repository: RepositoryReader[F, S, E, R]
 }

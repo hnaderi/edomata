@@ -30,13 +30,15 @@ import java.time.ZoneOffset
 //   lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
 // }
 
-private final class DoobieCompiler[F[_], E, N](trx: Transactor[F])(using
+private final class DoobieRepository[F[_], S, E, R, N](trx: Transactor[F])(using
     F: Concurrent[F],
     clock: Clock[F]
-) extends Compiler[F, E, N] {
+) extends Repository[F, S, E, R, N] {
+  def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] = ???
   def append(
       ctx: RequestContext[?, ?],
       version: SeqNr,
+      newState: S,
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ): F[Unit] = ???

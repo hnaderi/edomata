@@ -10,8 +10,11 @@ import fs2.Chunk
 
 import scala.concurrent.duration.*
 
-trait SnapshotStore[F[_], S, E, R] {
+trait SnapshotReader[F[_], S, E, R] {
   def get(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]]
+}
+
+trait SnapshotStore[F[_], S, E, R] extends SnapshotReader[F, S, E, R] {
   def put(id: StreamId, state: AggregateState.Valid[S, E, R]): F[Unit]
 }
 

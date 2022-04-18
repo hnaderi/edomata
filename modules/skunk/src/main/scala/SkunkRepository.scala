@@ -13,20 +13,34 @@ import skunk.data.Completion
 import java.time.ZoneOffset
 import java.util.UUID
 
-private final class SkunkCompiler[F[_], E, N](
+private final class SkunkRepository[F[_], S, E, R, N](
     pool: Resource[F, Session[F]],
     journal: Queries.Journal[E],
     outbox: Queries.Outbox[N],
-    cmds: Queries.Commands
+    cmds: Queries.Commands,
+    commands: CommandStore[F],
+    snapshot: SnapshotStore[F, S, E, R],
+    repository: RepositoryReader[F, S, E, R]
 )(using F: Sync[F], clock: Clock[F])
-    extends Compiler[F, E, N] {
+    extends Repository[F, S, E, R, N] {
 
   private val trx = pool.flatTap(_.transaction)
   private val newId = F.delay(UUID.randomUUID)
 
+  def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] =
+    commands.contains(cmd.id).flatMap { redundant =>
+      if redundant then CommandState.Redundant.pure
+      else
+        snapshot.get(cmd.address).flatMap {
+          case Some(s) => s.pure
+          case None    => repository.get(cmd.address).widen
+        }
+    }
+
   def append(
       ctx: RequestContext[?, ?],
       version: SeqNr,
+      newState: S,
       events: NonEmptyChain[E],
       notifications: Seq[N]
   ): F[Unit] = trx

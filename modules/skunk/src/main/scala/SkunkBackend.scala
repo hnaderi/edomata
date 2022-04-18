@@ -158,11 +158,23 @@ object SkunkBackend {
       qs <- Resource.eval(_setup)
       (jQ, nQ, cQ) = qs
       given ModelTC[S, E, R] = model
-      compiler = SkunkCompiler(pool, jQ, nQ, cQ)
-      outbox = SkunkOutboxReader(pool, nQ)
-      journal = SkunkJournalReader(pool, jQ)
       s <- snapshot
-      repository = Repository(journal, s)
-    } yield new DefaultBackend(compiler, outbox, journal, repository)
+      _outbox = SkunkOutboxReader(pool, nQ)
+      _journal = SkunkJournalReader(pool, jQ)
+      _repo = RepositoryReader(_journal, s)
+      cmds <- Resource.eval(CommandStore.inMem(100))
+      compiler = SkunkRepository(pool, jQ, nQ, cQ, cmds, s, _repo)
+    } yield new {
+      def compile[C](
+          app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
+      ): DomainService[F, CommandMessage[C], R] = cmd =>
+        CommandHandler.retry(maxRetry, retryInitialDelay) {
+          CommandHandler(compiler, app).apply(cmd)
+        }
+      val outbox: OutboxReader[F, N] = _outbox
+      val journal: JournalReader[F, E] = _journal
+      val repository: RepositoryReader[F, S, E, R] = _repo
+
+    }
   }
 }
