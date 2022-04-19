@@ -1,7 +1,9 @@
 package edomata.backend
 
+import cats.Monad
 import cats.effect.Concurrent
 import cats.effect.kernel.Async
+import cats.effect.kernel.Ref
 import cats.implicits.*
 import edomata.core.*
 
@@ -13,15 +15,19 @@ trait CommandStore[F[_]] {
 }
 
 object CommandStore {
-  def inMem[F[_]](size: Int)(using F: Async[F]): F[CommandStore[F]] = for {
-    c <- LRUCache[F, String, Unit](size)
-    s <- F.ref(HashSet.empty[String])
-  } yield new {
+  def inMem[F[_]](size: Int)(using F: Async[F]): F[CommandStore[F]] =
+    (LRUCache[F, String, Unit](size), F.ref(HashSet.empty[String]))
+      .mapN(InMemoryCommandStore(_, _))
 
-    def append(cmd: CommandMessage[?]): F[Unit] = c.add(cmd.id, ()).flatMap {
-      case Some((id, _)) => s.update(_ - id + cmd.id)
-      case None          => s.update(_ + cmd.id)
-    }
-    def contains(id: String): F[Boolean] = s.get.map(_.contains(id))
+  private[backend] final class InMemoryCommandStore[F[_]: Monad](
+      cache: Cache[F, String, Unit],
+      set: Ref[F, HashSet[String]]
+  ) extends CommandStore[F] {
+    def append(cmd: CommandMessage[?]): F[Unit] =
+      cache.add(cmd.id, ()).flatMap {
+        case Some((id, _)) => set.update(_ - id + cmd.id)
+        case None          => set.update(_ + cmd.id)
+      }
+    def contains(id: String): F[Boolean] = set.get.map(_.contains(id))
   }
 }

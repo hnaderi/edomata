@@ -25,13 +25,15 @@ private final class SkunkRepository[F[_], S, E, R, N](
 
   private val trx = pool.flatTap(_.transaction)
   private val newId = F.delay(UUID.randomUUID)
+  private val redundant: F[CommandState[S, E, R]] =
+    CommandState.Redundant.pure[F]
 
   def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] =
     pool
       .flatMap(_.prepare(cmds.count))
       .use(_.unique(cmd.id))
       .flatMap(c =>
-        if c != 0 then CommandState.Redundant.pure
+        if c != 0 then redundant
         else repository.get(cmd.address).widen
       )
 

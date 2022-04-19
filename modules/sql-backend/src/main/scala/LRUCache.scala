@@ -21,7 +21,8 @@ private final class LRUCache[F[_], I, T] private (
     private var last: Option[CacheItem[I, T]],
     private val sem: Semaphore[F],
     val maxSize: Int
-)(using F: Sync[F]) {
+)(using F: Sync[F])
+    extends Cache[F, I, T] {
   def size: F[Int] = sem.permit.use(_ => values.size.pure)
 
   def allValues: Resource[F, Iterable[T]] =
