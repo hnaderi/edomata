@@ -17,9 +17,10 @@ object CommandStore {
     c <- LRUCache[F, String, Unit](size)
     s <- F.ref(HashSet.empty[String])
   } yield new {
+
     def append(cmd: CommandMessage[?]): F[Unit] = c.add(cmd.id, ()).flatMap {
-      case Some((id, _)) => s.update(_ - id)
-      case None          => F.unit
+      case Some((id, _)) => s.update(_ - id + cmd.id)
+      case None          => s.update(_ + cmd.id)
     }
     def contains(id: String): F[Boolean] = s.get.map(_.contains(id))
   }

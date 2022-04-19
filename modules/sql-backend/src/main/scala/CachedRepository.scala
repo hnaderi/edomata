@@ -11,10 +11,14 @@ final class CachedRepository[F[_]: Concurrent, S, E, R, N](
     cmds: CommandStore[F],
     snapshot: SnapshotStore[F, S, E, R]
 ) extends Repository[F, S, E, R, N] {
+
+  private val redundant: F[CommandState[S, E, R]] =
+    CommandState.Redundant.pure[F]
+
   def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] = cmds
     .contains(cmd.id)
     .ifM(
-      CommandState.Redundant.pure,
+      redundant,
       snapshot.get(cmd.address).flatMap {
         case Some(s) => s.pure
         case None    => underlying.load(cmd)

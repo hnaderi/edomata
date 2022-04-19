@@ -95,10 +95,11 @@ object SkunkBackend {
       private val pool: Resource[F, Session[F]],
       private val domain: Domain[C, S, E, R, N],
       private val model: ModelTC[S, E, R],
-      private val namespace: PGNamespace,
+      val namespace: PGNamespace,
       private val snapshot: Resource[F, SnapshotStore[F, S, E, R]],
-      private val maxRetry: Int = 5,
-      private val retryInitialDelay: FiniteDuration = 2.seconds
+      val maxRetry: Int = 5,
+      val retryInitialDelay: FiniteDuration = 2.seconds,
+      val cached: Boolean = true
   ) {
 
     def persistedSnapshot(
@@ -114,6 +115,8 @@ object SkunkBackend {
         maxWait
       )
     )
+
+    def disableCache: DomainBuilder[F, C, S, E, R, N] = copy(cached = false)
 
     def inMemSnapshot(
         maxInMem: Int = 1000
@@ -162,8 +165,14 @@ object SkunkBackend {
       _outbox = SkunkOutboxReader(pool, nQ)
       _journal = SkunkJournalReader(pool, jQ)
       _repo = RepositoryReader(_journal, s)
-      cmds <- Resource.eval(CommandStore.inMem(100))
-      compiler = SkunkRepository(pool, jQ, nQ, cQ, _repo)
+      skRepo = SkunkRepository(pool, jQ, nQ, cQ, _repo)
+      compiler <-
+        if cached then
+          Resource
+            .eval(CommandStore.inMem(100))
+            .map(CachedRepository(skRepo, _, s))
+        else Resource.pure(skRepo)
+
     } yield new {
       def compile[C](
           app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
