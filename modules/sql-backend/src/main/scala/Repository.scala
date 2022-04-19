@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import edomata.core.*
 
@@ -11,17 +12,13 @@ trait Repository[F[_], S, E, R, N] {
       version: SeqNr,
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   ): F[Unit]
 
   def notify(
       ctx: RequestContext[?, ?],
       notifications: NonEmptyChain[N]
   ): F[Unit]
-}
-
-object Repository {
-  // def cached[F[_]:Concurrent, S,E,R]
 }
 
 type CommandState[S, E, R] =

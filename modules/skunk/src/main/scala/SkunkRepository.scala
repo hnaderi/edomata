@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
 import cats.effect.kernel.Clock
@@ -39,7 +40,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
       version: SeqNr,
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   ): F[Unit] = trx
     .use { s =>
       for {
@@ -59,7 +60,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
           .prepare(journal.append(evs))
           .use(_.execute(evs))
           .assertInserted(evs.size)
-        _ <- NonEmptyChain.fromSeq(notifications).fold(F.unit) { n =>
+        _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { n =>
           val ns = notifications.toList.map((_, now, ctx.command.metadata))
           s.prepare(outbox.insertAll(ns))
             .use(_.execute(ns))

@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
 import cats.implicits.*
@@ -25,7 +26,7 @@ final class CachedRepository[F[_]: Concurrent, S, E, R, N](
       version: SeqNr,
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   ): F[Unit] =
     underlying.append(ctx, version, newState, events, notifications) >>
       cmds.append(ctx.command) >>

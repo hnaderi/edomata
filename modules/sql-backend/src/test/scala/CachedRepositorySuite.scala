@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.implicits.*
@@ -50,7 +51,7 @@ class CachedRepositorySuite extends CatsEffectSuite {
 
   test("Must update its commands and states on successful append") {
     val events = NonEmptyChain(1, 2, 3)
-    val notifs = Seq(4, 5, 6)
+    val notifs = Chain(4, 5, 6)
     val newState = 11
     val version = 1
 
@@ -92,7 +93,7 @@ class CachedRepositorySuite extends CatsEffectSuite {
       cr = CachedRepository(repo, c, s)
 
       _ <- cr
-        .append(someCtx, 1, 11, NonEmptyChain(1, 2, 3), Seq(4, 5, 6))
+        .append(someCtx, 1, 11, NonEmptyChain(1, 2, 3), Chain(4, 5, 6))
         .attempt
         .assertEquals(PlanedFailure.asLeft)
 

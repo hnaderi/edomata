@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
@@ -40,7 +41,7 @@ private final class DoobieRepository[F[_], S, E, R, N](trx: Transactor[F])(using
       version: SeqNr,
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   ): F[Unit] = ???
 
   def notify(

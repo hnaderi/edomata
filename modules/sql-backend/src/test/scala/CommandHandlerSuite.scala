@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.implicits.*
@@ -42,7 +43,13 @@ class CommandHandlerSuite extends CatsEffectSuite {
       _ <- r.listActions.assertEquals(
         List(
           FakeRepository.Actions
-            .Appended(ctx, version, "123", NonEmptyChain(1, 2, 3), Seq(4, 5, 6))
+            .Appended(
+              ctx,
+              version,
+              "123",
+              NonEmptyChain(1, 2, 3),
+              Chain(4, 5, 6)
+            )
         )
       )
     } yield ()

@@ -29,12 +29,12 @@ object CommandHandler {
               repository.append(ctx, rev, ns, evs, notifs).as(void)
             case ProgramResult.Indecisive(notifs) =>
               NonEmptyChain
-                .fromSeq(notifs)
+                .fromChain(notifs)
                 .fold(voidF)(repository.notify(ctx, _).as(void))
             case ProgramResult.Rejected(notifs, errs) =>
               val res = errs.asLeft[Unit]
               NonEmptyChain
-                .fromSeq(notifs)
+                .fromChain(notifs)
                 .fold(res.pure)(repository.notify(ctx, _).as(res))
             case ProgramResult.Conflicted(errs) => errs.asLeft.pure
           }

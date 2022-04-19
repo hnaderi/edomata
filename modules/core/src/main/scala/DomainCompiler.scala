@@ -1,6 +1,7 @@
 package edomata.core
 
 import cats.Monad
+import cats.data.Chain
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.implicits.*
@@ -42,13 +43,13 @@ enum ProgramResult[S, E, R, N] {
   case Accepted(
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   )
   case Indecisive(
-      notifications: Seq[N]
+      notifications: Chain[N]
   )
   case Rejected(
-      notifications: Seq[N],
+      notifications: Chain[N],
       reasons: NonEmptyChain[R]
   )
   case Conflicted(

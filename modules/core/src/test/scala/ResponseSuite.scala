@@ -1,6 +1,7 @@
 package edomata.core
 
 import cats.Monad
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
@@ -70,7 +71,7 @@ class ResponseSuite extends DisciplineSuite {
   property("Publish on rejection") {
     forAll(rejected, notifications, notifications) { (a1, n1, n2) =>
       val r1 = Response(a1, n1)
-      val r2 = r1.publishOnRejection(n2: _*)
+      val r2 = r1.publishOnRejection(n2.toList: _*)
 
       assertEquals(
         r2,
@@ -81,7 +82,7 @@ class ResponseSuite extends DisciplineSuite {
   property("Publish adds notifications") {
     forAll(anySut, notifications, notifications) { (a1, n1, n2) =>
       val r1 = Response(a1, n1)
-      val r2 = r1.publish(n2: _*)
+      val r2 = r1.publish(n2.toList: _*)
       assertEquals(r2, r1.copy(notifications = n1 ++ n2))
     }
   }
@@ -89,15 +90,17 @@ class ResponseSuite extends DisciplineSuite {
     forAll(anySut, notifications) { (a1, n1) =>
       val r1 = Response(a1, n1)
       val r2 = r1.reset
-      assertEquals(r2.notifications, Nil)
+      assertEquals(r2.notifications, Chain.nil)
       assertEquals(r2.result, r1.result)
     }
   }
 }
 
 object ResponseSuite {
-  val notifications: Gen[Seq[Notification]] =
-    Gen.containerOf[Seq, Notification](
-      Arbitrary.arbitrary[String].map(Notification(_))
-    )
+  val notifications: Gen[Chain[Notification]] =
+    Gen
+      .containerOf[Seq, Notification](
+        Arbitrary.arbitrary[String].map(Notification(_))
+      )
+      .map(Chain.fromSeq)
 }

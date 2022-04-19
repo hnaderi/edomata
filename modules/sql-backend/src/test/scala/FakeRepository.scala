@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
@@ -21,7 +22,7 @@ final class FakeRepository[S, E, R, N](
       version: SeqNr,
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   ): IO[Unit] = actions.update(
     _.prepended(
       Actions.Appended(
@@ -58,7 +59,7 @@ object FakeRepository {
         version: SeqNr,
         newState: S,
         events: NonEmptyChain[E],
-        notifications: Seq[N]
+        notifications: Chain[N]
     )
     case Notified(
         ctx: RequestContext[?, ?],

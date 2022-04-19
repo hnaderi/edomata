@@ -1,5 +1,6 @@
 package edomata.backend
 
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
@@ -71,7 +72,7 @@ class FailingRepository[S, E, R, N] extends Repository[IO, S, E, R, N] {
       version: SeqNr,
       newState: S,
       events: NonEmptyChain[E],
-      notifications: Seq[N]
+      notifications: Chain[N]
   ): IO[Unit] = IO.raiseError(PlanedFailure)
 
   def notify(

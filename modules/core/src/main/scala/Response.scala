@@ -16,7 +16,7 @@ import scala.annotation.tailrec
 
 final case class Response[+R, +E, +N, +A](
     result: Decision[R, E, A],
-    notifications: Seq[N] = Nil
+    notifications: Chain[N] = Chain.nil
 ) {
   def map[B](f: A => B): Response[R, E, N, B] =
     copy(result = result.map(f))
@@ -42,11 +42,11 @@ final case class Response[+R, +E, +N, +A](
 
   /** Clears all notifications so far */
   def reset: Response[R, E, N, A] =
-    copy(notifications = Nil)
+    copy(notifications = Chain.nil)
 
   /** Adds notification without considering decision state */
   def publish[N2 >: N](ns: N2*): Response[R, E, N2, A] =
-    copy(notifications = notifications ++ ns)
+    copy(notifications = notifications ++ Chain.fromSeq(ns))
 
   def publishOnRejectionWith[N2 >: N](
       f: NonEmptyChain[R] => Seq[N2]
@@ -69,7 +69,7 @@ sealed trait ResponseConstructors {
     Response(d)
 
   def publish[R, E, N](n: N*): Response[R, E, N, Unit] =
-    Response(Decision.unit, n)
+    Response(Decision.unit, Chain.fromSeq(n))
 
   def accept[R, E, N](ev: E, evs: E*): Response[R, E, N, Unit] =
     acceptReturn(())(ev, evs: _*)
@@ -105,8 +105,8 @@ sealed trait ResponseCatsInstances0 extends ResponseCatsInstances1 {
       @tailrec
       private def step[A, B](
           a: A,
-          evs: Chain[E] = Chain.empty,
-          ns: Seq[N] = Nil
+          evs: Chain[E] = Chain.nil,
+          ns: Chain[N] = Chain.nil
       )(
           f: A => Response[R, E, N, Either[A, B]]
       ): Response[R, E, N, B] =
