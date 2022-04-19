@@ -22,6 +22,9 @@ final class BlackHoleSnapshotStore[S, E, R] extends SnapshotStore[IO, S, E, R] {
   def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
     IO.unit
   def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(None)
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+    None
+  )
 }
 
 final class ConstantSnapshotStore[S, E, R](state: S, version: SeqNr)
@@ -29,6 +32,21 @@ final class ConstantSnapshotStore[S, E, R](state: S, version: SeqNr)
   def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
     IO.unit
   def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+    Some(AggregateState.Valid(state, version))
+  )
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+    Some(AggregateState.Valid(state, version))
+  )
+}
+
+final class LaggedSnapshotStore[S, E, R](state: S, version: SeqNr, lagged: Long)
+    extends SnapshotStore[IO, S, E, R] {
+  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
+    IO.unit
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+    Some(AggregateState.Valid(state, lagged))
+  )
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
     Some(AggregateState.Valid(state, version))
   )
 }
@@ -39,6 +57,8 @@ final class FakeSnapShotStore[S, E, R](
   def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
     states.update(_.updated(id, state))
   def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] =
+    states.get.map(_.get(id))
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] =
     states.get.map(_.get(id))
 
   def all: IO[Map[StreamId, Valid[S, E, R]]] = states.get

@@ -19,7 +19,7 @@ final class CachedRepository[F[_]: Concurrent, S, E, R, N](
     .contains(cmd.id)
     .ifM(
       redundant,
-      snapshot.get(cmd.address).flatMap {
+      snapshot.getFast(cmd.address).flatMap {
         case Some(s) => s.pure
         case None    => underlying.load(cmd)
       }

@@ -48,6 +48,18 @@ class CachedRepositorySuite extends CatsEffectSuite {
       _ <- repo.listLoaded.assertEquals(Nil)
     } yield ()
   }
+  test("Must not use cold snapshot") {
+    for {
+      repo <- FakeRepository(persistedState)
+      cr = CachedRepository(
+        repo,
+        BlackHoleCommandStore,
+        new LaggedSnapshotStore(10, 3, 1)
+      )
+      _ <- cr.load(someCmd).assertEquals(inMemState)
+      _ <- repo.listLoaded.assertEquals(Nil)
+    } yield ()
+  }
 
   test("Must update its commands and states on successful append") {
     val events = NonEmptyChain(1, 2, 3)
