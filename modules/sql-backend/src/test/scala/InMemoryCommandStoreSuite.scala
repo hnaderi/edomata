@@ -14,28 +14,19 @@ import InMemoryCommandStoreSuite.*
 
 class InMemoryCommandStoreSuite extends CatsEffectSuite {
 
-  test("Must add to cache and set") {
+  test("Must add") {
     for {
-      c <- Cache.lru[IO, String, Unit](1)
-      s <- IO.ref(HashSet.empty[String])
-      ics = CommandStore.InMemoryCommandStore(c, s)
+      ics <- CommandStore.inMem[IO](1)
       _ <- ics.append(cmd("a"))
-      _ <- c.get("a").assertEquals(Some(()))
-      _ <- s.get.assertEquals(Set("a"))
       _ <- ics.contains("a").assertEquals(true)
     } yield ()
   }
 
-  test("Must remove from set when cache size is reached") {
+  test("Must remove when cache size is reached") {
     for {
-      c <- Cache.lru[IO, String, Unit](1)
-      s <- IO.ref(HashSet.empty[String])
-      ics = CommandStore.InMemoryCommandStore(c, s)
+      ics <- CommandStore.inMem[IO](1)
       _ <- ics.append(cmd("a"))
       _ <- ics.append(cmd("b"))
-      _ <- c.get("a").assertEquals(None)
-      _ <- c.get("b").assertEquals(Some(()))
-      _ <- s.get.assertEquals(Set("b"))
       _ <- ics.contains("a").assertEquals(false)
       _ <- ics.contains("b").assertEquals(true)
     } yield ()

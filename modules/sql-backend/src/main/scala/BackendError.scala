@@ -2,7 +2,11 @@ package edomata.backend
 
 sealed trait BackendError extends Throwable
 object BackendError {
-  case object VersionConflict extends Throwable(""), BackendError
+  case object VersionConflict
+      extends Throwable(
+        "You can't proceed due to version conflict, read and decide again!"
+      ),
+        BackendError
   case object MaxRetryExceeded
       extends Throwable("Maximum number of retries exceeded!"),
         BackendError
