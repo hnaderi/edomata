@@ -9,13 +9,13 @@ extension [S, E, R](self: DomainModel[S, E, R]) {
   def domain[C, N]: Domain[C, S, E, R, N] = Domain()
 }
 
-private[edomata] final class Domain[C, S, E, R, N](
+final class Domain[C, S, E, R, N](
     private val dummy: Boolean = true
 ) extends AnyVal {
   def dsl: DomainDSL[C, S, E, R, N] = DomainDSL()
 }
 
-private final class DomainDSL[C, S, E, R, N](
+final class DomainDSL[C, S, E, R, N](
     private val dummy: Boolean = true
 ) extends AnyVal {
   type App[F[_], T] = Edomaton[F, RequestContext[C, S], R, E, N, T]
