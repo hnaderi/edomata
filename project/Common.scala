@@ -17,8 +17,6 @@ object Common {
   )
 
   val settings = Seq(
-    organization := "io.github.hnaderi",
-    organizationName := "hnaderi",
     scalacOptions ++= commonScalac3Options
   )
 }

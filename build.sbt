@@ -12,9 +12,10 @@ inThisBuild(
     versionScheme := Some("early-semver"),
     sonatypeCredentialHost := "s01.oss.sonatype.org",
     organization := "io.github.hnaderi",
-    organizationName := "hnaderi",
+    organizationName := "Hossein Naderi",
+    startYear := Some(2021),
     licenses := Seq(
-      "APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
+      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
     ),
     developers := List(
       Developer(
@@ -148,12 +149,14 @@ addAlias("commit")(
   "clean",
   "scalafmtCheckAll",
   "scalafmtSbtCheck",
+  "headerCheckAll",
   "compile",
   "test"
 )
 addAlias("precommit")(
   "scalafmtAll",
   "scalafmtSbt",
+  "headerCreateAll",
   "compile",
   "test"
 )
