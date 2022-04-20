@@ -6,7 +6,6 @@ import cats.effect.testkit.TestControl
 import cats.implicits.*
 import munit.CatsEffectSuite
 import munit.Location
-import org.junit.rules.TestName
 
 import scala.concurrent.duration.*
 

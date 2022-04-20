@@ -19,52 +19,6 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import scala.concurrent.duration.*
 
-private final class SkunkJournalReader[F[_]: Concurrent, E](
-    pool: Resource[F, Session[F]],
-    q: Queries.Journal[E]
-) extends JournalReader[F, E] {
-
-  private def run[A, B](q: skunk.Query[A, B])(a: A) =
-    Stream.resource(pool.flatMap(_.prepare(q))).flatMap(_.stream(a, 100))
-
-  def readStream(streamId: StreamId): Stream[F, EventMessage[E]] =
-    run(q.readStream)(streamId)
-
-  def readStreamAfter(
-      streamId: StreamId,
-      version: EventVersion
-  ): Stream[F, EventMessage[E]] = run(q.readStreamAfter)((streamId, version))
-
-  def readStreamBefore(
-      streamId: StreamId,
-      version: EventVersion
-  ): Stream[F, EventMessage[E]] = run(q.readStreamBefore)((streamId, version))
-
-  def readAll: Stream[F, EventMessage[E]] = run(q.readAll)(skunk.Void)
-
-  def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
-    run(q.readAllAfter)(seqNr)
-
-  def notifications: Stream[F, StreamId] = ???
-}
-
-private final class SkunkOutboxReader[F[_]: Concurrent: Clock, N](
-    pool: Resource[F, Session[F]],
-    q: Queries.Outbox[N]
-) extends OutboxReader[F, N] {
-  def read: Stream[F, OutboxItem[N]] = Stream
-    .resource(pool.flatMap(_.prepare(q.read)))
-    .flatMap(_.stream(skunk.Void, 100))
-
-  def markAllAsSent(items: NonEmptyChain[OutboxItem[N]]): F[Unit] = for {
-    now <- currentTime[F]
-    is = items.toList.map(_.seqNr)
-    _ <- pool
-      .flatMap(_.prepare(q.markAsPublished(is)))
-      .use(_.execute((now, is)))
-  } yield ()
-}
-
 object SkunkBackend {
   def apply[F[_]: Async](pool: Resource[F, Session[F]]): PartialBuilder[F] =
     PartialBuilder(pool)
