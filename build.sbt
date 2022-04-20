@@ -5,29 +5,28 @@ import Dependencies._
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val scala3 = "3.1.1"
-ThisBuild / scalaVersion := scala3
-ThisBuild / fork := true
-ThisBuild / git.useGitDescribe := true
-ThisBuild / versionScheme := Some("early-semver")
-ThisBuild / publishTo := sonatypePublishToBundle.value
-ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
-ThisBuild / licenses := Seq(
-  "APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
-)
-ThisBuild / developers := List(
-  Developer(
-    id = "hnaderi",
-    name = "Hossein Naderi",
-    email = "hossein-naderi@hotmail.com",
-    url = url("https://hnaderi.ir")
+inThisBuild(
+  List(
+    scalaVersion := scala3,
+    fork := true,
+    git.useGitDescribe := true,
+    versionScheme := Some("early-semver"),
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
+
+    organization := "io.github.hnaderi",
+    organizationName := "hnaderi",
+    licenses := Seq(
+      "APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")
+    ),
+    developers := List(
+      Developer(
+        id = "hnaderi",
+        name = "Hossein Naderi",
+        email = "hossein-naderi@hotmail.com",
+        url = url("https://hnaderi.ir")
+      )
+    )
   )
-)
-
-publishMavenStyle := true
-
-import xerial.sbt.Sonatype._
-sonatypeProjectHosting := Some(
-  GitHubHosting("hnaderi", "edomata", "hossein-naderi@hotmail.com")
 )
 
 def module(name: String, deps: Seq[ModuleID] = Nil): Project = {
