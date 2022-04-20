@@ -65,13 +65,13 @@ lazy val root = (project in file("."))
   .settings(
     publish / skip := true
   )
-  .enablePlugins(GitVersioning)
   .enablePlugins(GitBranchPrompt)
   .aggregate(modules: _*)
 
 lazy val mdocPlantuml = (project in file("mdoc-plantuml"))
   .settings(
-    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2022.1"
+    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2022.1",
+    publish / skip := true
   )
   .enablePlugins(MdocPlugin)
 
