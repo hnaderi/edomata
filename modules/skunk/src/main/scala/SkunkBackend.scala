@@ -13,6 +13,7 @@ import edomata.core.*
 import fs2.Stream
 import skunk.Codec
 import skunk.Session
+import skunk.data.Identifier
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -96,24 +97,26 @@ object SkunkBackend {
       private val domain: Domain[C, S, E, R, N],
       private val model: ModelTC[S, E, R],
       val namespace: PGNamespace,
-      private val snapshot: Resource[F, SnapshotStore[F, S, E, R]],
+      private val snapshot: Resource[F, SnapshotStore[F, S]],
       val maxRetry: Int = 5,
       val retryInitialDelay: FiniteDuration = 2.seconds,
       val cached: Boolean = true
   ) {
 
     def persistedSnapshot(
-        storage: SnapshotPersistence[F, S, E, R],
+        storage: SnapshotPersistence[F, S],
         maxInMem: Int = 1000,
         maxBuffer: Int = 100,
         maxWait: FiniteDuration = 1.minute
     ): DomainBuilder[F, C, S, E, R, N] = copy(snapshot =
-      SnapshotStore.persisted(
-        storage,
-        size = maxInMem,
-        maxBuffer = maxBuffer,
-        maxWait
-      )
+      SnapshotStore
+        .persisted(
+          storage,
+          size = maxInMem,
+          maxBuffer = maxBuffer,
+          maxWait
+        )
+        .widen
     )
 
     def disableCache: DomainBuilder[F, C, S, E, R, N] = copy(cached = false)
@@ -124,7 +127,7 @@ object SkunkBackend {
       copy(snapshot = Resource.eval(SnapshotStore.inMem(maxInMem)))
 
     def withSnapshot(
-        s: Resource[F, SnapshotStore[F, S, E, R]]
+        s: Resource[F, SnapshotStore[F, S]]
     ): DomainBuilder[F, C, S, E, R, N] = copy(snapshot = s)
 
     def withRetryConfig(

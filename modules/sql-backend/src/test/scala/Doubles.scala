@@ -7,6 +7,7 @@ import cats.effect.kernel.Ref
 import cats.implicits.*
 import edomata.backend.AggregateState.Valid
 import edomata.core.*
+import fs2.Chunk
 
 object BlackHoleCommandStore extends CommandStore[IO] {
   def append(cmd: CommandMessage[?]): IO[Unit] = IO.unit
@@ -18,55 +19,55 @@ object YesManCommandStore extends CommandStore[IO] {
   def contains(id: String): IO[Boolean] = IO(true)
 }
 
-final class BlackHoleSnapshotStore[S, E, R] extends SnapshotStore[IO, S, E, R] {
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
+final class BlackHoleSnapshotStore[S] extends SnapshotStore[IO, S] {
+  def put(id: StreamId, state: AggregateState.Valid[S]): IO[Unit] =
     IO.unit
-  def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(None)
-  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S]]] = IO(None)
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S]]] = IO(
     None
   )
 }
 
-final class ConstantSnapshotStore[S, E, R](state: S, version: SeqNr)
-    extends SnapshotStore[IO, S, E, R] {
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
+final class ConstantSnapshotStore[S](state: S, version: SeqNr)
+    extends SnapshotStore[IO, S] {
+  def put(id: StreamId, state: AggregateState.Valid[S]): IO[Unit] =
     IO.unit
-  def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S]]] = IO(
     Some(AggregateState.Valid(state, version))
   )
-  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S]]] = IO(
     Some(AggregateState.Valid(state, version))
   )
 }
 
-final class LaggedSnapshotStore[S, E, R](state: S, version: SeqNr, lagged: Long)
-    extends SnapshotStore[IO, S, E, R] {
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
+final class LaggedSnapshotStore[S](state: S, version: SeqNr, lagged: Long)
+    extends SnapshotStore[IO, S] {
+  def put(id: StreamId, state: AggregateState.Valid[S]): IO[Unit] =
     IO.unit
-  def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S]]] = IO(
     Some(AggregateState.Valid(state, lagged))
   )
-  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] = IO(
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S]]] = IO(
     Some(AggregateState.Valid(state, version))
   )
 }
 
-final class FakeSnapShotStore[S, E, R](
-    states: Ref[IO, Map[StreamId, AggregateState.Valid[S, E, R]]]
-) extends SnapshotStore[IO, S, E, R] {
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): IO[Unit] =
+final class FakeSnapShotStore[S](
+    states: Ref[IO, Map[StreamId, AggregateState.Valid[S]]]
+) extends SnapshotStore[IO, S] {
+  def put(id: StreamId, state: AggregateState.Valid[S]): IO[Unit] =
     states.update(_.updated(id, state))
-  def get(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] =
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S]]] =
     states.get.map(_.get(id))
-  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S, E, R]]] =
+  def getFast(id: StreamId): IO[Option[AggregateState.Valid[S]]] =
     states.get.map(_.get(id))
 
-  def all: IO[Map[StreamId, Valid[S, E, R]]] = states.get
+  def all: IO[Map[StreamId, Valid[S]]] = states.get
 }
 
 object FakeSnapShotStore {
-  def apply[S, E, R](): IO[FakeSnapShotStore[S, E, R]] =
-    IO.ref(Map.empty[StreamId, Valid[S, E, R]]).map(new FakeSnapShotStore(_))
+  def apply[S](): IO[FakeSnapShotStore[S]] =
+    IO.ref(Map.empty[StreamId, Valid[S]]).map(new FakeSnapShotStore(_))
 }
 
 final class FakeCommandStore(
@@ -99,6 +100,45 @@ class FailingRepository[S, E, R, N] extends Repository[IO, S, E, R, N] {
       ctx: RequestContext[?, ?],
       notifications: NonEmptyChain[N]
   ): IO[Unit] = IO.raiseError(PlanedFailure)
+}
+
+class FakeSnapshotPersistence[S](
+    ref: Ref[IO, Map[StreamId, AggregateState.Valid[S]]]
+) extends SnapshotPersistence[IO, S] {
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S]]] =
+    ref.get.map(_.get(id))
+  def put(items: Chunk[SnapshotItem[S]]): IO[Unit] =
+    ref.update(_ ++ items.iterator)
+}
+object FakeSnapshotPersistence {
+  def apply[S]: IO[FakeSnapshotPersistence[S]] = IO
+    .ref(Map.empty[StreamId, AggregateState.Valid[S]])
+    .map(new FakeSnapshotPersistence(_))
+}
+
+class FailingSnapshotPersistence[S](
+    repo: SnapshotPersistence[IO, S],
+    failures: Ref[IO, Int],
+    reqFailures: Int
+) extends SnapshotPersistence[IO, S] {
+  val pred = failures.get.map(_ < reqFailures)
+  def run[T](f: IO[T]): IO[T] = pred
+    .ifM(
+      failures.update(_ + 1) >> IO.raiseError(PlanedFailure),
+      f
+    )
+
+  def get(id: StreamId): IO[Option[AggregateState.Valid[S]]] =
+    run(repo.get(id))
+
+  def put(items: Chunk[SnapshotItem[S]]): IO[Unit] =
+    run(repo.put(items))
+}
+object FailingSnapshotPersistence {
+  def apply[S](reqFailures: Int): IO[FailingSnapshotPersistence[S]] =
+    FakeSnapshotPersistence[S]
+      .product(IO.ref(0))
+      .map(new FailingSnapshotPersistence(_, _, reqFailures))
 }
 
 object PlanedFailure extends Throwable

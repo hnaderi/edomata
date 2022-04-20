@@ -68,7 +68,7 @@ class CachedRepositorySuite extends CatsEffectSuite {
     val version = 1
 
     for {
-      s <- FakeSnapShotStore[Int, Int, Nothing]()
+      s <- FakeSnapShotStore[Int]()
       c <- FakeCommandStore()
       repo <- FakeRepository(persistedState)
       cr = CachedRepository(repo, c, s)
@@ -99,7 +99,7 @@ class CachedRepositorySuite extends CatsEffectSuite {
   }
   test("Must not update its commands and states on failed append") {
     for {
-      s <- FakeSnapShotStore[Int, Int, Nothing]()
+      s <- FakeSnapShotStore[Int]()
       c <- FakeCommandStore()
       repo = new FailingRepository[Int, Int, Nothing, Int]
       cr = CachedRepository(repo, c, s)
@@ -118,7 +118,7 @@ class CachedRepositorySuite extends CatsEffectSuite {
     val notifs = NonEmptyChain(4, 5, 6)
 
     for {
-      s <- FakeSnapShotStore[Int, Int, Nothing]()
+      s <- FakeSnapShotStore[Int]()
       c <- FakeCommandStore()
       repo <- FakeRepository(persistedState)
       cr = CachedRepository(repo, c, s)

@@ -9,7 +9,7 @@ import edomata.core.*
 final class CachedRepository[F[_]: Concurrent, S, E, R, N](
     underlying: Repository[F, S, E, R, N],
     cmds: CommandStore[F],
-    snapshot: SnapshotStore[F, S, E, R]
+    snapshot: SnapshotStore[F, S]
 ) extends Repository[F, S, E, R, N] {
 
   private val redundant: F[CommandState[S, E, R]] =

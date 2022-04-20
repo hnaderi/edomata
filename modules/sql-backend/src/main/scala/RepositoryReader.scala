@@ -10,9 +10,10 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.util.UUID
 
-enum AggregateState[S, E, R](val isValid: Boolean) {
-  case Valid(state: S, version: SeqNr) extends AggregateState[S, E, R](true)
-  case Conflicted(
+enum AggregateState[+S, +E, +R](val isValid: Boolean) {
+  case Valid[S](state: S, version: SeqNr)
+      extends AggregateState[S, Nothing, Nothing](true)
+  case Conflicted[S, E, R](
       last: S,
       onEvent: EventMessage[E],
       errors: NonEmptyChain[R]
@@ -27,7 +28,7 @@ trait RepositoryReader[F[_], S, E, R] {
 object RepositoryReader {
   def apply[F[_], S, E, R](
       journal: JournalReader[F, E],
-      snapshot: SnapshotReader[F, S, E, R]
+      snapshot: SnapshotReader[F, S]
   )(using F: Concurrent[F], m: ModelTC[S, E, R]): RepositoryReader[F, S, E, R] =
     new {
       def get(streamId: StreamId): F[AggregateState[S, E, R]] =

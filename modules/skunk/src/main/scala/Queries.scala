@@ -146,17 +146,17 @@ CREATE TABLE IF NOT EXISTS $table (
 );
 """.command
 
-    private def aggregateStateCodec: Codec[AggregateState.Valid[S, E, R]] =
+    private def aggregateStateCodec: Codec[AggregateState.Valid[S]] =
       (state *: int8).pimap
 
-    def put: Command[(String, AggregateState.Valid[S, E, R])] =
+    def put: Command[(String, AggregateState.Valid[S])] =
       sql"""insert into $table (id, "version", state) values ($text, $aggregateStateCodec)
             on conflict (id) do update
                                 set version = excluded.version,
                                     state   = excluded.state
          """.command
 
-    def get: Query[String, AggregateState.Valid[S, E, R]] =
+    def get: Query[String, AggregateState.Valid[S]] =
       sql"""select version, state from $table where id = $text""".query(
         aggregateStateCodec
       )

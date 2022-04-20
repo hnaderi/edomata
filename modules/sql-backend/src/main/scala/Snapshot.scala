@@ -2,6 +2,7 @@ package edomata.backend
 
 import cats.Monad
 import cats.effect.Async
+import cats.effect.Temporal
 import cats.effect.implicits.*
 import cats.effect.kernel.Resource
 import cats.effect.std.Queue
@@ -11,7 +12,7 @@ import fs2.Stream
 
 import scala.concurrent.duration.*
 
-trait SnapshotReader[F[_], S, E, R] {
+trait SnapshotReader[F[_], S] {
 
   /** Reads snapshot
     *
@@ -22,7 +23,7 @@ trait SnapshotReader[F[_], S, E, R] {
     * @return
     *   optional snapshot for a folded aggregate
     */
-  def get(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]]
+  def get(id: StreamId): F[Option[AggregateState.Valid[S]]]
 
   /** Reads snapshot from a fast access storage or returns None if not
     * accessible from fast storage/cache. it will always return last version of
@@ -33,75 +34,85 @@ trait SnapshotReader[F[_], S, E, R] {
     * @return
     *   optional snapshot for a folded aggregate
     */
-  def getFast(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]]
+  def getFast(id: StreamId): F[Option[AggregateState.Valid[S]]]
 }
 
-trait SnapshotStore[F[_], S, E, R] extends SnapshotReader[F, S, E, R] {
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): F[Unit]
+trait SnapshotStore[F[_], S] extends SnapshotReader[F, S] {
+  def put(id: StreamId, state: AggregateState.Valid[S]): F[Unit]
 }
 
-trait SnapshotPersistence[F[_], S, E, R] {
-  def get(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]]
-  def put(items: Chunk[SnapshotItem[S, E, R]]): F[Unit]
+trait SnapshotPersistence[F[_], S] {
+  def get(id: StreamId): F[Option[AggregateState.Valid[S]]]
+  def put(items: Chunk[SnapshotItem[S]]): F[Unit]
 }
 
 object SnapshotStore {
-  def inMem[F[_]: Async, S, E, R](
+  def inMem[F[_]: Async, S](
       size: Int = 1000
-  ): F[SnapshotStore[F, S, E, R]] =
-    LRUCache[F, StreamId, AggregateState.Valid[S, E, R]](size)
+  ): F[SnapshotStore[F, S]] =
+    LRUCache[F, StreamId, AggregateState.Valid[S]](size)
       .map(InMemorySnapshotStore(_))
 
-  def persisted[F[_]: Async, S, E, R](
-      store: SnapshotPersistence[F, S, E, R],
+  def persisted[F[_], S](
+      store: SnapshotPersistence[F, S],
       size: Int = 1000,
       maxBuffer: Int = 100,
-      maxWait: FiniteDuration = 1.minute
-  ): Resource[F, SnapshotStore[F, S, E, R]] = for {
-    q <- Resource.eval(Queue.dropping[F, SnapshotItem[S, E, R]](maxBuffer))
+      maxWait: FiniteDuration = 1.minute,
+      flushOnExit: Boolean = true
+  )(using F: Async[F]): Resource[F, SnapshotStore[F, S]] = for {
+    q <- Resource.eval(Queue.dropping[F, SnapshotItem[S]](maxBuffer))
     lc <- Resource.eval(
-      LRUCache[F, StreamId, AggregateState.Valid[S, E, R]](size)
+      LRUCache[F, StreamId, AggregateState.Valid[S]](size)
     )
-    pss = PersistedSnapshotStore(lc, store, q)
-    _ <- fs2.Stream
+    pss = PersistedSnapshotStoreImpl(lc, store, q, maxBuffer, maxWait)
+    flush = lc.byUsage.use(
+      Stream
+        .fromIterator(_, size min 1000)
+        .chunks
+        .evalMap(store.put)
+        .compile
+        .drain
+    )
+    persist = Stream
       .fromQueueUnterminated(q, maxBuffer)
       .groupWithin(maxBuffer, maxWait)
-      .evalMap(store.put)
-      .compile
-      .drain
-      .background
+      .flatMap(ch => Stream.retry(store.put(ch), 1.second, _ * 2, 3))
+    _ <- persist.compile.drain.background
+      .onFinalize(if flushOnExit then flush else F.unit)
   } yield pss
 }
 
-private final class InMemorySnapshotStore[F[_]: Monad, S, E, R](
-    cache: LRUCache[F, StreamId, AggregateState.Valid[S, E, R]]
-) extends SnapshotStore[F, S, E, R] {
-  def get(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]] =
+private final class InMemorySnapshotStore[F[_]: Monad, S](
+    cache: LRUCache[F, StreamId, AggregateState.Valid[S]]
+) extends SnapshotStore[F, S] {
+  def get(id: StreamId): F[Option[AggregateState.Valid[S]]] =
     cache.get(id)
-  def getFast(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]] = get(id)
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): F[Unit] =
+  def getFast(id: StreamId): F[Option[AggregateState.Valid[S]]] = get(id)
+  def put(id: StreamId, state: AggregateState.Valid[S]): F[Unit] =
     cache.add(id, state).void
 }
 
-type SnapshotItem[S, E, R] =
-  (StreamId, AggregateState.Valid[S, E, R])
+type SnapshotItem[S] =
+  (StreamId, AggregateState.Valid[S])
 
-private final class PersistedSnapshotStore[F[_], S, E, R](
-    cache: LRUCache[F, StreamId, AggregateState.Valid[S, E, R]],
-    p: SnapshotPersistence[F, S, E, R],
-    q: Queue[F, SnapshotItem[S, E, R]]
-)(using F: Monad[F])
-    extends SnapshotStore[F, S, E, R] {
-  def get(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]] =
+private[backend] final class PersistedSnapshotStoreImpl[F[_], S](
+    cache: LRUCache[F, StreamId, AggregateState.Valid[S]],
+    p: SnapshotPersistence[F, S],
+    q: Queue[F, SnapshotItem[S]],
+    maxBuffer: Int,
+    maxWait: FiniteDuration
+)(using F: Temporal[F])
+    extends SnapshotStore[F, S] {
+  def get(id: StreamId): F[Option[AggregateState.Valid[S]]] =
     getFast(id).flatMap {
       case c @ Some(_) => c.pure
       case None        => p.get(id)
     }
-  def put(id: StreamId, state: AggregateState.Valid[S, E, R]): F[Unit] =
+  def put(id: StreamId, state: AggregateState.Valid[S]): F[Unit] =
     cache.add(id, state).flatMap {
-      case Some(evicted) => q.offer(evicted)
+      case Some(evicted) => q.tryOffer(evicted).void
       case None          => F.unit
     }
-  def getFast(id: StreamId): F[Option[AggregateState.Valid[S, E, R]]] =
+  def getFast(id: StreamId): F[Option[AggregateState.Valid[S]]] =
     cache.get(id)
 }

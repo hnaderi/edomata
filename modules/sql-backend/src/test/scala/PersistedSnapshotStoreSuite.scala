@@ -1,0 +1,147 @@
+package edomata.backend
+
+import cats.effect.IO
+import cats.effect.kernel.Resource
+import cats.effect.testkit.TestControl
+import cats.implicits.*
+import munit.CatsEffectSuite
+import munit.Location
+import org.junit.rules.TestName
+
+import scala.concurrent.duration.*
+
+import PersistedSnapshotStoreSuite.*
+
+class PersistedSnapshotStoreSuite extends CatsEffectSuite {
+  check("Must not store more than size", size = 1) { sut =>
+    sut.store.put("a", a) >>
+      sut.assertPresent("a" -> a) >>
+      sut.store.put("b", b) >>
+      sut.assertNotPresent("a") >>
+      sut.assertPresent("b" -> b)
+  }
+
+  check(
+    "Must persist evicted items asynchronously when maxWait reached",
+    size = 1,
+    maxWait = 1.minute
+  ) { sut =>
+    sut.store.put("a", a) >>
+      sut.store.put("b", b) >>
+      sut.assertNotPersisted("a", "b") >>
+      IO.sleep(61.seconds) >>
+      sut.assertPersisted("a" -> a) >>
+      sut.assertNotPersisted("b")
+  }
+
+  check(
+    "Must persist evicted items asynchronously when maxBuffer reached",
+    size = 1,
+    maxBuffer = 1
+  ) { sut =>
+    sut.store.put("a", a) >>
+      sut.store.put("b", b) >>
+      sut.assertNotPersisted("a", "b") >>
+      IO.sleep(1.seconds) >>
+      sut.assertPersisted("a" -> a) >>
+      sut.assertNotPersisted("b")
+  }
+
+  check("Must not flush on exit if flushOnExit is false", flushOnExit = false)(
+    sut =>
+      sut.store.put("a", a) >>
+        sut.store.put("b", b) >>
+        sut.assertNotPersisted("a", "b"),
+    p => p.get("a").assertEquals(None) >> p.get("b").assertEquals(None)
+  )
+
+  check("Must flush on exit if flushOnExit is true", flushOnExit = true)(
+    sut =>
+      sut.store.put("a", a) >>
+        sut.store.put("b", b) >>
+        sut.assertNotPersisted("a", "b"),
+    p => p.get("a").assertEquals(Some(a)) >> p.get("b").assertEquals(Some(b))
+  )
+
+  check(
+    "Must not persist anything if neither evicted or requested to flushOnExit",
+    flushOnExit = false
+  )(
+    sut =>
+      sut.store.put("a", a) >>
+        sut.store.put("b", b),
+    p => p.get("a").assertEquals(None) >> p.get("b").assertEquals(None)
+  )
+
+  check(
+    "Must retry persisting",
+    flushOnExit = false,
+    size = 1,
+    maxBuffer = 1,
+    failures = 1
+  )(sut =>
+    sut.store.put("a", a) >>
+      sut.store.put("b", b) >>
+      IO.sleep(2.seconds) >>
+      sut.assertPersisted("a" -> a)
+  )
+
+  final class TestUniverse(
+      persistence: SnapshotPersistence[IO, String],
+      val store: SnapshotStore[IO, String]
+  ) {
+    def assertNotPersisted(i: String*)(using Location) =
+      i.traverse(persistence.get(_).assertEquals(None)).void
+
+    def assertPersisted(i: (String, AggregateState.Valid[String])*)(using
+        Location
+    ) =
+      i.traverse((k, v) => persistence.get(k).assertEquals(Some(v))).void
+
+    def assertNotPresent(i: String*)(using Location) =
+      i.traverse(store.get(_).assertEquals(None)).void
+
+    def assertPresent(i: (String, AggregateState.Valid[String])*)(using
+        Location
+    ) =
+      i.traverse((k, v) => store.get(k).assertEquals(Some(v))).void
+  }
+
+  def check(
+      name: String,
+      size: Int = 1000,
+      maxBuffer: Int = 100,
+      maxWait: FiniteDuration = 1.minute,
+      flushOnExit: Boolean = true,
+      failures: Int = 0
+  )(
+      f: TestUniverse => IO[Unit],
+      g: SnapshotPersistence[IO, String] => IO[Unit] = _ => IO.unit
+  )(using Location): Unit = test(name) {
+    TestControl.executeEmbed(
+      for {
+        p <-
+          if failures > 0 then FailingSnapshotPersistence[String](failures)
+          else FakeSnapshotPersistence[String]
+        _ <- SnapshotStore
+          .persisted(
+            p,
+            size = size,
+            maxBuffer = maxBuffer,
+            maxWait = maxWait,
+            flushOnExit = flushOnExit
+          )
+          .use(pss => f(TestUniverse(p, pss)))
+        _ <- g(p)
+      } yield ()
+    )
+  }
+
+}
+
+object PersistedSnapshotStoreSuite {
+  private def aggregate(s: String, v: Long): AggregateState.Valid[String] =
+    AggregateState.Valid(s, v)
+  private val a = aggregate("a", 1)
+  private val b = aggregate("b", 2)
+}
