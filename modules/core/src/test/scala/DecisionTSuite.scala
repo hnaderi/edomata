@@ -4,14 +4,16 @@ import cats.Applicative
 import cats.Eval
 import cats.data.NonEmptyChain
 import cats.implicits.*
+import cats.kernel.laws.discipline.EqTests
+import cats.laws.discipline.MonadTests
 import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
-import DecisionTTest.*
+import DecisionTSuite.*
 
-class DecisionTTest extends ScalaCheckSuite {
+class DecisionTSuite extends DisciplineSuite {
   property("Accepted accumulates") {
     forAll(accepted, accepted) { case ((a, at), (b, bt)) =>
       val c = at.flatMap(_ => bt).run.value
@@ -33,11 +35,21 @@ class DecisionTTest extends ScalaCheckSuite {
       assertEquals(c, a)
     }
   }
+
+  checkAll("laws", MonadTests[DTT].monad[Int, Int, String])
+
+  checkAll("laws", EqTests[DTT[Long]].eqv)
+
+  private given [T: Arbitrary]: Arbitrary[DTT[T]] = Arbitrary(
+    Arbitrary.arbitrary[T].flatMap(t => anySut2.map(_.as(t)))
+  )
 }
 
-object DecisionTTest {
+object DecisionTSuite {
 
   type SUTT = DecisionT[Eval, Rejection, Event, Long]
+
+  type DTT[T] = DecisionT[Eval, Rejection, Event, T]
 
   private def lift[T <: SUT](t: Gen[T]): Gen[(T, SUTT)] =
     t.map(d => (d, DecisionT.lift(d)(using Applicative[Eval])))
@@ -54,4 +66,6 @@ object DecisionTTest {
   val anySut = Gen.oneOf(accepted, rejected, indecisive)
   val notRejected = Gen.oneOf(accepted, indecisive)
 
+  val anySut2: Gen[DTT[Long]] =
+    Gen.oneOf(accepted, rejected, indecisive).map(_._1).map(DecisionT.lift(_))
 }

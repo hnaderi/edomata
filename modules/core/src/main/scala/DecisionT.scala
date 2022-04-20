@@ -4,9 +4,11 @@ import cats.Applicative
 import cats.Functor
 import cats.Monad
 import cats.MonadError
+import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.data.ValidatedNec
 import cats.implicits._
+import cats.kernel.Eq
 import edomata.core.Decision.Accepted
 import edomata.core.Decision.InDecisive
 import edomata.core.Decision.Rejected
@@ -104,12 +106,23 @@ sealed transparent trait DecisionTCatsInstances {
         a: A
     )(f: A => DecisionT[F, R, E, Either[A, B]]): DecisionT[F, R, E, B] =
       DecisionT {
-        F.tailRecM(a) { a =>
+        F.tailRecM((a, Chain.empty[E])) { (a, evs) =>
           f(a).run.map {
-            case e @ Accepted(events @ _, result) =>
-              result.map(b => e.copy(result = b))
-            case e @ InDecisive(result) => result.map(b => e.copy(result = b))
-            case e @ Rejected(reasons)  => Right(Rejected(reasons))
+            case e @ Accepted(events, result) =>
+              result.fold(
+                a => Left((a, evs ++ events.toChain)),
+                b => Right(Accepted(events.prependChain(evs), b))
+              )
+            case e @ InDecisive(result) =>
+              result.fold(
+                a => Left((a, evs)),
+                b =>
+                  NonEmptyChain
+                    .fromChain(evs)
+                    .fold(InDecisive(b))(Accepted(_, b))
+                    .asRight
+              )
+            case e @ Rejected(reasons) => Right(Rejected(reasons))
           }
         }
       }
@@ -129,4 +142,7 @@ sealed transparent trait DecisionTCatsInstances {
       }
     }
 
+  given [F[_], R, E, A](using
+      Eq[F[Decision[R, E, A]]]
+  ): Eq[DecisionT[F, R, E, A]] = Eq.by(_.run)
 }
