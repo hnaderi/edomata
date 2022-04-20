@@ -58,20 +58,23 @@ object SkunkBackend {
   ) {
 
     def persistedSnapshot(
-        storage: SnapshotPersistence[F, S],
         maxInMem: Int = 1000,
         maxBuffer: Int = 100,
         maxWait: FiniteDuration = 1.minute
-    ): DomainBuilder[F, C, S, E, R, N] = copy(snapshot =
-      SnapshotStore
-        .persisted(
-          storage,
-          size = maxInMem,
-          maxBuffer = maxBuffer,
-          maxWait
-        )
-        .widen
-    )
+    )(using codec: BackendCodec[S]): DomainBuilder[F, C, S, E, R, N] =
+      copy(snapshot =
+        Resource
+          .eval(SkunkSnapshotPersistence(pool, namespace))
+          .flatMap(store =>
+            SnapshotStore
+              .persisted(
+                store,
+                size = maxInMem,
+                maxBuffer = maxBuffer,
+                maxWait
+              )
+          )
+      )
 
     def disableCache: DomainBuilder[F, C, S, E, R, N] = copy(cached = false)
 

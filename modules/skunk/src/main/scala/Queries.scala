@@ -130,7 +130,7 @@ insert into $table (payload, created, correlation, causation) values ${insertCod
 """.command
   }
 
-  final class Snapshot[S, E, R](
+  final class Snapshot[S](
       namespace: PGNamespace,
       codec: BackendCodec[S]
   ) {
@@ -149,15 +149,18 @@ CREATE TABLE IF NOT EXISTS $table (
     private def aggregateStateCodec: Codec[AggregateState.Valid[S]] =
       (state *: int8).pimap
 
-    def put: Command[(String, AggregateState.Valid[S])] =
-      sql"""insert into $table (id, "version", state) values ($text, $aggregateStateCodec)
-            on conflict (id) do update
-                                set version = excluded.version,
-                                    state   = excluded.state
+    private val insertCodec = (text *: aggregateStateCodec).values
+
+    def put(l: List[(String, AggregateState.Valid[S])]): Command[l.type] =
+      sql"""
+insert into $table (id, state, "version") values ${insertCodec.list(l)}
+on conflict (id) do update
+set version = excluded.version,
+    state   = excluded.state
          """.command
 
     def get: Query[String, AggregateState.Valid[S]] =
-      sql"""select version, state from $table where id = $text""".query(
+      sql"""select state , version from $table where id = $text""".query(
         aggregateStateCodec
       )
   }

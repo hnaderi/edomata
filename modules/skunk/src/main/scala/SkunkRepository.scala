@@ -91,24 +91,4 @@ private final class SkunkRepository[F[_], S, E, R, N](
         .assertInserted(ns.size)
     } yield ()
   }
-
-  extension (self: F[Completion]) {
-    def assertInserted(size: Int): F[Unit] = self.flatMap {
-      case Completion.Insert(i) =>
-        if i == size then F.unit
-        else
-          F.raiseError(
-            BackendError.PersistenceError(
-              s"expected to insert exactly $size, but inserted $i"
-            )
-          )
-      case other =>
-        F.raiseError(
-          BackendError.PersistenceError(
-            s"expected to receive insert response, but received: $other"
-          )
-        )
-    }
-    def assertInserted: F[Unit] = assertInserted(1)
-  }
 }
