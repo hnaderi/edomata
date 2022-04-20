@@ -9,10 +9,8 @@ inThisBuild(
   List(
     scalaVersion := scala3,
     fork := true,
-    git.useGitDescribe := true,
     versionScheme := Some("early-semver"),
     sonatypeCredentialHost := "s01.oss.sonatype.org",
-
     organization := "io.github.hnaderi",
     organizationName := "hnaderi",
     licenses := Seq(
@@ -119,7 +117,7 @@ lazy val skunkBackend = module("skunk")
 
 lazy val doobieBackend = module("doobie")
   .dependsOn(sqlBackend)
-  .settings(libraryDependencies ++= doobiePG)
+  .settings(libraryDependencies ++= doobiePG, publish / skip := true)
 
 lazy val skunkCirceCodecs = module("skunk-circe")
   .dependsOn(skunkBackend)
@@ -129,12 +127,14 @@ lazy val skunkUpickeCodec = module("skunk-upickle")
   .dependsOn(skunkBackend)
   .settings(libraryDependencies ++= upickle)
 
-lazy val examples = project.dependsOn(
-  skunkBackend,
-  doobieBackend,
-  skunkCirceCodecs,
-  skunkUpickeCodec
-)
+lazy val examples = project
+  .dependsOn(
+    skunkBackend,
+    doobieBackend,
+    skunkCirceCodecs,
+    skunkUpickeCodec
+  )
+  .settings(publish / skip := true)
 
 def addAlias(name: String)(tasks: String*) =
   addCommandAlias(name, tasks.mkString(" ;"))
