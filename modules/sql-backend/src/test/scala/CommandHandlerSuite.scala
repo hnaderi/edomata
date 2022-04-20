@@ -31,7 +31,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
   }
 
   test("Appends accepted results") {
-    val app: APP = SUT.dsl.perform(Decision.accept(1, 2, 3)).publish(4, 5, 6)
+    val app: APP = SUT.dsl.decide(Decision.accept(1, 2, 3)).publish(4, 5, 6)
     val cmd = CommandMessage("", Instant.MAX, "", 1)
     val ctx = cmd.buildContext("")
     val version = 100
@@ -56,7 +56,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
   }
 
   test("Notifies indecisive results") {
-    val app: APP = SUT.dsl.perform(Decision.unit).publish(4, 5, 6)
+    val app: APP = SUT.dsl.decide(Decision.unit).publish(4, 5, 6)
     val cmd = CommandMessage("", Instant.MAX, "", 1)
     val ctx = cmd.buildContext("")
     val version = 100
@@ -118,7 +118,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
   }
 
   test("Must reject results that cause state to become conflicted") {
-    val app: APP = SUT.dsl.perform(Decision.accept(-1, -2))
+    val app: APP = SUT.dsl.decide(Decision.accept(-1, -2))
     val cmd = CommandMessage("", Instant.MAX, "", 1)
     val version = 100
 

@@ -58,10 +58,10 @@ final class DomainDSL[C, S, E, R, N](
   ): App[F, T] =
     Edomaton.reject(r, rs: _*)
 
-  inline def perform[F[_]: Applicative, T](
+  inline def decide[F[_]: Applicative, T](
       d: Decision[R, E, T]
   ): App[F, T] =
-    Edomaton.perform(d)
+    Edomaton.decide(d)
 
   def state[F[_]: Monad]: App[F, S] =
     Edomaton.read.map(_.state)

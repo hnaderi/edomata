@@ -12,17 +12,41 @@ import cats.kernel.Eq
 
 import Edomaton.*
 
+/** Represents programs that are event driven state machines (a Mealy machine)
+  *
+  * these programs can use input to decide on a state transition, and optionally
+  * emit a sequence of notifications for communication.
+  *
+  * @tparam F
+  *   effect type
+  * @tparam Env
+  *   input type
+  * @tparam R
+  *   rejection type
+  * @tparam E
+  *   internal event type
+  * @tparam N
+  *   notification type, a.k.a external event, integration event
+  * @tparam A
+  *   output type
+  */
 final case class Edomaton[F[_], -Env, R, E, N, A](
     run: Env => F[Response[R, E, N, A]]
 ) {
+
+  /** maps output result */
   def map[B](f: A => B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     transform(_.map(f))
 
+  /** creates a new edomaton that translates some input to what this edomaton
+    * can understand
+    */
   def contramap[Env2](f: Env2 => Env): Edomaton[F, Env2, R, E, N, A] =
     Edomaton(
       run.compose(f)
     )
 
+  /** binds another edomaton to this one. */
   def flatMap[Env2 <: Env, B](
       f: A => Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] =
@@ -42,39 +66,57 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
       }
     )
 
+  /** alias for flatMap */
   inline def >>=[Env2 <: Env, B](
       f: A => Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(f)
 
+  /** alias for andThen, flatMap(_ => f) */
   inline def >>[Env2 <: Env, B](
       f: => Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = andThen(f)
 
+  /** sequences another edomaton without considering output for this one
+    *
+    * alias for flatMap(_=> f)
+    */
   inline def andThen[Env2 <: Env, B](
       f: => Edomaton[F, Env2, R, E, N, B]
   )(using Monad[F]): Edomaton[F, Env2, R, E, N, B] = flatMap(_ => f)
 
+  /** transforms underlying response
+    */
   def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
       Functor[F]
   ): Edomaton[F, Env, R, E, N, B] =
     Edomaton(run.andThen(_.map(f)))
 
+  /** translates this program in another language mapped by a natural
+    * transformation
+    */
   def mapK[G[_]](fk: FunctionK[F, G]): Edomaton[G, Env, R, E, N, A] =
     Edomaton(run.andThen(fk.apply))
 
+  /** evaluates an effect using output of this edomaton and uses result of
+    * evaluation as new output
+    */
   def evalMap[B](f: A => F[B])(using
       Monad[F]
   ): Edomaton[F, Env, R, E, N, B] =
     flatMap(a => liftF(f(a).map(Response.pure)))
 
+  /** like evalMap but ignores evaluation result
+    */
   def evalTap[B](f: A => F[B])(using
       Monad[F]
   ): Edomaton[F, Env, R, E, N, A] =
     flatMap(a => liftF(f(a).map(Response.pure)).as(a))
 
+  /** evaluates an effect and uses its result as new output */
   def eval[B](f: => F[B])(using Monad[F]): Edomaton[F, Env, R, E, N, A] =
     evalTap(_ => f)
 
+  /** alias for map(_=> b) */
   inline def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
 
@@ -86,21 +128,25 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   def publish(ns: N*)(using Functor[F]): Edomaton[F, Env, R, E, N, A] =
     transform(_.publish(ns: _*))
 
+  /** If this edomaton is rejected, uses given function to decide what to
+    * publish
+    */
   def publishOnRejectionWith(
       f: NonEmptyChain[R] => Seq[N]
   )(using Functor[F]): Edomaton[F, Env, R, E, N, A] = transform(
     _.publishOnRejectionWith(f)
   )
 
+  /** publishes these notifications if this edomaton is rejected */
   def publishOnRejection(ns: N*)(using
       Functor[F]
   ): Edomaton[F, Env, R, E, N, A] =
     transform(_.publishOnRejection(ns: _*))
 }
 
-object Edomaton extends ServiceMonadInstances, ServiceMonadConstructors
+object Edomaton extends EdomatonInstances, EdomatonConstructors
 
-sealed transparent trait ServiceMonadInstances {
+sealed transparent trait EdomatonInstances {
   given [F[_]: Monad, Env, R, E, N]
       : Monad[[t] =>> Edomaton[F, Env, R, E, N, t]] =
     new Monad {
@@ -152,46 +198,57 @@ sealed transparent trait ServiceMonadInstances {
 
 }
 
-sealed transparent trait ServiceMonadConstructors {
+sealed transparent trait EdomatonConstructors {
+
+  /** constructs an edomaton that outputs a pure value */
   def pure[F[_]: Monad, Env, R, E, N, T](
       t: T
   ): Edomaton[F, Env, R, E, N, T] =
     Edomaton(_ => Response.pure(t).pure)
 
+  /** an edomaton with trivial output */
   def unit[F[_]: Monad, Env, R, E, N, T]: Edomaton[F, Env, R, E, N, Unit] =
     pure(())
 
+  /** constructs an edomaton from an effect that results in a response */
   def liftF[F[_], Env, R, E, N, T](
       f: F[Response[R, E, N, T]]
   ): Edomaton[F, Env, R, E, N, T] = Edomaton(_ => f)
 
+  /** constructs an edomaton with given response */
   def lift[F[_]: Applicative, Env, R, E, N, T](
       f: Response[R, E, N, T]
   ): Edomaton[F, Env, R, E, N, T] = liftF(f.pure)
 
+  /** constructs an edomaton that evaluates an effect */
   def eval[F[_]: Applicative, Env, R, E, N, T](
       f: F[T]
   ): Edomaton[F, Env, R, E, N, T] = liftF(f.map(Response.pure))
 
+  /** constructs an edomaton that runs an effect using its input */
   def run[F[_]: Applicative, Env, R, E, N, T](
       f: Env => F[T]
   ): Edomaton[F, Env, R, E, N, T] = Edomaton(
     f.andThen(_.map(Response.pure))
   )
 
+  /** constructs an edomaton that outputs what's read */
   def read[F[_]: Applicative, Env, R, E, N, T]: Edomaton[F, Env, R, E, N, Env] =
     run(_.pure[F])
 
+  /** constructs an edomaton that publishes given notifications */
   def publish[F[_]: Applicative, Env, R, E, N](
       ns: N*
   ): Edomaton[F, Env, R, E, N, Unit] = lift(Response.publish(ns: _*))
 
+  /** constructs an edomaton that rejects with given rejections */
   def reject[F[_]: Applicative, Env, R, E, N, T](
       r: R,
       rs: R*
   ): Edomaton[F, Env, R, E, N, T] = lift(Response.reject(r, rs: _*))
 
-  def perform[F[_]: Applicative, Env, R, E, N, T](
+  /** constructs an edomaton that decides the given decision */
+  def decide[F[_]: Applicative, Env, R, E, N, T](
       d: Decision[R, E, T]
   ): Edomaton[F, Env, R, E, N, T] = lift(Response.lift(d))
 

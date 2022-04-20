@@ -62,7 +62,7 @@ object Application extends IOApp.Simple {
     case "receive" =>
       for {
         s <- dsl.state
-        ns <- dsl.perform(s.receive(2))
+        ns <- dsl.decide(s.receive(2))
         _ <- dsl.eval(IO.println(ns))
         _ <- dsl.publish(Updates.Updated())
       } yield ()
