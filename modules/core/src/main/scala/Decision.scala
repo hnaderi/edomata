@@ -82,10 +82,7 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
 
 }
 
-object Decision
-    extends DecisionConstructors,
-      DecisionCatsInstances0,
-      DecisionOps {
+object Decision extends DecisionConstructors, DecisionCatsInstances0 {
   final case class InDecisive[T](result: T)
       extends Decision[Nothing, Nothing, T]
   final case class Accepted[E, T](events: NonEmptyChain[E], result: T)
@@ -118,15 +115,6 @@ sealed trait DecisionConstructors {
       case Validated.Invalid(e) => Rejected(e)
       case Validated.Valid(a)   => InDecisive(a)
     }
-}
-
-trait DecisionOps {
-  extension [R, T](self: ValidatedNec[R, T]) {
-    def toDecision[E]: Decision[R, E, T] = self match {
-      case Validated.Valid(t)   => Decision.InDecisive(t)
-      case Validated.Invalid(r) => Decision.Rejected(r)
-    }
-  }
 }
 
 type D[R, E] = [T] =>> Decision[R, E, T]
@@ -201,5 +189,14 @@ sealed trait DecisionCatsInstances1 {
         f: (A, Eval[B]) => Eval[B]
     ): Eval[B] =
       fa.visit(_ => lb, a => f(a, lb))
+  }
+}
+
+private[edomata] transparent trait ValidatedSyntax {
+  extension [R, T](self: ValidatedNec[R, T]) {
+    def toDecision[E]: Decision[R, E, T] = self match {
+      case Validated.Valid(t)   => Decision.InDecisive(t)
+      case Validated.Invalid(r) => Decision.Rejected(r)
+    }
   }
 }

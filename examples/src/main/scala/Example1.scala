@@ -22,6 +22,7 @@ import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.*
 import edomata.core.*
+import edomata.syntax.all.*
 import natchez.Trace.Implicits.noop
 import skunk.Session
 import upickle.default.*

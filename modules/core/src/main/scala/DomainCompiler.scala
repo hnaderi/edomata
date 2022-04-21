@@ -28,13 +28,13 @@ import scala.util.NotGiven
 
 type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]
 
-extension [F[_]: Monad, C, S, E, R, N](
-    app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
-)(using ModelTC[S, E, R]) {
-
-  def execute(ctx: RequestContext[C, S]): F[ProgramResult[S, E, R, N]] =
+object DomainCompiler {
+  def execute[F[_]: Monad, C, S, E, R, N](
+      app: Edomaton[F, RequestContext[C, S], R, E, N, Unit],
+      ctx: RequestContext[C, S]
+  )(using m: ModelTC[S, E, R]): F[ProgramResult[S, E, R, N]] =
     app.run(ctx).map { case Response(decision, notifs) =>
-      ctx.state.perform(decision) match {
+      m.perform(ctx.state, decision) match {
         case Decision.Accepted(evs, newState) =>
           ProgramResult.Accepted(newState, evs, notifs)
         case Decision.InDecisive(_) =>
@@ -45,14 +45,6 @@ extension [F[_]: Monad, C, S, E, R, N](
           ProgramResult.Conflicted(errs)
       }
     }
-}
-
-extension [F[_]: Monad, C, S, E, R, N, T](
-    app: Edomaton[F, RequestContext[C, S], R, E, N, T]
-)(using NotGiven[T =:= Unit], ModelTC[S, E, R]) {
-
-  def execute(ctx: RequestContext[C, S]): F[ProgramResult[S, E, R, N]] =
-    app.void.execute(ctx)
 }
 
 enum ProgramResult[S, E, R, N] {
@@ -71,4 +63,24 @@ enum ProgramResult[S, E, R, N] {
   case Conflicted(
       reasons: NonEmptyChain[R]
   )
+}
+
+private[edomata] transparent trait EdomatonSyntax {
+  extension [F[_]: Monad, C, S, E, R, N, T](
+      app: Edomaton[F, RequestContext[C, S], R, E, N, T]
+  )(using NotGiven[T =:= Unit], ModelTC[S, E, R]) {
+
+    inline def execute(
+        ctx: RequestContext[C, S]
+    ): F[ProgramResult[S, E, R, N]] =
+      DomainCompiler.execute(app.void, ctx)
+  }
+
+  extension [F[_]: Monad, C, S, E, R, N](
+      app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
+  )(using m: ModelTC[S, E, R]) {
+    inline def execute(
+        ctx: RequestContext[C, S]
+    ): F[ProgramResult[S, E, R, N]] = DomainCompiler.execute(app, ctx)
+  }
 }

@@ -21,6 +21,7 @@ import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.implicits.*
 import edomata.core.*
+import edomata.syntax.all.*
 import munit.CatsEffectSuite
 
 import java.time.Instant

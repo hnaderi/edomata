@@ -38,7 +38,7 @@ object CommandHandler {
       repository.load(cmd).flatMap {
         case AggregateState.Valid(s, rev) =>
           val ctx = cmd.buildContext(s)
-          val res = app.execute(ctx)
+          val res = DomainCompiler.execute[F, C, S, E, R, N](app, ctx)
 
           res.flatMap {
             case ProgramResult.Accepted(ns, evs, notifs) =>

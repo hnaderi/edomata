@@ -20,11 +20,6 @@ import cats.Applicative
 import cats.Monad
 import cats.implicits.*
 
-extension [S, E, R](self: DomainModel[S, E, R]) {
-  def dsl[C, N]: DomainDSL[C, S, E, R, N] = DomainDSL()
-  def domain[C, N]: Domain[C, S, E, R, N] = Domain()
-}
-
 final class Domain[C, S, E, R, N](
     private val dummy: Boolean = true
 ) extends AnyVal {
@@ -99,4 +94,11 @@ final class DomainDSL[C, S, E, R, N](
   ): App[F, T] =
     command.flatMap(f)
 
+}
+
+private[edomata] transparent trait DomainSyntax {
+  extension [S, E, R](self: DomainModel[S, E, R]) {
+    def dsl[C, N]: DomainDSL[C, S, E, R, N] = DomainDSL()
+    def domain[C, N]: Domain[C, S, E, R, N] = Domain()
+  }
 }
