@@ -10,3 +10,5 @@ libraryDependencies += "io.github.hnaderi" %% "edomata-core" % "@VERSION@"
 import edomata.core.*
 val d1 = Decision.pure(1)
 ```
+
+TBD

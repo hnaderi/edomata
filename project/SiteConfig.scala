@@ -17,17 +17,18 @@ object SiteConfigs {
         )
       ),
       title = Some("Edomata"),
-      subtitle = Some("Event-driven automatons for Scala"),
+      subtitle = Some("Event-driven automatons for Scala and Scala.js"),
       latestReleases = Seq(
-        ReleaseInfo("Latest develop Release", version)
+        ReleaseInfo("Latest develop Release", version),
+        ReleaseInfo("Stable Release", "N/A yet!")
       ),
       license = Some("Apache 2.0"),
       documentationLinks = Seq(
         TextLink.internal(Root / "introduction.md", "Inroduction"),
         TextLink
           .internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
-        TextLink.internal(Root / "principles" / "index.md", "Principles")
-        // TextLink.internal(Root / "api" / "index.html", "API docs")
+        TextLink.internal(Root / "principles" / "index.md", "Principles"),
+        TextLink.internal(Root / "api" / "index.html", "API docs")
       ),
       teasers = Seq(
         Teaser(
@@ -40,7 +41,7 @@ object SiteConfigs {
         ),
         Teaser(
           "Lightweight",
-          "Provides simple tools that encourage good design for complex event-driven systems"
+          "Provides simple, composable tools that encourage good design for complex event-driven systems"
         ),
         Teaser(
           "DDD/Eventsourcing/CQRS",

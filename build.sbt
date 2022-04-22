@@ -181,9 +181,7 @@ def addAlias(name: String)(tasks: String*) =
   addCommandAlias(name, tasks.mkString(" ;"))
 
 addAlias("site")(
-  "docs/clean",
-  "docs/mdoc",
-  "laikaSite"
+  "docs/tlSite"
 )
 addAlias("commit")(
   "clean",
