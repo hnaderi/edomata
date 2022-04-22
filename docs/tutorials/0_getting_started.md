@@ -58,10 +58,6 @@ val d9 = List.range(1, 3).traverse(Decision.accept(_))
 val d10 = Decision(List.range(1, 3)).sequence[List, Int]
 ```
 
-## DomainModel
-
-TBD
-
 ## Edomaton
 
 TBD
@@ -70,6 +66,6 @@ TBD
 
 You can go to next tutorial or get yourself more familiar with the following.
 
-## More
+## Other data types
 
 TBD
