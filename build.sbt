@@ -34,7 +34,6 @@ def module(mname: String): CrossProject => CrossProject =
   _.in(file(s"modules/$mname"))
     .settings(
       name := s"module-$mname",
-      scalacOptions ++= Seq("-Xfatal-warnings"),
       libraryDependencies ++= Seq(
         "org.scalameta" %%% "munit" % Versions.MUnit % Test,
         "org.scalameta" %%% "munit-scalacheck" % Versions.MUnit % Test,
