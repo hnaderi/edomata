@@ -61,8 +61,8 @@
         <li class="level2"><a href="../about/features.html">Features</a></li>
         <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
         <li class="level1 nav-header">tutorials</li>
-        <li class="level2"><a href="../tutorials/1_hello-world.html">Hello world</a></li>
         <li class="level2"><a href="../tutorials/0_getting_started.html">Getting started</a></li>
+        <li class="level2"><a href="../tutorials/1_hello-world.html">Hello world</a></li>
         <li class="level1 nav-header">principles</li>
         <li class="level2"><a href="definitions.html">Definitions</a></li>
         <li class="level2 active"><a href="#">Principles</a></li>
@@ -105,18 +105,18 @@
         
         <h2 id="event-driven-system" class="section"><a class="anchor-link left" href="#event-driven-system"><i class="icofont-laika">&#xef71;</i></a>Event driven system</h2>
         <p>A specific form of message passing that always uses events as messages.
-        Events are first class citizens of the system, and in a pure eda system, events are reasons; meaning that nothing happens unless there is exactly one event for it.</p>
+        Events are first class citizens of the system, and in a pure eda system, events are reasons and facts; meaning that nothing happens unless there is exactly one event for it.</p>
         
         <h2 id="event-sourcing" class="section"><a class="anchor-link left" href="#event-sourcing"><i class="icofont-laika">&#xef71;</i></a>Event sourcing</h2>
         <p>It is a persistence strategy that takes EDA to its extreme, where any change to any data is due to events.
-        it&#39;s litmus test would be something like this:<br>
+        For any component, where all changes to its data satisfy the following criteria, we call it event sourced.<br>
         <img src="https://plantuml.com/plantuml/svg/NOmn3i9040FxUuKb6lA5K51GyOmbvoId97lHxXB4xpb1HsLBCxOlHM7LcRorNKmsF6HO9gjFpRUwLaEOg3T4ZPGyn5hq_lRWXc4MdUWeuMWeU4bbnFarlwyTOgRYVCSi1x-6KRmgn24A7ksmIpZjid8oKlk3LiR2t8pqu_3wj87vahWwsraWSwTc_owBBhtM-7C_" alt=""></p>
         <p>Note that this is not an architecture as opposed to EDA which is, ES is considered a local persistence strategy, and it must be totally transparent and isolated from external systems.</p>
         
         <h2 id="cqrs" class="section"><a class="anchor-link left" href="#cqrs"><i class="icofont-laika">&#xef71;</i></a>CQRS</h2>
         <p>it is the idea of applying CQS principle to whole sub-systems, meaning that responsibility for handling commands are totally separated from handling queries. it is a useful pattern for following scenarios:
         - when there is a need to have more than one representation of data, and different databases for each of them
-        - when business logic is totally irrelevant to views that users need or business logic is to complex to be mixed with other irrelevant responsibilities.</p>
+        - when business logic is totally irrelevant to views that users need or business logic is too complex to be mixed with other irrelevant responsibilities.</p>
         <p>Note that this is also a local pattern, not an architecture, and almost always is not a replacement for crud systems.<br>
         Also CQRS doesn&#39;t have to mean doing event sourcing, introducing commands, event, read sides, sagas, async processing and so forth.</p>
         
@@ -133,7 +133,7 @@
         <h1 id="misconceptions-and-anti-patterns" class="section"><a class="anchor-link left" href="#misconceptions-and-anti-patterns"><i class="icofont-laika">&#xef71;</i></a>Misconceptions and anti-patterns</h1>
         
         <h2 id="communicating-using-journal" class="section"><a class="anchor-link left" href="#communicating-using-journal"><i class="icofont-laika">&#xef71;</i></a>Communicating using journal</h2>
-        <p>using events to communicate; this by far most spread misconception! that is message passing, not event sourcing.</p>
+        <p>using events to communicate; this is by far most spread misconception! that is message passing, not event sourcing.</p>
         
         <h2 id="cqrs-architecture" class="section"><a class="anchor-link left" href="#cqrs-architecture"><i class="icofont-laika">&#xef71;</i></a>CQRS architecture</h2>
         <p>as described earlier, CQRS is not a system architecture, it is a local application architecture or pattern; having a system with CQRS architecture not only does not convey any meaning, it also shows a form a cargo cult programming and design.</p>

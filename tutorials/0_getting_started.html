@@ -61,8 +61,8 @@
         <li class="level2"><a href="../about/features.html">Features</a></li>
         <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
         <li class="level1 nav-header">tutorials</li>
-        <li class="level2"><a href="1_hello-world.html">Hello world</a></li>
         <li class="level2 active"><a href="#">Getting started</a></li>
+        <li class="level2"><a href="1_hello-world.html">Hello world</a></li>
         <li class="level1 nav-header">principles</li>
         <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
         <li class="level2"><a href="../principles/index.html">Principles</a></li>
@@ -77,6 +77,13 @@
         <p class="header"><a href="#">Getting started</a></p>
         
         <ul class="nav-list">
+          <li class="level1"><a href="#install">Install</a></li>
+          <li class="level1"><a href="#imports">Imports</a></li>
+          <li class="level1"><a href="#decision">Decision</a></li>
+          <li class="level1"><a href="#domainmodel">DomainModel</a></li>
+          <li class="level1"><a href="#edomaton">Edomaton</a></li>
+          <li class="level1"><a href="#what-s-next">What&#39;s next?</a></li>
+          <li class="level1"><a href="#more">More</a></li>
         </ul>
         
         <p class="footer"></p>
@@ -85,13 +92,97 @@
       <main class="content">
 
         <h1 id="getting-started" class="title">Getting started</h1>
-        <p>To install </p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-4b338eb-SNAPSHOT&quot;</span></code></pre>
+        
+        <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-ce14ebf-SNAPSHOT&quot;</span></code></pre>
         <p>or for scala.js</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-4b338eb-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-ce14ebf-SNAPSHOT&quot;</span></code></pre>
+        
+        <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
-</span><span class="keyword">val</span><span> </span><span class="identifier">d1</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="number-literal">1</span><span>)
-</span><span class="comment">// d1: Decision[Nothing, Nothing, Int] = InDecisive(1)</span></code></pre>
+</span><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.* </span><span class="comment">// for convenient extension methods</span></code></pre>
+        
+        <h2 id="decision" class="section"><a class="anchor-link left" href="#decision"><i class="icofont-laika">&#xef71;</i></a>Decision</h2>
+        <p>It all start with decisions!<br>
+        Decision models programs that decide in a event driven context, these programs are pure and can:<br>
+        - accept events<br>
+        - reject with errors<br>
+        - stay indecisive!<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d1</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="number-literal">1</span><span>)
+</span><span class="comment">// d1: Decision[Nothing, Nothing, Int] = InDecisive(1)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d2</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;Missile Launched!&quot;</span><span>)
+</span><span class="comment">// d2: Decision[Nothing, String, Unit] = Accepted(
+//   Singleton(&quot;Missile Launched!&quot;),
+//   ()
+// )
+</span><span class="keyword">val</span><span> </span><span class="identifier">d3</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>)
+</span><span class="comment">// d3: Decision[String, Nothing, Nothing] = Rejected(
+//   Singleton(&quot;No remained missiles to launch!&quot;)
+// )</span></code></pre>
+        <p>decisions are composable<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d4</span><span> = </span><span class="identifier">d1</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> * </span><span class="number-literal">2</span><span>)
+</span><span class="comment">// d4: Decision[Nothing, Nothing, Int] = InDecisive(2)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d5</span><span> = </span><span class="identifier">d2</span><span> &gt;&gt; </span><span class="identifier">d1</span><span>
+</span><span class="comment">// d5: Decision[Nothing, String, Int] = Accepted(
+//   Singleton(&quot;Missile Launched!&quot;),
+//   1
+// )
+</span><span class="keyword">val</span><span> </span><span class="identifier">d6</span><span> = </span><span class="identifier">d5</span><span> &gt;&gt; </span><span class="identifier">d3</span><span>
+</span><span class="comment">// d6: Decision[String, String, Nothing] = Rejected(
+//   Singleton(&quot;No remained missiles to launch!&quot;)
+// )</span></code></pre>
+        <p>you can also use for comprehensions:<br></p>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d7</span><span> = </span><span class="keyword">for</span><span> {
+  </span><span class="identifier">i</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="number-literal">1</span><span>)
+  </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;A&quot;</span><span>) </span><span class="comment">// accepting one event
+</span><span>  </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;B&quot;</span><span>, </span><span class="string-literal">&quot;C&quot;</span><span>) </span><span class="comment">// accepting several events
+</span><span>  </span><span class="identifier">j</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">acceptReturn</span><span>(</span><span class="identifier">i</span><span> * </span><span class="number-literal">2</span><span>)(</span><span class="string-literal">&quot;D&quot;</span><span>, </span><span class="string-literal">&quot;E&quot;</span><span>) </span><span class="comment">// accepting several events and returning a value
+</span><span>} </span><span class="keyword">yield</span><span> </span><span class="identifier">i</span><span> + </span><span class="identifier">j</span><span>
+</span><span class="comment">// d7: Decision[Nothing, String, Int] = Accepted(
+//   Append(
+//     Singleton(&quot;A&quot;),
+//     Append(
+//       Append(Singleton(&quot;B&quot;), Singleton(&quot;C&quot;)),
+//       Append(Singleton(&quot;D&quot;), Singleton(&quot;E&quot;))
+//     )
+//   ),
+//   3
+// )</span></code></pre>
+        <p>or in presence of cats syntax:<br></p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*     </span><span class="comment">// for cats related stuff     // for cats related stuff
+</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">d8</span><span> = (</span><span class="identifier">d1</span><span>, </span><span class="identifier">d7</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>)
+</span><span class="comment">// d8: Decision[Nothing, String, Int] = Accepted(
+//   Append(
+//     Singleton(&quot;A&quot;),
+//     Append(
+//       Append(Singleton(&quot;B&quot;), Singleton(&quot;C&quot;)),
+//       Append(Singleton(&quot;D&quot;), Singleton(&quot;E&quot;))
+//     )
+//   ),
+//   4
+// )
+</span><span class="keyword">val</span><span> </span><span class="identifier">d9</span><span> = </span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">3</span><span>).</span><span class="identifier">traverse</span><span>(</span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="identifier">_</span><span>))
+</span><span class="comment">// d9: Decision[Nothing, Int, List[Unit]] = Accepted(
+//   Append(Singleton(1), Singleton(2)),
+//   List((), ())
+// )
+</span><span class="keyword">val</span><span> </span><span class="identifier">d10</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">3</span><span>)).</span><span class="identifier">sequence</span><span>[</span><span class="type-name">List</span><span>, </span><span class="type-name">Int</span><span>]
+</span><span class="comment">// d10: List[Decision[Nothing, Nothing, Int]] = List(
+//   InDecisive(1),
+//   InDecisive(2)
+// )</span></code></pre>
+        
+        <h2 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h2>
+        <p>TBD</p>
+        
+        <h2 id="edomaton" class="section"><a class="anchor-link left" href="#edomaton"><i class="icofont-laika">&#xef71;</i></a>Edomaton</h2>
+        <p>TBD</p>
+        
+        <h2 id="what-s-next" class="section"><a class="anchor-link left" href="#what-s-next"><i class="icofont-laika">&#xef71;</i></a>What&#39;s next?</h2>
+        <p>You can go to next tutorial or get yourself more familiar with the following.</p>
+        
+        <h2 id="more" class="section"><a class="anchor-link left" href="#more"><i class="icofont-laika">&#xef71;</i></a>More</h2>
         <p>TBD</p>
 
       </main>

@@ -61,8 +61,8 @@
         <li class="level2"><a href="../about/features.html">Features</a></li>
         <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
         <li class="level1 nav-header">tutorials</li>
-        <li class="level2"><a href="../tutorials/1_hello-world.html">Hello world</a></li>
         <li class="level2"><a href="../tutorials/0_getting_started.html">Getting started</a></li>
+        <li class="level2"><a href="../tutorials/1_hello-world.html">Hello world</a></li>
         <li class="level1 nav-header">principles</li>
         <li class="level2 active"><a href="#">Definitions</a></li>
         <li class="level2"><a href="index.html">Principles</a></li>
@@ -112,7 +112,7 @@
         <h3 id="command-message" class="section"><a class="anchor-link left" href="#command-message"><i class="icofont-laika">&#xef71;</i></a>Command message</h3>
         <p>A message that its intent is to convey a request to change system behavior<br>
         commands are named using imperative verbs, like <code>ReceivePayment</code>, <code>ConfirmOrder</code>, <code>MarkAsDelivered</code>.<br>
-        command may be rejected by system, according to its logic, policies, state, ...</p>
+        commands may be rejected by system, according to its logic, policies, state, ...</p>
         
         <h3 id="event-message" class="section"><a class="anchor-link left" href="#event-message"><i class="icofont-laika">&#xef71;</i></a>Event message</h3>
         <p>A message that its intent is to capture a fact.<br>
@@ -136,14 +136,15 @@
         <p>History of events from beginning in chronological order.</p>
         
         <h3 id="command-handler" class="section"><a class="anchor-link left" href="#command-handler"><i class="icofont-laika">&#xef71;</i></a>Command handler</h3>
-        <p>A component that receive command message, decides what to do based on domain logic, and acts upon it.<br>
+        <p>A component that receives command message, decides what to do based on domain logic, and acts upon it.<br>
         it is basically a function in the form of <code>cmd =&gt; F[EitherNec[Rejection, Unit]]</code>.</p>
         
         <h3 id="event-handler" class="section"><a class="anchor-link left" href="#event-handler"><i class="icofont-laika">&#xef71;</i></a>Event handler</h3>
         <p>A component that receives a sub-set of events from one or more event streams, and runs side effects.<br>
         they are basically modeled as a function that transforms an event stream to a process stream.<br>
         e.g. <code>fs2.Pipe[F, Event, Nothing]</code><br>
-        event handlers can send commands, that makes them process managers.</p>
+        event handlers can send commands, that makes them process managers.<br>
+        event handlers should be deterministic as much as possible, for example if an event handler wants to send any messages, message IDs must be reproducible, not using a random UUID; this will help with managing workflows and delivery guaranties.</p>
         
         <h3 id="process-manager" class="section"><a class="anchor-link left" href="#process-manager"><i class="icofont-laika">&#xef71;</i></a>Process manager</h3>
         <p>An event handler that may or may not maintain a state, and can send messages.<br>
