@@ -26,8 +26,8 @@ object SiteConfigs {
         TextLink.internal(Root / "introduction.md", "Inroduction"),
         TextLink
           .internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
-        TextLink.internal(Root / "principles" / "index.md", "Principles"),
-        TextLink.internal(Root / "api" / "index.html", "API docs")
+        TextLink.internal(Root / "principles" / "index.md", "Principles")
+        // TextLink.internal(Root / "api" / "index.html", "API docs")
       ),
       teasers = Seq(
         Teaser(

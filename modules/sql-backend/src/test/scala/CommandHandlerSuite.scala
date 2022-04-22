@@ -39,9 +39,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
       app: APP = Edomaton.eval(flag.set(true))
       r <- repo(CommandState.Redundant)
       s = CommandHandler(r, app)
-      _ <- s
-        .apply(CommandMessage("", Instant.MAX, "", 1))
-        .assertEquals(Right(()))
+      _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.listActions.assertEquals(Nil)
       _ <- flag.get.assertEquals(false)
     } yield ()
@@ -49,7 +47,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Appends accepted results") {
     val app: APP = SUT.dsl.decide(Decision.accept(1, 2, 3)).publish(4, 5, 6)
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val ctx = cmd.buildContext("")
     val version = 100
 
@@ -74,7 +71,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Notifies indecisive results") {
     val app: APP = SUT.dsl.decide(Decision.unit).publish(4, 5, 6)
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val ctx = cmd.buildContext("")
     val version = 100
 
@@ -92,7 +88,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Notifies rejection with notification") {
     val app: APP = SUT.dsl.reject("oops!").publish(4, 5, 6)
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val ctx = cmd.buildContext("")
     val version = 100
 
@@ -110,7 +105,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Rejections with no notifications have no effect") {
     val app: APP = SUT.dsl.reject("oops!")
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val version = 100
 
     for {
@@ -123,7 +117,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Indecisives with no notifications have no effect") {
     val app: APP = SUT.dsl.unit
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val version = 100
 
     for {
@@ -136,7 +129,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Must reject results that cause state to become conflicted") {
     val app: APP = SUT.dsl.decide(Decision.accept(-1, -2))
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val version = 100
 
     for {
@@ -149,7 +141,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Must reject working on conflicted state") {
     val app: APP = SUT.dsl.unit
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
     val evMsg = EventMessage(meta, -1)
     val rejection = "don't know what to do"
@@ -167,7 +158,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
   test("Must not change raised errors") {
     val exception = new Exception("Some error!")
     val app: APP = SUT.dsl.eval(IO.raiseError(exception))
-    val cmd = CommandMessage("", Instant.MAX, "", 1)
     val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
 
     for {
@@ -207,4 +197,5 @@ object CommandHandlerSuite {
   }
 
   val noop: APP = Edomaton.unit
+  val cmd = CommandMessage("", Instant.MAX, "", 1)
 }

@@ -24,11 +24,14 @@ import skunk.data.Completion
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.time.Instant
 
 private def currentTime[F[_]: Functor](using
     clock: Clock[F]
 ): F[OffsetDateTime] =
-  clock.realTimeInstant.map(_.atOffset(ZoneOffset.UTC))
+  clock.realTime.map(d =>
+    Instant.ofEpochMilli(d.toMillis).atOffset(ZoneOffset.UTC)
+  )
 
 extension [F[_]](self: F[Completion])(using F: MonadError[F, Throwable]) {
   private[backend] def assertInserted(size: Int): F[Unit] = self.flatMap {
