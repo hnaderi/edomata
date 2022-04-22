@@ -7,11 +7,11 @@ this may be used to decouple execution stages both in time and space, so executi
 
 ## Event driven system
 A specific form of message passing that always uses events as messages.
-Events are first class citizens of the system, and in a pure eda system, events are reasons; meaning that nothing happens unless there is exactly one event for it.
+Events are first class citizens of the system, and in a pure eda system, events are reasons and facts; meaning that nothing happens unless there is exactly one event for it.
 
 ## Event sourcing
 It is a persistence strategy that takes EDA to its extreme, where any change to any data is due to events.
-it's litmus test would be something like this:  
+For any component, where all changes to its data satisfy the following criteria, we call it event sourced.  
 ```scala mdoc:plantuml
 start
 
@@ -28,7 +28,7 @@ Note that this is not an architecture as opposed to EDA which is, ES is consider
 ## CQRS
 it is the idea of applying CQS principle to whole sub-systems, meaning that responsibility for handling commands are totally separated from handling queries. it is a useful pattern for following scenarios:
 - when there is a need to have more than one representation of data, and different databases for each of them
-- when business logic is totally irrelevant to views that users need or business logic is to complex to be mixed with other irrelevant responsibilities.
+- when business logic is totally irrelevant to views that users need or business logic is too complex to be mixed with other irrelevant responsibilities.
 
 Note that this is also a local pattern, not an architecture, and almost always is not a replacement for crud systems.  
 Also CQRS doesn't have to mean doing event sourcing, introducing commands, event, read sides, sagas, async processing and so forth.
@@ -46,7 +46,7 @@ Actors may modify their own private state, but can only affect each other indire
 # Misconceptions and anti-patterns
 
 ## Communicating using journal
-using events to communicate; this by far most spread misconception! that is message passing, not event sourcing.
+using events to communicate; this is by far most spread misconception! that is message passing, not event sourcing.
 
 ## CQRS architecture
 as described earlier, CQRS is not a system architecture, it is a local application architecture or pattern; having a system with CQRS architecture not only does not convey any meaning, it also shows a form a cargo cult programming and design.

@@ -80,6 +80,14 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
       case Rejected(reasons)  => Rejected(reasons)
     }
 
+  inline def >>=[R2 >: R, E2 >: E, B](
+      f: A => Decision[R2, E2, B]
+  ): Decision[R2, E2, B] = flatMap(f)
+
+  inline def >>[R2 >: R, E2 >: E, B](
+      f: => Decision[R2, E2, B]
+  ): Decision[R2, E2, B] = flatMap(_ => f)
+
   /** whether is rejected or not */
   def isRejected: Boolean = self match {
     case Rejected(_) => true
@@ -128,6 +136,9 @@ object Decision extends DecisionConstructors, DecisionCatsInstances0 {
 }
 
 sealed trait DecisionConstructors {
+
+  /** Constructs a program that outputs a pure value */
+  def apply[R, E, T](t: T): Decision[R, E, T] = InDecisive(t)
 
   /** Constructs a program that outputs a pure value */
   def pure[R, E, T](t: T): Decision[R, E, T] = InDecisive(t)

@@ -17,7 +17,7 @@ A packet of data, that can carry some information
 ### Command message
 A message that its intent is to convey a request to change system behavior  
 commands are named using imperative verbs, like `ReceivePayment`, `ConfirmOrder`, `MarkAsDelivered`.  
-command may be rejected by system, according to its logic, policies, state, ...
+commands may be rejected by system, according to its logic, policies, state, ...
 
 ### Event message
 A message that its intent is to capture a fact.  
@@ -43,14 +43,15 @@ A request to ask system for some data. queries are idempotent by nature, and can
 History of events from beginning in chronological order.
 
 ### Command handler
-A component that receive command message, decides what to do based on domain logic, and acts upon it.  
+A component that receives command message, decides what to do based on domain logic, and acts upon it.  
 it is basically a function in the form of `cmd => F[EitherNec[Rejection, Unit]]`.
 
 ### Event handler
 A component that receives a sub-set of events from one or more event streams, and runs side effects.  
 they are basically modeled as a function that transforms an event stream to a process stream.  
 e.g. `fs2.Pipe[F, Event, Nothing]`  
-event handlers can send commands, that makes them process managers.
+event handlers can send commands, that makes them process managers.  
+event handlers should be deterministic as much as possible, for example if an event handler wants to send any messages, message IDs must be reproducible, not using a random UUID; this will help with managing workflows and delivery guaranties.
 
 ### Process manager
 An event handler that may or may not maintain a state, and can send messages.  
