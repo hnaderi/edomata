@@ -6,6 +6,8 @@ import sbtcrossproject.CrossProject
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val scala3 = "3.1.1"
+val PrimaryJava = JavaSpec.temurin("8")
+val LTSJava = JavaSpec.temurin("17")
 
 inThisBuild(
   List(
@@ -19,6 +21,7 @@ inThisBuild(
     tlSonatypeUseLegacyHost := false,
     tlCiReleaseBranches := Seq("main"),
     tlSitePublishBranch := Some("main"),
+    githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava),
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
