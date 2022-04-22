@@ -25,6 +25,19 @@ import cats.data.ValidatedNec
 import cats.implicits._
 import cats.kernel.Eq
 
+/** A monad transformer for [[Response]]
+  *
+  * @tparam F
+  *   effect type
+  * @tparam R
+  *   rejection type
+  * @tparam E
+  *   domain event type
+  * @tparam N
+  *   notification type
+  * @tparam A
+  *   output type
+  */
 final case class Action[F[_], R, E, N, A](run: F[Response[R, E, N, A]]) {
   def map[B](f: A => B)(using F: Functor[F]): Action[F, R, E, N, B] =
     Action(F.map(run)(_.map(f)))

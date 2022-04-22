@@ -26,12 +26,23 @@ import scala.annotation.implicitNotFound
 
 import Decision.*
 
-@implicitNotFound("Cannot find domain model definition")
+/** A type class that captures domain model
+  *
+  * note that due to uniqueness requirements for this typeclass, it is sealed
+  * and the only way to create an instance is through implementing DomainModel.
+  *
+  * so don't create several instances as it is a bad idea and may change your
+  * domain model behavior in different contexts!
+  */
+@implicitNotFound(
+  "Cannot find domain model definition for State: ${State}, Event: ${Event}, Rejection: ${Rejection}"
+)
 @implicitAmbiguous("Domain model definition must be unique!")
 sealed trait ModelTC[State, Event, Rejection] {
   def initial: State
   def transition: Event => State => ValidatedNec[Rejection, State]
 
+  /** like perform, but also returns initial output */
   final def handle[T](
       self: State,
       dec: Decision[Rejection, Event, T]
@@ -46,6 +57,9 @@ sealed trait ModelTC[State, Event, Rejection] {
       case d @ Decision.Rejected(_)   => d.copy()
     }
 
+  /** Returns a decision that has applied this decision and folded state, so the
+    * output is new state
+    */
   final def perform(
       self: State,
       dec: Decision[Rejection, Event, Unit]
@@ -59,8 +73,30 @@ sealed trait ModelTC[State, Event, Rejection] {
     es.foldM(self)((ns, e) => transition(e)(ns).toEither)
 }
 
+/** A purely functional, event driven domain model
+  *
+  * @tparam State
+  *   state model of your program, a.k.a aggregate root
+  * @tparam Event
+  *   domain events
+  * @tparam Rejection
+  *   domain error type
+  */
 abstract class DomainModel[State, Event, Rejection] { self =>
+
+  /** Initial or empty value for this domain model
+    *
+    * for any aggregate, it is either created and have a history, or is in
+    * initial state
+    */
   def initial: State
+
+  /** A function that defines how this model transitions in response to events;
+    * it is like an event handler, but is pure.
+    *
+    * An event that can't be applied results in a rejection or conflict, based
+    * on whether it is read from journal or applied for decision
+    */
   def transition: Event => State => ValidatedNec[Rejection, State]
 
   given ModelTC[State, Event, Rejection] = new {
@@ -73,11 +109,16 @@ private[edomata] transparent trait ModelSyntax {
   extension [State, Event, Rejection](
       self: State
   )(using m: ModelTC[State, Event, Rejection]) {
+
+    /** like perform, but also returns initial output */
     final def handle[T](
         dec: Decision[Rejection, Event, T]
     ): Decision[Rejection, Event, (State, T)] =
       m.handle(self, dec)
 
+    /** Returns a decision that has applied this decision and folded state, so
+      * the output is new state
+      */
     final def perform(
         dec: Decision[Rejection, Event, Unit]
     ): Decision[Rejection, Event, State] =

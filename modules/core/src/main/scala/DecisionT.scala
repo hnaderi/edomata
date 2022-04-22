@@ -29,6 +29,17 @@ import edomata.core.Decision.Accepted
 import edomata.core.Decision.InDecisive
 import edomata.core.Decision.Rejected
 
+/** This is monad transformer for [[Decision]]
+  *
+  * @tparam F
+  *   effect type
+  * @tparam R
+  *   rejection type
+  * @tparam E
+  *   event type
+  * @tparam A
+  *   program output type
+  */
 final case class DecisionT[F[_], R, E, A](run: F[Decision[R, E, A]]) {
   def map[B](f: A => B)(using F: Functor[F]): DecisionT[F, R, E, B] =
     DecisionT(F.map(run)(_.map(f)))
@@ -58,40 +69,53 @@ object DecisionT extends DecisionTConstructors with DecisionTCatsInstances {
 }
 
 sealed transparent trait DecisionTConstructors {
+
+  /** Constructs a program that outputs a pure value */
   def pure[F[_], R, E, T](
       t: T
   )(using F: Applicative[F]): DecisionT[F, R, E, T] =
     DecisionT(F.pure(Decision.pure(t)))
 
-  def void[F[_]: Applicative, R, E]: DecisionT[F, R, E, Unit] = pure(())
+  /** Constructs a program that outputs a trivial output */
+  def unit[F[_]: Applicative, R, E]: DecisionT[F, R, E, Unit] = pure(())
 
+  /** Lifts a Decision to DecisionT */
   def lift[F[_], R, E, T](
       t: Decision[R, E, T]
   )(using F: Applicative[F]): DecisionT[F, R, E, T] =
     DecisionT(F.pure(t))
 
+  /** Lifts an effect to DecisionT */
   def liftF[F[_], R, E, T](
       f: F[T]
   )(using F: Functor[F]): DecisionT[F, R, E, T] =
     DecisionT(F.map(f)(Decision.pure))
 
+  /** Constructs a program that uses a validation to decide whether to output a
+    * value or reject with error(s)
+    */
   def validate[F[_]: Applicative, R, E, T](
       validation: ValidatedNec[R, T]
   ): DecisionT[F, R, E, T] =
     lift(Decision.validate(validation))
 
+  /** Constructs a program that decides to accept a sequence of events */
   def accept[F[_]: Applicative, R, E](
       ev: E,
       evs: E*
   ): DecisionT[F, R, E, Unit] =
     lift(Decision.accept(ev, evs: _*))
 
+  /** Constructs a program that decides to accept a sequence of events and also
+    * returns an output
+    */
   def acceptReturn[F[_]: Applicative, R, E, T](t: T)(
       ev: E,
       evs: E*
   ): DecisionT[F, R, E, T] =
     lift(Decision.acceptReturn(t)(ev, evs: _*))
 
+  /** Constructs a program that decides to reject with a sequence of reasons */
   def reject[F[_]: Applicative, R, E](
       reason: R,
       otherReasons: R*

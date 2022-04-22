@@ -32,22 +32,23 @@ object DomainCompiler {
   def execute[F[_]: Monad, C, S, E, R, N](
       app: Edomaton[F, RequestContext[C, S], R, E, N, Unit],
       ctx: RequestContext[C, S]
-  )(using m: ModelTC[S, E, R]): F[ProgramResult[S, E, R, N]] =
+  )(using m: ModelTC[S, E, R]): F[EdomatonResult[S, E, R, N]] =
     app.run(ctx).map { case Response(decision, notifs) =>
       m.perform(ctx.state, decision) match {
         case Decision.Accepted(evs, newState) =>
-          ProgramResult.Accepted(newState, evs, notifs)
+          EdomatonResult.Accepted(newState, evs, notifs)
         case Decision.InDecisive(_) =>
-          ProgramResult.Indecisive(notifs)
+          EdomatonResult.Indecisive(notifs)
         case Decision.Rejected(errs) if decision.isRejected =>
-          ProgramResult.Rejected(notifs, errs)
+          EdomatonResult.Rejected(notifs, errs)
         case Decision.Rejected(errs) =>
-          ProgramResult.Conflicted(errs)
+          EdomatonResult.Conflicted(errs)
       }
     }
 }
 
-enum ProgramResult[S, E, R, N] {
+/** Representation of the result of running an edomaton */
+enum EdomatonResult[S, E, R, N] {
   case Accepted(
       newState: S,
       events: NonEmptyChain[E],
@@ -72,7 +73,7 @@ private[edomata] transparent trait EdomatonSyntax {
 
     inline def execute(
         ctx: RequestContext[C, S]
-    ): F[ProgramResult[S, E, R, N]] =
+    ): F[EdomatonResult[S, E, R, N]] =
       DomainCompiler.execute(app.void, ctx)
   }
 
@@ -81,6 +82,6 @@ private[edomata] transparent trait EdomatonSyntax {
   )(using m: ModelTC[S, E, R]) {
     inline def execute(
         ctx: RequestContext[C, S]
-    ): F[ProgramResult[S, E, R, N]] = DomainCompiler.execute(app, ctx)
+    ): F[EdomatonResult[S, E, R, N]] = DomainCompiler.execute(app, ctx)
   }
 }

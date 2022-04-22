@@ -31,9 +31,32 @@ import cats.kernel.Eq
 import scala.annotation.tailrec
 
 import Decision._
+import cats.syntax.validated
 
-/** Represents states in a decision context */
+/** Represents programs that decide in an event driven context
+  *
+  * This is basically a simple state machine like the following:
+  * ```
+  * [*] -> InDecisive
+  * InDecisive -- event --> Accepted
+  * InDecisive -- join --> InDecisive
+  * InDecisive -- rejection --> Rejected (resets and terminates)
+  * Accepted -- event --> Accepted (accumulates)
+  * Accepted -- rejection --> Rejected (resets and terminates)
+  * ```
+  *
+  * It forms a monad error and also is traversable.
+  *
+  * @tparam R
+  *   rejection type
+  * @tparam E
+  *   event type
+  * @tparam A
+  *   program output type
+  */
 sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
+
+  /** creates a new decision that changes the output value of this one */
   def map[B](f: A => B): Decision[R, E, B] =
     self match {
       case InDecisive(t)     => InDecisive(f(t))
@@ -41,6 +64,7 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
       case Rejected(reasons) => Rejected(reasons)
     }
 
+  /** binds another decision to this one, creates a new decision */
   def flatMap[R2 >: R, E2 >: E, B](
       f: A => Decision[R2, E2, B]
   ): Decision[R2, E2, B] =
@@ -56,28 +80,40 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
       case Rejected(reasons)  => Rejected(reasons)
     }
 
+  /** whether is rejected or not */
   def isRejected: Boolean = self match {
     case Rejected(_) => true
     case _           => false
   }
 
+  /** whether is accepted or not */
   def isAccepted: Boolean = self match {
     case Accepted(_, _) => true
     case _              => false
   }
 
+  /** traverses this decision, run fr if there are errors and runs fa if there
+    * is some output
+    */
   def visit[B](fr: NonEmptyChain[R] => B, fa: A => B): B = self match {
     case Decision.InDecisive(a)  => fa(a)
     case Decision.Accepted(_, a) => fa(a)
     case Decision.Rejected(r)    => fr(r)
   }
 
+  /** Ignores events and creates a ValidatedNec */
   def toValidated: ValidatedNec[R, A] = self match {
     case Decision.Accepted(_, t) => Validated.Valid(t)
     case Decision.InDecisive(t)  => Validated.Valid(t)
     case Decision.Rejected(r)    => Validated.Invalid(r)
   }
+
+  /** Ignores events and errors and creates an Option that contains program
+    * output
+    */
   def toOption: Option[A] = visit(_ => None, Some(_))
+
+  /** Ignores events and creates an Either */
   def toEither: EitherNec[R, A] = visit(Left(_), Right(_))
 
 }
@@ -92,22 +128,33 @@ object Decision extends DecisionConstructors, DecisionCatsInstances0 {
 }
 
 sealed trait DecisionConstructors {
+
+  /** Constructs a program that outputs a pure value */
   def pure[R, E, T](t: T): Decision[R, E, T] = InDecisive(t)
 
+  /** Constructs a program that outputs a trivial output */
   def unit[R, E]: Decision[R, E, Unit] = InDecisive(())
 
+  /** Constructs a program that decides to accept a sequence of events */
   def accept[R, E](ev: E, evs: E*): Decision[R, E, Unit] =
     acceptReturn(())(ev, evs: _*)
 
+  /** Constructs a program that decides to accept a sequence of events and also
+    * returns an output
+    */
   def acceptReturn[R, E, T](t: T)(ev: E, evs: E*): Decision[R, E, T] =
     Accepted(NonEmptyChain.of(ev, evs: _*), t)
 
+  /** Constructs a program that decides to reject with a sequence of reasons */
   def reject[R, E](
       reason: R,
       otherReasons: R*
   ): Decision[R, E, Nothing] =
     Rejected(NonEmptyChain.of(reason, otherReasons: _*))
 
+  /** Constructs a program that uses a validation to decide whether to output a
+    * value or reject with error(s)
+    */
   def validate[R, E, T](
       validation: ValidatedNec[R, T]
   ): Decision[R, E, T] =

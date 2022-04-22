@@ -21,11 +21,23 @@ import cats.implicits.*
 
 import java.time.Instant
 
+/** Representation of a standard input for an [[Edomaton]]
+  *
+  * @tparam C
+  *   Command type
+  * @tparam S
+  *   State model type
+  */
 final case class RequestContext[+C, +S](
     command: CommandMessage[C],
     state: S
 )
 
+/** Representation of a standard command message
+  *
+  * @tparam C
+  *   Command payload which is your command model
+  */
 final case class CommandMessage[+C](
     id: String,
     time: Instant,
@@ -33,7 +45,10 @@ final case class CommandMessage[+C](
     payload: C,
     metadata: MessageMetadata
 )
+
 object CommandMessage {
+
+  /** Constructs a command message a the root of a chain of messages */
   def apply[C](
       id: String,
       time: Instant,
@@ -48,6 +63,8 @@ object CommandMessage {
   )
 
   extension [C, M](cmd: CommandMessage[C]) {
+
+    /** Builds a request context from this [[CommandMessage]] */
     def buildContext[S, R](
         state: S
     ): RequestContext[C, S] =
@@ -56,16 +73,24 @@ object CommandMessage {
         state = state
       )
 
+    /** Derives a new metadata for the next message in chain that is linked to
+      * this one
+      */
     def deriveMeta: MessageMetadata = cmd.metadata.copy(causation = cmd.id.some)
   }
 }
 
+/** Representation of a standard message metadata */
 final case class MessageMetadata(
     correlation: Option[String],
     causation: Option[String]
 )
 object MessageMetadata {
+
+  /** Consturcts a root chain metadata */
   def apply(id: String): MessageMetadata = MessageMetadata(id.some, id.some)
+
+  /** Consturcts a metadata */
   def apply(correlation: String, causation: String): MessageMetadata =
     MessageMetadata(correlation = correlation.some, causation = causation.some)
 }

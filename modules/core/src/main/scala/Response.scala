@@ -30,6 +30,20 @@ import cats.kernel.Eq
 
 import scala.annotation.tailrec
 
+/** Representation of programs that decide and emit notifications
+  *
+  * This adds capability of emiting notifications/integration events to
+  * [[Decision]] programs
+  *
+  * @tparam R
+  *   rejection type
+  * @tparam E
+  *   domain event type
+  * @tparam N
+  *   notification type
+  * @tparam A
+  *   output type
+  */
 final case class Response[+R, +E, +N, +A](
     result: Decision[R, E, A],
     notifications: Chain[N] = Chain.nil
@@ -64,10 +78,13 @@ final case class Response[+R, +E, +N, +A](
   def publish[N2 >: N](ns: N2*): Response[R, E, N2, A] =
     copy(notifications = notifications ++ Chain.fromSeq(ns))
 
+  /** If it is rejected, uses given function to decide what to publish
+    */
   def publishOnRejectionWith[N2 >: N](
       f: NonEmptyChain[R] => Seq[N2]
   ): Response[R, E, N2, A] = publish(result.visit(f, _ => Nil): _*)
 
+  /** publishes these notifications if this program result is rejected */
   def publishOnRejection[N2 >: N](ns: N2*): Response[R, E, N2, A] =
     publishOnRejectionWith(_ => ns)
 }
@@ -75,32 +92,45 @@ final case class Response[+R, +E, +N, +A](
 object Response extends ResponseConstructors with ResponseCatsInstances0
 
 sealed trait ResponseConstructors {
+
+  /** constructs a program that outputs a pure value */
   def pure[R, E, N, T](t: T): Response[R, E, N, T] = Response(
     Decision.pure(t)
   )
 
+  /** a program with trivial output */
   def unit[R, E, N]: Response[R, E, N, Unit] = pure(())
 
+  /** constructs a program with given decision */
   def lift[R, E, N, T](d: Decision[R, E, T]): Response[R, E, N, T] =
     Response(d)
 
+  /** constructs a program that publishes given notifications */
   def publish[R, E, N](n: N*): Response[R, E, N, Unit] =
     Response(Decision.unit, Chain.fromSeq(n))
 
+  /** Constructs a program that decides to accept a sequence of events */
   def accept[R, E, N](ev: E, evs: E*): Response[R, E, N, Unit] =
     acceptReturn(())(ev, evs: _*)
 
+  /** Constructs a program that decides to accept a sequence of events and also
+    * returns an output
+    */
   def acceptReturn[R, E, N, T](
       t: T
   )(ev: E, evs: E*): Response[R, E, N, T] =
     Response(Decision.Accepted(NonEmptyChain.of(ev, evs: _*), t))
 
+  /** constructs a program that rejects with given rejections */
   def reject[R, E, N](
       reason: R,
       otherReasons: R*
   ): Response[R, E, N, Nothing] =
     Response(Decision.Rejected(NonEmptyChain.of(reason, otherReasons: _*)))
 
+  /** Constructs a program that uses a validation to decide whether to output a
+    * value or reject with error(s)
+    */
   def validate[R, E, N, T](
       validation: ValidatedNec[R, T]
   ): Response[R, E, N, T] =

@@ -41,18 +41,18 @@ object CommandHandler {
           val res = DomainCompiler.execute[F, C, S, E, R, N](app, ctx)
 
           res.flatMap {
-            case ProgramResult.Accepted(ns, evs, notifs) =>
+            case EdomatonResult.Accepted(ns, evs, notifs) =>
               repository.append(ctx, rev, ns, evs, notifs).as(void)
-            case ProgramResult.Indecisive(notifs) =>
+            case EdomatonResult.Indecisive(notifs) =>
               NonEmptyChain
                 .fromChain(notifs)
                 .fold(voidF)(repository.notify(ctx, _).as(void))
-            case ProgramResult.Rejected(notifs, errs) =>
+            case EdomatonResult.Rejected(notifs, errs) =>
               val res = errs.asLeft[Unit]
               NonEmptyChain
                 .fromChain(notifs)
                 .fold(res.pure)(repository.notify(ctx, _).as(res))
-            case ProgramResult.Conflicted(errs) => errs.asLeft.pure
+            case EdomatonResult.Conflicted(errs) => errs.asLeft.pure
           }
         case AggregateState.Conflicted(ls, lEv, errs) => errs.asLeft.pure
         case CommandState.Redundant                   => voidF

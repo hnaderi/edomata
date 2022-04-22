@@ -48,7 +48,7 @@ import Edomaton.*
   */
 final case class Edomaton[F[_], -Env, R, E, N, A](
     run: Env => F[Response[R, E, N, A]]
-) {
+) extends AnyVal {
 
   /** maps output result */
   def map[B](f: A => B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
