@@ -6,6 +6,7 @@ import sbtcrossproject.CrossProject
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val scala3 = "3.1.1"
+
 inThisBuild(
   List(
     tlBaseVersion := "0.0",
@@ -36,9 +37,7 @@ def module(mname: String): CrossProject => CrossProject =
       name := s"module-$mname",
       libraryDependencies ++= Seq(
         "org.scalameta" %%% "munit" % Versions.MUnit % Test,
-        "org.scalameta" %%% "munit-scalacheck" % Versions.MUnit % Test,
-        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test,
-        "org.typelevel" %%% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion % Test
+        "org.scalameta" %%% "munit-scalacheck" % Versions.MUnit % Test
       ),
       moduleName := s"edomata-$mname"
     )
@@ -111,6 +110,8 @@ lazy val sqlBackend = module("sql-backend") {
       description := "Performant eventsourcing backend for edomata",
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "cats-effect" % Versions.catsEffect,
+        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test,
+        "org.typelevel" %%% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion % Test,
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect % Test,
         "co.fs2" %%% "fs2-core" % Versions.fs2
       )
