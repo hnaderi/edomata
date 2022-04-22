@@ -8,5 +8,5 @@
 <a href="https://typelevel.org/cats/"><img src="https://typelevel.org/cats/img/cats-badge.svg" height="40px" align="right" alt="Cats friendly" /></a>
 
 ## Getting started
-visit [Project site](https://hnaderi.gitlab.io/edomata/)
+visit [Project site](https://hnaderi.github.io/edomata/)
 
