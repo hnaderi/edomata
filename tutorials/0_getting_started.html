@@ -86,9 +86,13 @@
           <li class="level1"><a href="#install">Install</a></li>
           <li class="level1"><a href="#imports">Imports</a></li>
           <li class="level1"><a href="#decision">Decision</a></li>
-          <li class="level1"><a href="#edomaton">Edomaton</a></li>
+          <li class="level1"><a href="#modeling">Modeling</a></li>
+          <li class="level1"><a href="#domainmodel">DomainModel</a></li>
+          <li class="level2"><a href="#tip">Tip</a></li>
+          <li class="level2"><a href="#thinking-further">Thinking further</a></li>
+          <li class="level2"><a href="#info">Info</a></li>
+          <li class="level1"><a href="#testing">Testing</a></li>
           <li class="level1"><a href="#what-s-next">What&#39;s next?</a></li>
-          <li class="level1"><a href="#other-data-types">Other data types</a></li>
         </ul>
         
         <p class="footer"></p>
@@ -99,9 +103,9 @@
         <h1 id="getting-started" class="title">Getting started</h1>
         
         <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-b49c2ac-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-4738841-SNAPSHOT&quot;</span></code></pre>
         <p>or for scala.js</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-b49c2ac-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-4738841-SNAPSHOT&quot;</span></code></pre>
         
         <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
@@ -109,83 +113,166 @@
         
         <h2 id="decision" class="section"><a class="anchor-link left" href="#decision"><i class="icofont-laika">&#xef71;</i></a>Decision</h2>
         <p>It all start with decisions!<br>
-        Decision models programs that decide in a event driven context, these programs are pure and can:<br>
-        - accept events<br>
-        - reject with errors<br>
-        - stay indecisive!<br></p>
+        Decision models programs that decide in a event driven context, these programs are pure and can:</p>
+        <ul>
+          <li>accept events<br></li>
+          <li>reject with errors<br></li>
+          <li>stay indecisive!<br></li>
+        </ul>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d1</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="number-literal">1</span><span>)
 </span><span class="comment">// d1: Decision[Nothing, Nothing, Int] = InDecisive(1)
 </span><span class="keyword">val</span><span> </span><span class="identifier">d2</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;Missile Launched!&quot;</span><span>)
-</span><span class="comment">// d2: Decision[Nothing, String, Unit] = Accepted(
-//   Singleton(&quot;Missile Launched!&quot;),
-//   ()
-// )
+</span><span class="comment">// d2: Decision[Nothing, String, Unit] = Accepted(Chain(Missile Launched!),())
 </span><span class="keyword">val</span><span> </span><span class="identifier">d3</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>)
-</span><span class="comment">// d3: Decision[String, Nothing, Nothing] = Rejected(
-//   Singleton(&quot;No remained missiles to launch!&quot;)
-// )</span></code></pre>
+</span><span class="comment">// d3: Decision[String, Nothing, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
         <p>decisions are composable<br></p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d4</span><span> = </span><span class="identifier">d1</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> * </span><span class="number-literal">2</span><span>)
 </span><span class="comment">// d4: Decision[Nothing, Nothing, Int] = InDecisive(2)
 </span><span class="keyword">val</span><span> </span><span class="identifier">d5</span><span> = </span><span class="identifier">d2</span><span> &gt;&gt; </span><span class="identifier">d1</span><span>
-</span><span class="comment">// d5: Decision[Nothing, String, Int] = Accepted(
-//   Singleton(&quot;Missile Launched!&quot;),
-//   1
-// )
+</span><span class="comment">// d5: Decision[Nothing, String, Int] = Accepted(Chain(Missile Launched!),1)
 </span><span class="keyword">val</span><span> </span><span class="identifier">d6</span><span> = </span><span class="identifier">d5</span><span> &gt;&gt; </span><span class="identifier">d3</span><span>
-</span><span class="comment">// d6: Decision[String, String, Nothing] = Rejected(
-//   Singleton(&quot;No remained missiles to launch!&quot;)
-// )</span></code></pre>
+</span><span class="comment">// d6: Decision[String, String, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
         <p>you can also use for comprehensions:<br></p>
-        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d7</span><span> = </span><span class="keyword">for</span><span> {
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d7</span><span> = </span><span class="keyword">for</span><span> {
   </span><span class="identifier">i</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="number-literal">1</span><span>)
   </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;A&quot;</span><span>) </span><span class="comment">// accepting one event
 </span><span>  </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;B&quot;</span><span>, </span><span class="string-literal">&quot;C&quot;</span><span>) </span><span class="comment">// accepting several events
 </span><span>  </span><span class="identifier">j</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">acceptReturn</span><span>(</span><span class="identifier">i</span><span> * </span><span class="number-literal">2</span><span>)(</span><span class="string-literal">&quot;D&quot;</span><span>, </span><span class="string-literal">&quot;E&quot;</span><span>) </span><span class="comment">// accepting several events and returning a value
 </span><span>} </span><span class="keyword">yield</span><span> </span><span class="identifier">i</span><span> + </span><span class="identifier">j</span><span>
-</span><span class="comment">// d7: Decision[Nothing, String, Int] = Accepted(
-//   Append(
-//     Singleton(&quot;A&quot;),
-//     Append(
-//       Append(Singleton(&quot;B&quot;), Singleton(&quot;C&quot;)),
-//       Append(Singleton(&quot;D&quot;), Singleton(&quot;E&quot;))
-//     )
-//   ),
-//   3
-// )</span></code></pre>
+</span><span class="comment">// d7: Decision[Nothing, String, Int] = Accepted(Chain(A, B, C, D, E),3)</span></code></pre>
         <p>or in presence of cats syntax:<br></p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*     </span><span class="comment">// for cats related stuff     // for cats related stuff
-</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*  
+
 </span><span class="keyword">val</span><span> </span><span class="identifier">d8</span><span> = (</span><span class="identifier">d1</span><span>, </span><span class="identifier">d7</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>)
-</span><span class="comment">// d8: Decision[Nothing, String, Int] = Accepted(
-//   Append(
-//     Singleton(&quot;A&quot;),
-//     Append(
-//       Append(Singleton(&quot;B&quot;), Singleton(&quot;C&quot;)),
-//       Append(Singleton(&quot;D&quot;), Singleton(&quot;E&quot;))
-//     )
-//   ),
-//   4
-// )
-</span><span class="keyword">val</span><span> </span><span class="identifier">d9</span><span> = </span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">3</span><span>).</span><span class="identifier">traverse</span><span>(</span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="identifier">_</span><span>))
-</span><span class="comment">// d9: Decision[Nothing, Int, List[Unit]] = Accepted(
-//   Append(Singleton(1), Singleton(2)),
-//   List((), ())
-// )
-</span><span class="keyword">val</span><span> </span><span class="identifier">d10</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">3</span><span>)).</span><span class="identifier">sequence</span><span>[</span><span class="type-name">List</span><span>, </span><span class="type-name">Int</span><span>]
-</span><span class="comment">// d10: List[Decision[Nothing, Nothing, Int]] = List(
-//   InDecisive(1),
-//   InDecisive(2)
-// )</span></code></pre>
+</span><span class="comment">// d8: Decision[Nothing, String, Int] = Accepted(Chain(A, B, C, D, E),4)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d9</span><span> = </span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>).</span><span class="identifier">traverse</span><span>(</span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="identifier">_</span><span>))
+</span><span class="comment">// d9: Decision[Nothing, Int, List[Unit]] = Accepted(Chain(1, 2, 3, 4),List((), (), (), ()))
+</span><span class="keyword">val</span><span> </span><span class="identifier">d10</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>)).</span><span class="identifier">sequence</span><span>[</span><span class="type-name">List</span><span>, </span><span class="type-name">Int</span><span>]
+</span><span class="comment">// d10: List[Decision[Nothing, Nothing, Int]] = List(InDecisive(1), InDecisive(2), InDecisive(3), InDecisive(4))</span></code></pre>
         
-        <h2 id="edomaton" class="section"><a class="anchor-link left" href="#edomaton"><i class="icofont-laika">&#xef71;</i></a>Edomaton</h2>
-        <p>TBD</p>
+        <h2 id="modeling" class="section"><a class="anchor-link left" href="#modeling"><i class="icofont-laika">&#xef71;</i></a>Modeling</h2>
+        <p>Let&#39;s use what we&#39;ve learned so far to create an overly simplified model of a bank account.<br>
+        Assume we have the following business requirements:</p>
+        <ul>
+          <li>We must be able to open an account, if we did not have used that account name before<br></li>
+          <li>We can deposit/withdraw some amount of assets to an open account<br></li>
+          <li>We must be able to close an account, if it is settled (meaning its balance is zero)<br></li>
+        </ul>
+        <p>We&#39;ll start by modeling domain events first, that we have from event storming or other kind of design practices:<br></p>
+        <blockquote>I&#39;ll use scala 3 enums for modeling ADTs, as they are neat and more close to what modeling is all about; but you can use <code>sealed trait</code>s and normal <code>case class</code>es too</blockquote>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">enum</span><span> </span><span class="type-name">Event</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Opened</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Deposited</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Closed</span><span>
+}</span></code></pre>
+        <p>we&#39;ll continue with modeling rejection scenarios that also came from event storming:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">enum</span><span> </span><span class="type-name">Rejection</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">ExistingAccount</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">NoSuchAccount</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">InsufficientBalance</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">NoSettled</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">AlreadyClosed</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">BadRequest</span><span>
+}</span></code></pre>
+        <p>no we must model an aggregate root:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">enum</span><span> </span><span class="type-name">Account</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>(</span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span>
+}</span></code></pre>
+        <p>No we can use <code>Decision</code> to write our domain logic:<br></p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">ValidatedNec</span><span>
+
+</span><span class="identifier">enum</span><span> </span><span class="type-name">Account</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>(</span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span>
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">open</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">decide</span><span> { </span><span class="comment">// 1
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span> =&gt; </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Opened</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">ExistingAccount</span><span>)
+  }
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">close</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; </span><span class="comment">// 2, 3
+</span><span>    </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> == </span><span class="number-literal">0</span><span> </span><span class="identifier">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Closed</span><span>)
+    </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">NoSettled</span><span>)
+  })
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">withdraw</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt;
+    </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> &gt;= </span><span class="identifier">amount</span><span> &amp;&amp; </span><span class="identifier">amount</span><span> &gt; </span><span class="number-literal">0</span><span> </span><span class="identifier">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">amount</span><span>))
+    </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">InsufficientBalance</span><span>) 
+    </span><span class="comment">// We can model rejections to have values, which helps a lot for showing error messages, but it&#39;s out of scope for this document
+</span><span>  })
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">deposit</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt;
+    </span><span class="keyword">if</span><span> </span><span class="identifier">amount</span><span> &gt; </span><span class="number-literal">0</span><span> </span><span class="identifier">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Deposited</span><span>(</span><span class="identifier">amount</span><span>))
+    </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">BadRequest</span><span>)
+  })
+  
+  </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">mustBeOpen</span><span> : </span><span class="type-name">ValidatedNec</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span> </span><span class="keyword">match</span><span> { </span><span class="comment">// 4
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="identifier">o</span><span class="annotation">@Open</span><span>(</span><span class="identifier">_</span><span>) =&gt; </span><span class="identifier">o</span><span>.</span><span class="identifier">validNec</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">NoSuchAccount</span><span>.</span><span class="identifier">invalidNec</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">AlreadyClosed</span><span>.</span><span class="identifier">invalidNec</span><span>
+  }
+}</span></code></pre>
+        <ol class="arabic">
+          <li><code>.decide</code> is an extension method from edomata syntax that helps with deciding and transitioning to new state which I&#39;ll describe below</li>
+          <li><code>.perform</code> like <code>.decide</code> takes a decision as argument, an runs the decision on current state to return new state, it is basically a helper for folding to let you reuse <code>transition</code> and not repeating yourself</li>
+          <li><code>Decision</code> can be converted <code>.toValidated</code>, <code>.toOption</code> or <code>.toEither</code>.</li>
+          <li>as functional data structures are composable, you can extract common use cases like validations.</li>
+        </ol>
+        <p>but you might say, domain logic is not just deciding, you must perform the actions you decided; and you are right, let&#39;s go to that part:</p>
+        
+        <h2 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h2>
+        <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates required stuff for next steps:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Account</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">DomainModel</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>]{
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">initial</span><span> = </span><span class="type-name">New</span><span>  </span><span class="comment">// 1
+</span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">transition</span><span> = { </span><span class="comment">// 2
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Opened</span><span> =&gt; </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Open</span><span>(</span><span class="number-literal">0</span><span>).</span><span class="identifier">validNec</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">b</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">s</span><span> =&gt; </span><span class="identifier">s</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">balance</span><span> = </span><span class="identifier">s</span><span>.</span><span class="identifier">balance</span><span> - </span><span class="identifier">b</span><span>)) </span><span class="comment">// 3
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Deposited</span><span>(</span><span class="identifier">b</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">s</span><span> =&gt; </span><span class="identifier">s</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">balance</span><span> = </span><span class="identifier">s</span><span>.</span><span class="identifier">balance</span><span> + </span><span class="identifier">b</span><span>)) 
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Closed</span><span> =&gt; </span><span class="identifier">_</span><span>=&gt; </span><span class="type-name">Close</span><span>.</span><span class="identifier">validNec</span><span>
+  }
+
+}</span></code></pre>
+        <ol class="arabic">
+          <li>
+            <code>initial</code> is the initial state of your domain model which is the first start in timeline changes, you can assume that it&#39;s like <code>None</code> in <code>Option[T]</code>. beside it being required for our tutorial purposes, defining an initial state has the following advantages:
+            <ul>
+              <li>Model consistency; you are always working with your domain model, not with <code>Option[YourModel]</code></li>
+              <li>It enables to add new default values in future, where your model evolves and reduces number of times where an upcasting or migration is required.</li>
+            </ul>
+          </li>
+          <li><code>transition</code> is the fold function that given an event, tells how to go to next state. it&#39;s a function in <code>E =&gt; S =&gt; ValidatedNec[R, S]</code>. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, changing your transition to a conflicting logic with history of already created timelines.</li>
+        </ol>
+        
+        <h4 id="tip" class="section"><a class="anchor-link left" href="#tip"><i class="icofont-laika">&#xef71;</i></a>Tip</h4>
+        <blockquote>Writing transition without using a library for optics and lenses would be cumbersome and not expressive enough for domain modeling; I suggest you to use the great <a href="https://www.optics.dev/Monocle/">monocle</a> library which provides neat macros for lenses, and you don&#39;t even need to think about it twice after using it for the first time.</blockquote>
+        
+        <h4 id="thinking-further" class="section"><a class="anchor-link left" href="#thinking-further"><i class="icofont-laika">&#xef71;</i></a>Thinking further</h4>
+        <blockquote>Writing event driven (and specifically event sourced) domain models deals with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you&#39;ll read from a journal; for example, in the example above, we might receive a Withdrawn event on <code>New</code> or <code>Closed</code> state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can&#39;t even find a balance to decrement! in non functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.</blockquote>
+        
+        <h4 id="info" class="section"><a class="anchor-link left" href="#info"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
+        <blockquote>If you have a programming error in your folding which can cause conflicts, edomata has your back! it won&#39;t let your program to reach a result where it can be persisted and corrupting data; we&#39;ll see this in next chapters.</blockquote>
+        <p>As simple as that!</p>
+        
+        <h2 id="testing" class="section"><a class="anchor-link left" href="#testing"><i class="icofont-laika">&#xef71;</i></a>Testing</h2>
+        <p>As everything is pure and all the logic is implemented as programs that are values, you can easily test everything:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>.</span><span class="identifier">open</span><span>
+</span><span class="comment">// res1: Decision[Rejection, Event, Account] = Accepted(Chain(Opened),Open(0))
+</span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">10</span><span>).</span><span class="identifier">deposit</span><span>(</span><span class="number-literal">2</span><span>)
+</span><span class="comment">// res2: Decision[Rejection, Event, Account] = Accepted(Chain(Deposited(2)),Open(12))
+</span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">5</span><span>).</span><span class="identifier">close</span><span>
+</span><span class="comment">// res3: Decision[Rejection, Event, Account] = Rejected(Chain(NoSettled))
+</span><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>.</span><span class="identifier">open</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">close</span><span>)
+</span><span class="comment">// res4: Decision[Rejection, Event, Account] = Accepted(Chain(Opened, Closed),Close)</span></code></pre>
         
         <h2 id="what-s-next" class="section"><a class="anchor-link left" href="#what-s-next"><i class="icofont-laika">&#xef71;</i></a>What&#39;s next?</h2>
-        <p>You can go to next tutorial or get yourself more familiar with the following.</p>
-        
-        <h2 id="other-data-types" class="section"><a class="anchor-link left" href="#other-data-types"><i class="icofont-laika">&#xef71;</i></a>Other data types</h2>
-        <p>TBD</p>
+        <p>So far you&#39;ve seen what edomata has to offer for domain modeling, but what about application layer, persistence and other stuff? we&#39;ll continue with <a href="1_hello_world.html">Edomaton</a>, which is the building block for creating applications and services (and of course why this library is called Edomata)</p>
 
       </main>
 
