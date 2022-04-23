@@ -124,6 +124,9 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
   /** Ignores events and creates an Either */
   def toEither: EitherNec[R, A] = visit(Left(_), Right(_))
 
+  /** Ignores output value */
+  def void: Decision[R, E, Unit] = map(_ => ())
+
 }
 
 object Decision extends DecisionConstructors, DecisionCatsInstances0 {

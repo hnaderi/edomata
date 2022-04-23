@@ -111,7 +111,7 @@ private[edomata] transparent trait ModelSyntax {
   )(using m: ModelTC[State, Event, Rejection]) {
 
     /** like perform, but also returns initial output */
-    final def handle[T](
+    def handle[T](
         dec: Decision[Rejection, Event, T]
     ): Decision[Rejection, Event, (State, T)] =
       m.handle(self, dec)
@@ -119,9 +119,15 @@ private[edomata] transparent trait ModelSyntax {
     /** Returns a decision that has applied this decision and folded state, so
       * the output is new state
       */
-    final def perform(
-        dec: Decision[Rejection, Event, Unit]
+    def perform[T](
+        dec: Decision[Rejection, Event, T]
     ): Decision[Rejection, Event, State] =
-      m.perform(self, dec)
+      m.perform(self, dec.void)
+
+    /** Helps with deciding based on state and then applying the decision */
+    def decide[T](
+        f: State => Decision[Rejection, Event, T]
+    ): Decision[Rejection, Event, State] =
+      m.perform(self, f(self).void)
   }
 }

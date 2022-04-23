@@ -44,13 +44,11 @@ enum Counter {
   case Open(i: Int)
   case Closed
 
-  def receive(i: Int): Decision[Rejection, Event, Counter] = this.perform(
-    this match {
-      case Empty   => Decision.accept(Event.Opened, Event.Received(i))
-      case Open(_) => Decision.accept(Event.Received(i))
-      case Closed  => Decision.reject(Rejection.Unknown)
-    }
-  )
+  def receive(i: Int): Decision[Rejection, Event, Counter] = this.decide {
+    case Empty   => Decision.accept(Event.Opened, Event.Received(i))
+    case Open(_) => Decision.accept(Event.Received(i))
+    case Closed  => Decision.reject(Rejection.Unknown)
+  }
 }
 object Counter extends DomainModel[Counter, Event, Rejection] {
   def initial = Empty
