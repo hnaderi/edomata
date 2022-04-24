@@ -38,5 +38,5 @@ $input
 """)
     val enc = ssr.getBlocks.get(0).getEncodedUrl
 
-    s"![](https://plantuml.com/plantuml/svg/$enc)  \n"
+    s"![](https://www.plantuml.com/plantuml/svg/$enc)  \n"
 }
