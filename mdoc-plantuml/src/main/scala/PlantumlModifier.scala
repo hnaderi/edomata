@@ -31,13 +31,12 @@ class PlantumlModifier extends StringModifier {
     val input = code.text
     val ssr = new SourceStringReader(s"""
 @start$directive
-skin rose
-skinparam backgroundColor transparent
+!theme toy
 
 $input
 @end$directive
 """)
     val enc = ssr.getBlocks.get(0).getEncodedUrl
 
-    s"![](https://plantuml.com/plantuml/svg/$enc)\n"
+    s"![](https://plantuml.com/plantuml/svg/$enc)  \n"
 }
