@@ -22,6 +22,18 @@ import edomata.syntax.all.* // for convenient extension methods
 It all start with decisions!  
 Decision models programs that decide in a event driven context, these programs are pure and can:
 
+```scala mdoc:plantuml
+State InDecisive : output
+State Accepted : events, output
+State Rejected : errors
+
+InDecisive -up-> Accepted : event
+InDecisive -> InDecisive : bind
+InDecisive --> Rejected : error(s)
+Accepted -> Accepted : accumulates
+Accepted --> Rejected : error(s)
+```
+
 - accept events  
 - reject with errors  
 - stay indecisive!  
