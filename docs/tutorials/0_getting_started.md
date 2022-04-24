@@ -88,7 +88,7 @@ enum Rejection {
   case ExistingAccount
   case NoSuchAccount
   case InsufficientBalance
-  case NoSettled
+  case NotSettled
   case AlreadyClosed
   case BadRequest
 }
@@ -124,7 +124,7 @@ enum Account {
   
   def close : Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account => // 2, 3
     if account.balance == 0 then Decision.accept(Event.Closed)
-    else Decision.reject(Rejection.NoSettled)
+    else Decision.reject(Rejection.NotSettled)
   })
   
   def withdraw(amount: BigDecimal): Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account =>
