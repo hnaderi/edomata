@@ -53,38 +53,55 @@ lazy val modules = List(
   skunkUpickeCodec,
   doobieBackend,
   docs,
+  unidocs,
   examples,
   mdocPlantuml
 )
 
 lazy val root = tlCrossRootProject
-  .enablePlugins(GitBranchPrompt)
+  .settings(
+    name := "edomata"
+  )
   .aggregate(modules: _*)
 
-lazy val mdocPlantuml = (project in file("mdoc-plantuml"))
+lazy val mdocPlantuml = project
+  .in(file("mdoc-plantuml"))
   .settings(
     libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2022.1"
   )
   .enablePlugins(MdocPlugin)
   .enablePlugins(NoPublishPlugin)
 
-import laika.parse.code.SyntaxHighlighting
-import laika.markdown.github.GitHubFlavor
-
-lazy val docs = (project in file("docs-build"))
-  .settings(
-    publish / skip := true,
-    laikaIncludeAPI := true,
-    // laikaGenerateAPI / mappings := (ScalaUnidoc / packageDoc / mappings).value,
-    Laika / sourceDirectories := Seq(mdocOut.value),
-    laikaExtensions ++= Seq(GitHubFlavor, SyntaxHighlighting),
-    laikaTheme := SiteConfigs(version.value).build
-  )
+lazy val docs = project
+  .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
-  .enablePlugins(TypelevelUnidocPlugin)
+  .settings(
+    tlSiteHeliumConfig := SiteConfigs(version.value),
+    tlSiteApiModule := Some((unidocs / projectID).value),
+    tlSiteApiPackage := Some("edomata"),
+    tlSiteRelatedProjects := Seq(
+      TypelevelProject.Cats,
+      TypelevelProject.CatsEffect,
+      TypelevelProject.Fs2,
+      TypelevelProject.Discipline
+    )
+  )
   .dependsOn(
     core.jvm,
     mdocPlantuml
+  )
+
+lazy val unidocs = project
+  .in(file("unidocs"))
+  .enablePlugins(TypelevelUnidocPlugin)
+  .settings(
+    name := "edomata-docs",
+    description := "unified docs for edomata",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
+      mdocPlantuml,
+      doobieBackend.jvm,
+      examples.jvm
+    )
   )
 
 lazy val core = module("core") {
@@ -185,9 +202,6 @@ lazy val examples =
 def addAlias(name: String)(tasks: String*) =
   addCommandAlias(name, tasks.mkString(" ;"))
 
-addAlias("site")(
-  "docs/tlSite"
-)
 addAlias("commit")(
   "clean",
   "scalafmtCheckAll",

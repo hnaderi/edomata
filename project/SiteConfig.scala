@@ -9,6 +9,16 @@ import laika.theme._
 
 object SiteConfigs {
   def apply(version: String): Helium = Helium.defaults.site
+    .metadata(
+      title = Some("Edomata"),
+      authors = Seq("Hossein Naderi"),
+      language = Some("en")
+    )
+    .site
+    .favIcons(
+      Favicon.internal(Root / "icon.png", "32x32")
+    )
+    .site
     .landingPage(
       logo = Some(
         Image.internal(
@@ -27,8 +37,7 @@ object SiteConfigs {
         TextLink.internal(Root / "introduction.md", "Inroduction"),
         TextLink
           .internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
-        TextLink.internal(Root / "principles" / "index.md", "Principles"),
-        TextLink.internal(Root / "api" / "index.html", "API docs")
+        TextLink.internal(Root / "principles" / "index.md", "Principles")
       ),
       teasers = Seq(
         Teaser(
@@ -59,10 +68,15 @@ object SiteConfigs {
     )
     .site
     .topNavigationBar(
-      homeLink = IconLink.internal(Root / "introduction.md", HeliumIcon.home),
+      homeLink = ImageLink
+        .internal(Root / "introduction.md", Image.internal(Root / "icon.png")),
       navLinks = Seq(
-        IconLink.internal(Root / "api" / "index.html", HeliumIcon.api)
+        // IconLink.internal(Root / "api" / "index.html", HeliumIcon.api)
+        IconLink
+          .external("https://github.com/hnaderi/edomata", HeliumIcon.github)
       )
     )
+    .site
+    .baseURL("https://hnaderi.github.io/edomata/")
 
 }
