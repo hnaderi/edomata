@@ -236,6 +236,7 @@ Account.New.open.flatMap(_.close)
 
 ## Service layer
 Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:  
+
 - store and load models
 - interact with them
 - possibly perform some side effects
