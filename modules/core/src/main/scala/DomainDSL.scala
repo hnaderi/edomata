@@ -18,6 +18,7 @@ package edomata.core
 
 import cats.Applicative
 import cats.Monad
+import cats.data.ValidatedNec
 import cats.implicits.*
 
 final class Domain[C, S, E, R, N](
@@ -73,6 +74,11 @@ final class DomainDSL[C, S, E, R, N](
       d: Decision[R, E, T]
   ): App[F, T] =
     Edomaton.decide(d)
+
+  inline def validate[F[_]: Applicative, T](
+      v: ValidatedNec[R, T]
+  ): App[F, T] =
+    Edomaton.validate(v)
 
   def state[F[_]: Monad]: App[F, S] =
     Edomaton.read.map(_.state)

@@ -23,6 +23,7 @@ import cats.Functor
 import cats.Monad
 import cats.arrow.FunctionK
 import cats.data.NonEmptyChain
+import cats.data.ValidatedNec
 import cats.implicits.*
 import cats.kernel.Eq
 
@@ -268,4 +269,7 @@ sealed transparent trait EdomatonConstructors {
       d: Decision[R, E, T]
   ): Edomaton[F, Env, R, E, N, T] = lift(Response.lift(d))
 
+  def validate[F[_]: Applicative, Env, R, E, N, T](
+      v: ValidatedNec[R, T]
+  ): Edomaton[F, Env, R, E, N, T] = lift(Response.validate(v))
 }

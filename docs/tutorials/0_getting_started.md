@@ -18,9 +18,20 @@ import edomata.core.*
 import edomata.syntax.all.* // for convenient extension methods
 ```
 
-## Decision
+## Layers of abstraction
+
+```scala mdoc:plantuml
+
+```
+
+## Domain layer
+### Decision
 It all start with decisions!  
 Decision models programs that decide in a event driven context, these programs are pure and can:
+
+- accept events  
+- reject with errors  
+- stay indecisive!  
 
 ```scala mdoc:plantuml
 State InDecisive : output
@@ -34,9 +45,7 @@ Accepted -> Accepted : accumulates
 Accepted --> Rejected : error(s)
 ```
 
-- accept events  
-- reject with errors  
-- stay indecisive!  
+Examples:  
 
 ```scala mdoc:to-string
 val d1 = Decision(1)
@@ -71,7 +80,7 @@ val d9 = List.range(1, 5).traverse(Decision.accept(_))
 val d10 = Decision(List.range(1, 5)).sequence[List, Int]
 ```
 
-## Modeling
+### Modeling
 
 Let's use what we've learned so far to create an overly simplified model of a bank account.  
 Assume we have the following business requirements:
@@ -139,8 +148,9 @@ enum Account {
     else Decision.reject(Rejection.NotSettled)
   })
   
-  def withdraw(amount: BigDecimal): Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account =>
-    if account.balance >= amount && amount > 0 then Decision.accept(Event.Withdrawn(amount))
+  def withdraw(amount: BigDecimal): Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account => 
+    if account.balance >= amount && amount > 0 
+    then Decision.accept(Event.Withdrawn(amount))
     else Decision.reject(Rejection.InsufficientBalance) 
     // We can model rejections to have values, which helps a lot for showing error messages, but it's out of scope for this document
   })
@@ -150,7 +160,7 @@ enum Account {
     else Decision.reject(Rejection.BadRequest)
   })
   
-  private def mustBeOpen : ValidatedNec[Rejection, Open] = this match { // 4
+  def mustBeOpen : ValidatedNec[Rejection, Open] = this match { // 5
     case o@Open(_) => o.validNec
     case New => Rejection.NoSuchAccount.invalidNec
     case Close => Rejection.AlreadyClosed.invalidNec
@@ -161,11 +171,12 @@ enum Account {
 1. `.decide` is an extension method from edomata syntax that helps with deciding and transitioning to new state which I'll describe below
 2. `.perform` like `.decide` takes a decision as argument, an runs the decision on current state to return new state, it is basically a helper for folding to let you reuse `transition` and not repeating yourself
 3. `Decision` can be converted `.toValidated`, `.toOption` or `.toEither`.
-4. as functional data structures are composable, you can extract common use cases like validations.
+4. `.handle` is like `.perform`, but returns output paired with new state
+5. as functional data structures are composable, you can extract common use cases like validations.
 
 but you might say, domain logic is not just deciding, you must perform the actions you decided; and you are right, let's go to that part:
 
-## DomainModel
+### DomainModel
 
 In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use `DomainModel`, which is a helper class that creates required stuff for next steps:
 
@@ -200,7 +211,7 @@ object Account extends DomainModel[Account, Event, Rejection]{
 
 As simple as that!
 
-## Testing
+### Testing domain model
 
 As everything is pure and all the logic is implemented as programs that are values, you can easily test everything:  
 ```scala mdoc:to-string
@@ -210,6 +221,164 @@ Account.Open(5).close
 Account.New.open.flatMap(_.close)
 ```
 
-## What's next?
+## Service layer
+Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:  
+- store and load models
+- interact with them
+- possibly perform some side effects
 
-So far you've seen what edomata has to offer for domain modeling, but what about application layer, persistence and other stuff? we'll continue with [Edomaton](1_hello_world.md), which is the building block for creating applications and services (and of course why this library is called Edomata)
+you can do all that without edomata, as everything in edomata is just pure data and you can use it however you like; but here we'll focus on what edomata has to offer.  
+Edomata is designed around the idea of event driven state machines,
+and it's not surprising that tools that it provides for building services are also event driven state machines!
+these state machines are like [actors](../principles/index.md#actor-model) that respond to incoming messages which are domain commands,
+may possibly change state through emiting some events as we've seen in domain modeling above,
+and possibly emit some other type of events for communication and integration with other services;
+while doing so, they can also perform any side effects that are idempotent,
+as these machines may be run several times in case of failure. that takes us to the next building block:
+
+### Edomaton
+An `Edomaton` is an event-driven automata (pl. Edomata) that can do the following:  
+
+- read current state
+- ask what is requested (command message)
+- perform side effects
+- decide (as described in decision above)
+- notify (emit notifications, integration events, ...)
+- output a value
+
+`Edomaton`s are composable, so you can assemble them together, change them or treat them like normal data structures. 
+
+#### Info
+> an `Edomaton` is like an employee, while a `Decision` is like a business rule
+
+for creating our first `Edomaton`, we need to model 2 more ADTs; commands and notifications.
+
+```scala mdoc
+enum Command {
+  case Open
+  case Deposit(amount: BigDecimal)
+  case Withdraw(amount: BigDecimal)
+  case Close
+}
+
+enum Notification {
+  case AccountOpened(accountId: String)
+  case BalanceUpdated(accountId: String, balance: BigDecimal)
+  case AccountClosed(accountId: String)
+}
+```
+
+In contrast to `Decision` or other alike data structures, `Edomaton` type is somewhat larger than normal and it's not really ergonomic to type it every time you need to create an edomaton, to facilitate that a builder DSL is provided that helps with that:
+
+```scala mdoc:silent
+// let's use IO as our side effect
+import cats.effect.IO
+
+val dsl = Account.dsl[Command, Notification]
+
+val e1 : dsl.App[IO, Int] = dsl.pure(1)
+val e2 = dsl.pure[IO, Int](1)
+val e3 = e1 >> e2.map(_ * 2)
+val e4 = (e1, e2).mapN(_ + _)
+val e5 = dsl.eval(IO.println("Hello world!"))
+```
+
+and we can create our first service:
+
+```scala mdoc:silent
+object AccountService {
+  import cats.Monad
+
+  private val dsl = Account.dsl[Command, Notification]
+  
+  def apply[F[_] : Monad] = dsl.router[F, Unit] {
+
+    case Command.Open => for {
+      s <- dsl.state
+      ns <- dsl.decide(s.open)
+      acc <- dsl.aggregateId
+      _ <- dsl.publish(Notification.AccountOpened(acc))
+    } yield ()
+
+    case Command.Deposit(amount) => for {
+      s <- dsl.state
+      deposited <- dsl.decide(s.deposit(amount))
+      openAccount <- dsl.validate(deposited.mustBeOpen)
+      accId <- dsl.aggregateId
+      _ <- dsl.publish(Notification.BalanceUpdated(accId, openAccount.balance))
+    } yield ()
+
+    case Command.Withdraw(amount) => for {
+      s <- dsl.state
+      withdrawn <- dsl.decide(s.withdraw(amount))
+      openAccount <- dsl.validate(withdrawn.mustBeOpen)
+      accId <- dsl.aggregateId
+      _ <- dsl.publish(Notification.BalanceUpdated(accId, openAccount.balance))
+    } yield ()
+
+    case Command.Close => for {
+      s <- dsl.state
+      ns <- dsl.decide(s.close)
+    } yield ()
+
+  }
+
+}
+
+```
+
+That's it! we've just written our first `Edomaton`.
+
+### Testing an edomaton
+As said earlier, everything in Edomata is just a normal value, and you can treat them like normal data.  
+`Edomaton`s take an environment, and work in that context to produce a result; 
+using default dsl like what we've done in this tutorial creates `Edomaton`s that require a data type called `RequestContext` which is a pretty standard modeling of a request context in an event-driven setup.
+
+```scala mdoc
+import java.time.Instant
+
+val scenario1 = RequestContext(
+  command = CommandMessage(
+    id = "some random id for request",
+    time = Instant.MIN,
+    address = "our account id",
+    payload = Command.Open
+  ),
+  state = Account.New
+)
+```
+
+There are 2 ways for running an `Edomaton` to get its result:  
+- (recommended) use `.execute` which takes input and returns processed results, which is used in real backends too.
+
+```scala mdoc:to-string
+// as we've written our service definition in a tagless style, 
+// we are free to provide any type param that satisfies required typeclasses
+
+import cats.Id
+val obtained = AccountService[Id].execute(scenario1)
+
+// or even use a real IO monad if needed
+AccountService[IO].execute(scenario1)
+```
+- use `.run`, which takes input and returns raw result
+
+```scala mdoc:to-string
+AccountService[Id].run(scenario1)
+```
+
+now we can easily assert our expectations using our favorite test framework
+
+```scala
+assertEquals(
+  obtained,
+  EdomatonResult.Accepted(
+    newState = Account.Open(0),
+    events = ...
+    notifications = ...
+  )
+)
+```
+
+## What's next?
+So far we've created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I'll discuss in the [next chapter](1_hello_world.md)

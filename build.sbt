@@ -88,6 +88,7 @@ lazy val docs = project
   )
   .dependsOn(
     core.jvm,
+    sqlBackend.jvm,
     mdocPlantuml
   )
 
