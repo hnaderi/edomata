@@ -20,8 +20,21 @@ import edomata.syntax.all.* // for convenient extension methods
 
 ## Layers of abstraction
 
-```scala mdoc:plantuml
+```scala mdoc:plantuml:wbs
+* layers
+** domain
 
+*** is pure
+*** ensures aggregate invariants
+-** does not change frequently\n in well stablished businesses
+-** models an aggregate root in DDD
+
+** service
+
+*** may involve side effects
+-** is very minimal and mostly glueing
+*** must be idempotent
+-** models application services\nand command handlers in DDD
 ```
 
 ## Domain layer
