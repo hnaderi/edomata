@@ -1,3 +1,5 @@
+import laika.rewrite.link.ApiLinks
+import laika.rewrite.link.LinkConfig
 import Dependencies._
 import laika.io.config.SiteConfig
 import sbt.ThisBuild
@@ -77,14 +79,26 @@ lazy val docs = project
   .enablePlugins(TypelevelSitePlugin)
   .settings(
     tlSiteHeliumConfig := SiteConfigs(version.value),
-    tlSiteApiModule := Some((unidocs / projectID).value),
-    tlSiteApiPackage := Some("edomata"),
     tlSiteRelatedProjects := Seq(
       TypelevelProject.Cats,
       TypelevelProject.CatsEffect,
       TypelevelProject.Fs2,
       TypelevelProject.Discipline
-    )
+    ),
+    laikaConfig := LaikaConfig.defaults
+      .withConfigValue(
+        LinkConfig(apiLinks =
+          Seq(
+            ApiLinks(
+              tlSiteApiUrl.value
+                .map(_.toString())
+                .getOrElse("/edomata/api/"),
+              "edomata"
+            )
+          )
+        )
+      ),
+    laikaIncludeAPI := true
   )
   .dependsOn(
     core.jvm,
