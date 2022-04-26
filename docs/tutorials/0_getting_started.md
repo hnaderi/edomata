@@ -363,7 +363,8 @@ val scenario1 = RequestContext(
 ```
 
 There are 2 ways for running an `Edomaton` to get its result:  
-- (recommended) use `.execute` which takes input and returns processed results, which is used in real backends too.
+
+- Recommended way is to use `.execute` which takes input and returns processed results, which is used in real backends too.
 
 ```scala mdoc:to-string
 // as we've written our service definition in a tagless style, 
@@ -375,7 +376,7 @@ val obtained = AccountService[Id].execute(scenario1)
 // or even use a real IO monad if needed
 AccountService[IO].execute(scenario1)
 ```
-- use `.run`, which takes input and returns raw result
+- or you can use `.run`, which takes input and returns raw `Response` model, which you can interpret however you like.
 
 ```scala mdoc:to-string
 AccountService[Id].run(scenario1)
