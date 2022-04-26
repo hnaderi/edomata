@@ -67,10 +67,8 @@
         <li class="level2 active"><a href="#">Design goals</a></li>
         <li class="level1 nav-header">tutorials</li>
         <li class="level2"><a href="../tutorials/0_getting_started.html">Getting started</a></li>
-        <li class="level2"><a href="../tutorials/1_hello_world.html">Hello world</a></li>
-        <li class="level2"><a href="../tutorials/2_testing.html">Testing</a></li>
-        <li class="level2"><a href="../tutorials/3_running_applications.html">Running applications</a></li>
-        <li class="level2"><a href="../tutorials/4_processes.html">Processes</a></li>
+        <li class="level2"><a href="../tutorials/1_backends.html">Running</a></li>
+        <li class="level2"><a href="../tutorials/2_processes.html">Processes</a></li>
         <li class="level1 nav-header">principles</li>
         <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
         <li class="level2"><a href="../principles/index.html">Principles</a></li>
@@ -101,6 +99,9 @@
         <p class="header"><a href="#">Design goals</a></p>
 
         <ul class="nav-list">
+          <li class="level1"><a href="#ideas">ideas</a></li>
+          <li class="level1"><a href="#to-achieve">to achieve</a></li>
+          <li class="level1"><a href="#non-goals">non goals</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -109,7 +110,31 @@
       <main class="content">
 
         <h1 id="design-goals" class="title">Design goals</h1>
-        <p>TBD</p>
+        
+        <h2 id="ideas" class="section"><a class="anchor-link left" href="#ideas"><i class="icofont-laika">&#xef71;</i></a>ideas</h2>
+        <ul>
+          <li>functional programming is cool!</li>
+          <li>message passing is key to reliable/resilient systems.</li>
+          <li>event driven design is necessary for natural domain modeling.</li>
+          <li>DDD is a great design guideline.</li>
+          <li>state machines are building blocks of distributed systems.</li>
+        </ul>
+        
+        <h2 id="to-achieve" class="section"><a class="anchor-link left" href="#to-achieve"><i class="icofont-laika">&#xef71;</i></a>to achieve</h2>
+        <ul>
+          <li>Expressive domain modeling</li>
+          <li>Test driven development and general testing must be as easy as validating against literal numbers</li>
+          <li>serve as a CQRS chassis</li>
+          <li>we should be able to run a specific program with different interpreters with different characteristics.</li>
+        </ul>
+        
+        <h2 id="non-goals" class="section"><a class="anchor-link left" href="#non-goals"><i class="icofont-laika">&#xef71;</i></a>non goals</h2>
+        <ul>
+          <li>general tools for all the scenarios<br>
+          this library is designed specifically for event-driven/event-sourced applications with a DDD mindset in mind, it would be suitable for those specific problems, and probably a bad fit for others.<br></li>
+          <li>performance<br>
+          while it is considered as much as possible, to eliminate unnecessary works and do works as efficient as possible; performance has lower priority than being expressive. if you know how improve specific performance problems I would be very happy to discuss the matter, or more happy if you do a PR!</li>
+        </ul>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

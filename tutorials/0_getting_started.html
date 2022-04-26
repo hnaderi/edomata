@@ -67,10 +67,8 @@
         <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
         <li class="level1 nav-header">tutorials</li>
         <li class="level2 active"><a href="#">Getting started</a></li>
-        <li class="level2"><a href="1_hello_world.html">Hello world</a></li>
-        <li class="level2"><a href="2_testing.html">Testing</a></li>
-        <li class="level2"><a href="3_running_applications.html">Running applications</a></li>
-        <li class="level2"><a href="4_processes.html">Processes</a></li>
+        <li class="level2"><a href="1_backends.html">Running</a></li>
+        <li class="level2"><a href="2_processes.html">Processes</a></li>
         <li class="level1 nav-header">principles</li>
         <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
         <li class="level2"><a href="../principles/index.html">Principles</a></li>
@@ -123,9 +121,9 @@
         <h1 id="getting-started" class="title">Getting started</h1>
         
         <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-ca62f4d-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-0c1d171-SNAPSHOT&quot;</span></code></pre>
         <p>or for scala.js</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-ca62f4d-SNAPSHOT&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.0-0c1d171-SNAPSHOT&quot;</span></code></pre>
         
         <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
@@ -301,10 +299,12 @@
 </span><span class="comment">// res4: Decision[Rejection, Event, Account] = Accepted(Chain(Opened, Closed),Close)</span></code></pre>
         
         <h2 id="service-layer" class="section"><a class="anchor-link left" href="#service-layer"><i class="icofont-laika">&#xef71;</i></a>Service layer</h2>
-        <p>Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:<br>
-        - store and load models
-        - interact with them
-        - possibly perform some side effects</p>
+        <p>Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:<br></p>
+        <ul>
+          <li>store and load models</li>
+          <li>interact with them</li>
+          <li>possibly perform some side effects</li>
+        </ul>
         <p>you can do all that without edomata, as everything in edomata is just pure data and you can use it however you like; but here we&#39;ll focus on what edomata has to offer.<br>
         Edomata is designed around the idea of event driven state machines,
         and it&#39;s not surprising that tools that it provides for building services are also event driven state machines!
@@ -421,8 +421,10 @@
 //   ),
 //   New
 // )</span></code></pre>
-        <p>There are 2 ways for running an <code>Edomaton</code> to get its result:<br>
-        - (recommended) use <code>.execute</code> which takes input and returns processed results, which is used in real backends too.</p>
+        <p>There are 2 ways for running an <code>Edomaton</code> to get its result:<br></p>
+        <ul>
+          <li>Recommended way is to use <code>.execute</code> which takes input and returns processed results, which is used in real backends too.</li>
+        </ul>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// as we&#39;ve written our service definition in a tagless style, 
 // we are free to provide any type param that satisfies required typeclasses
 </span><span>
@@ -434,7 +436,7 @@
 </span><span class="type-name">AccountService</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
 </span><span class="comment">// res5: IO[EdomatonResult[Account, Event, Rejection, Notification]] = IO(...)</span></code></pre>
         <ul>
-          <li>use <code>.run</code>, which takes input and returns raw result</li>
+          <li>or you can use <code>.run</code>, which takes input and returns raw <code>Response</code> model, which you can interpret however you like.</li>
         </ul>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)
 </span><span class="comment">// res6: Response[Rejection, Event, Notification, Unit] = Response(Accepted(Chain(Opened),()),Chain(AccountOpened(our account id)))</span></code></pre>
@@ -449,7 +451,7 @@
 )</span></code></pre>
         
         <h2 id="what-s-next" class="section"><a class="anchor-link left" href="#what-s-next"><i class="icofont-laika">&#xef71;</i></a>What&#39;s next?</h2>
-        <p>So far we&#39;ve created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I&#39;ll discuss in the <a href="1_hello_world.html">next chapter</a></p>
+        <p>So far we&#39;ve created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I&#39;ll discuss in the <a href="1_backends.html">next chapter</a></p>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

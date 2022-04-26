@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Skunk</title>
+    <title>Running</title>
     
       <meta name="author" content="Hossein Naderi"/>
     
@@ -66,15 +66,15 @@
         <li class="level2"><a href="../about/features.html">Features</a></li>
         <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
         <li class="level1 nav-header">tutorials</li>
-        <li class="level2"><a href="../tutorials/0_getting_started.html">Getting started</a></li>
-        <li class="level2"><a href="../tutorials/1_backends.html">Running</a></li>
-        <li class="level2"><a href="../tutorials/2_processes.html">Processes</a></li>
+        <li class="level2"><a href="0_getting_started.html">Getting started</a></li>
+        <li class="level2 active"><a href="#">Running</a></li>
+        <li class="level2"><a href="2_processes.html">Processes</a></li>
         <li class="level1 nav-header">principles</li>
         <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
         <li class="level2"><a href="../principles/index.html">Principles</a></li>
         <li class="level1 nav-header">backends</li>
-        <li class="level2 active"><a href="#">Skunk</a></li>
-        <li class="level2"><a href="doobie.html">Doobie</a></li>
+        <li class="level2"><a href="../backends/skunk.html">Skunk</a></li>
+        <li class="level2"><a href="../backends/doobie.html">Doobie</a></li>
         <li class="level1"><a href="../faq.html">FAQ</a></li>
       </ul>
 
@@ -96,10 +96,11 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Skunk</a></p>
+        <p class="header"><a href="#">Running</a></p>
 
         <ul class="nav-list">
-          <li class="level1"><a href="#install">Install</a></li>
+          <li class="level1"><a href="#backends">Backends</a></li>
+          <li class="level2"><a href="#postgres">Postgres</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -107,13 +108,39 @@
 
       <main class="content">
 
-        <h1 id="skunk" class="title">Skunk</h1>
+        <h1 id="running" class="title">Running</h1>
+        <p>A pretty common pattern in functional programming, is creating programs that defines a problem and then creating other programs that interpret them; and thus decoupling what and how of a program. there are a bunch of terms used for such a pattern but I&#39;ll stick with program and interpreter here.
+        an <code>Edomaton</code> is simply a definition of an action that needs to take place, it won&#39;t affect its environment even if it runs for several times (and programs that uses side effects must follow this rule); it just computes the result of decision making, so we can use it.</p>
+        <p>For running such a program we need another program that can interpret this one, which in edomata is called a backend.</p>
         
-        <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.0-0c1d171-SNAPSHOT&quot;</span></code></pre>
-        <p>or for scala.js</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.0-0c1d171-SNAPSHOT&quot;</span></code></pre>
-        <p>TBD</p>
+        <h2 id="backends" class="section"><a class="anchor-link left" href="#backends"><i class="icofont-laika">&#xef71;</i></a>Backends</h2>
+        <p>there are currently 2 backends supported, but creating new ones is pretty straight forward as much as extending or customizing provided ones.
+        currently available backends rely on RDBMSes (specifically Postgres) for persistence.</p>
+        
+        <h3 id="postgres" class="section"><a class="anchor-link left" href="#postgres"><i class="icofont-laika">&#xef71;</i></a>Postgres</h3>
+        <p>these backends are designed to be as standard as possible and to be a great fit as default backend in production scenarios for microservice/service based/event-driven architectures.<br></p>
+        
+        <h4 id="persistence" class="section"><a class="anchor-link left" href="#persistence"><i class="icofont-laika">&#xef71;</i></a>Persistence</h4>
+        <p>Each aggregate type has its own namespace (which is a separate schema in postgres), that contains all the required tables:</p>
+        <ul>
+          <li>journal: where events are stored</li>
+          <li>outbox: where notifications are stored for consuming</li>
+          <li>commands: for idempotency checking of commands</li>
+          <li>snapshots: for persisting snapshots, if configured to do so<br></li>
+        </ul>
+        <p>Beside that, these backends also have built-in caches that when sized correctly, can prevent most of the database stuff and runs application like a <a href="https://martinfowler.com/bliki/MemoryImage.html">memory image</a> which can boost a lot of performance. this database stuff are required if you need to ensure no dataloss in a normal webservice/microservice scenario, which is the most common use case; however there is nothing that prevents a backend to use a disruptor pattern (like LMAX disruptor) to eliminates all the disk stuff while running business code.</p>
+        <p>These 2 backends are completely compatible with each others data, so you can change your mind on which one to use any time.</p>
+        
+        <h4 id="serialization" class="section"><a class="anchor-link left" href="#serialization"><i class="icofont-laika">&#xef71;</i></a>Serialization</h4>
+        <p>both backends support <code>json</code>, <code>jsonb</code>, <code>bytea</code> types in postgres, so you can use the one which is more appropriate.
+        integrations with <code>Circe</code> and <code>uPickle</code> is provided in separate modules which you can use, or otherwise you can create your own codecs easily.</p>
+        
+        <h4 id="usage" class="section"><a class="anchor-link left" href="#usage"><i class="icofont-laika">&#xef71;</i></a>Usage</h4>
+        <p>for instructions on how to setup and use this backends refer to:</p>
+        <ul>
+          <li><a href="../backends/skunk.html">Skunk backend</a></li>
+          <li><a href="../backends/doobie.html">Doobie backend</a></li>
+        </ul>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
