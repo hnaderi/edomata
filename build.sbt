@@ -7,7 +7,7 @@ import sbtcrossproject.CrossProject
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala3 = "3.1.1"
+lazy val scala3 = "3.1.2"
 val PrimaryJava = JavaSpec.temurin("8")
 val LTSJava = JavaSpec.temurin("17")
 
