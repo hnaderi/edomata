@@ -100,10 +100,11 @@
 
         <ul class="nav-list">
           <li class="level1"><a href="#goals">Goals</a></li>
-          <li class="level1"><a href="#competitors">Competitors</a></li>
+          <li class="level1"><a href="#alternatives">Alternatives</a></li>
           <li class="level2"><a href="#akka-and-akka-persistence">Akka and Akka persistence</a></li>
           <li class="level2"><a href="#aecor"><a href="https://github.com/notxcain/aecor">Aecor</a></a></li>
           <li class="level2"><a href="#axon">Axon</a></li>
+          <li class="level2"><a href="#comparison">Comparison</a></li>
           <li class="level2"><a href="#your-home-grown-toolbox">Your home grown toolbox</a></li>
           <li class="level1"><a href="#rationale">Rationale</a></li>
           <li class="level1"><a href="#next">Next</a></li>
@@ -122,7 +123,7 @@
         <h2 id="goals" class="section"><a class="anchor-link left" href="#goals"><i class="icofont-laika">&#xef71;</i></a>Goals</h2>
         <p>provide a solution to implement event driven systems, using domain driven design, by focusing on domain logic and building an automaton to represent the language.</p>
         
-        <h2 id="competitors" class="section"><a class="anchor-link left" href="#competitors"><i class="icofont-laika">&#xef71;</i></a>Competitors</h2>
+        <h2 id="alternatives" class="section"><a class="anchor-link left" href="#alternatives"><i class="icofont-laika">&#xef71;</i></a>Alternatives</h2>
         <p>There are a lot of attempts with huge success in this area, but every one of them has some caveats and I wanted to attack the problem in a different angle.<br></p>
         
         <h3 id="akka-and-akka-persistence" class="section"><a class="anchor-link left" href="#akka-and-akka-persistence"><i class="icofont-laika">&#xef71;</i></a>Akka and Akka persistence</h3>
@@ -130,7 +131,7 @@
         <ul>
           <li>incompatible ecosystem with FP</li>
           <li>too low level</li>
-          <li>easy too use, but not simple</li>
+          <li>easy to use, but not simple</li>
           <li>tries to solve a lot of problems at once, which can lead to mixing domain logic and implementation details if not used carefully</li>
           <li>in case of event sourcing, it does mislead somehow, as sourcing inputs does not make a system event sourced</li>
           <li>you can&#39;t compose or reuse actors easily</li>
@@ -143,7 +144,88 @@
         <p>this is a very nice purely functional wrapper (with brilliant design) around Akka and Akka persistence, solves the problem with composablity and purely functional programming, but leaves us with yet another level of indirection which makes the mix more complex.</p>
         
         <h3 id="axon" class="section"><a class="anchor-link left" href="#axon"><i class="icofont-laika">&#xef71;</i></a>Axon</h3>
-        <p>Are you serious? that&#39;s for a different world where people go to their editors with a pile of annotations and program in annotations. also it is too proprietary in every direction; if you are considering it, there is a huge chance that this library won&#39;t be a good experience for you.</p>
+        <p>While this is not a direct alternative, it tries to do some of things this library is meant for.</p>
+        
+        <h3 id="comparison" class="section"><a class="anchor-link left" href="#comparison"><i class="icofont-laika">&#xef71;</i></a>Comparison</h3>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Edomata</th>
+              <th>Axon</th>
+              <th>Akka and friends</th>
+              <th>Aecor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Paradigm</td>
+              <td>Purely functional</td>
+              <td>OOP</td>
+              <td>Imperative/message passing</td>
+              <td>Purely functional</td>
+            </tr>
+            <tr>
+              <td>Style</td>
+              <td>Haskell-ish scala</td>
+              <td>Java</td>
+              <td>Erlang-ish java</td>
+              <td>MTL</td>
+            </tr>
+            <tr>
+              <td>Usage</td>
+              <td>Library</td>
+              <td>Framework</td>
+              <td>Framework/Platform</td>
+              <td>Library + akka</td>
+            </tr>
+            <tr>
+              <td>Persistence</td>
+              <td>Custom interpreters*</td>
+              <td>Axon server</td>
+              <td>Akka persistence backends</td>
+              <td>like akka</td>
+            </tr>
+            <tr>
+              <td>Testing</td>
+              <td>Trivial</td>
+              <td>Test library</td>
+              <td>Test library</td>
+              <td>Trivial + like akka</td>
+            </tr>
+            <tr>
+              <td>Runtime</td>
+              <td>JVM/JS + (Native soon)</td>
+              <td>JVM</td>
+              <td>JVM</td>
+              <td>JVM</td>
+            </tr>
+            <tr>
+              <td>Focus</td>
+              <td>Expressive event driven state machines</td>
+              <td>CQRS+Event-sourcing</td>
+              <td>Actor model/Erlang OTP on JVM</td>
+              <td>Purely functional behaviors for Akka</td>
+            </tr>
+            <tr>
+              <td>Ecosystem</td>
+              <td>Typelevel</td>
+              <td>Java</td>
+              <td>Lightbend</td>
+              <td>Typelevel over akka</td>
+            </tr>
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+        <ul>
+          <li>Production ready Postgres based backends are provided in a doobie and skunk flavor.</li>
+        </ul>
         
         <h3 id="your-home-grown-toolbox" class="section"><a class="anchor-link left" href="#your-home-grown-toolbox"><i class="icofont-laika">&#xef71;</i></a>Your home grown toolbox</h3>
         <p>Event sourcing does not require any framework and almost always they mess up the work, as mentioned by Greg Young and other pioneers of ES/CQRS, and it does not need a long way to go in order to reach this conclusion, it is sufficient to use one of the available frameworks for a real project and you will reach the same conclusion (if you care for simplicity); so it is almost always better to develop your home grown toolbox and utilities, right?!<br>
