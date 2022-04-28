@@ -7,7 +7,7 @@ It is purely functional and built for typelevel ecosystem in mind, however it do
 ## Goals
 provide a solution to implement event driven systems, using domain driven design, by focusing on domain logic and building an automaton to represent the language.
 
-## Competitors
+## Alternatives
 There are a lot of attempts with huge success in this area, but every one of them has some caveats and I wanted to attack the problem in a different angle.  
 
 ### Akka and Akka persistence
@@ -15,7 +15,7 @@ it is a very strong and well established ecosystem, but it has a few drawbacks:
 
 * incompatible ecosystem with FP
 * too low level
-* easy too use, but not simple
+* easy to use, but not simple
 * tries to solve a lot of problems at once, which can lead to mixing domain logic and implementation details if not used carefully
 * in case of event sourcing, it does mislead somehow, as sourcing inputs does not make a system event sourced
 * you can't compose or reuse actors easily
@@ -28,7 +28,24 @@ however, it has a large ecosystem and community, and it should be your first con
 this is a very nice purely functional wrapper (with brilliant design) around Akka and Akka persistence, solves the problem with composablity and purely functional programming, but leaves us with yet another level of indirection which makes the mix more complex.
 
 ### Axon
-Are you serious? that's for a different world where people go to their editors with a pile of annotations and program in annotations. also it is too proprietary in every direction; if you are considering it, there is a huge chance that this library won't be a good experience for you.
+While this is not a direct alternative, it tries to do some of things this library is meant for.
+
+### Comparison
+
+|             | Edomata                                | Axon                | Akka and friends              | Aecor                                |
+|-------------|----------------------------------------|---------------------|-------------------------------|--------------------------------------|
+| Paradigm    | Purely functional                      | OOP                 | Imperative/message passing    | Purely functional                    |
+| Style       | Haskell-ish scala                      | Java                | Erlang-ish java               | MTL                                  |
+| Usage       | Library                                | Framework           | Framework/Platform            | Library + akka                       |
+| Persistence | Custom interpreters*                   | Axon server         | Akka persistence backends     | like akka                            |
+| Testing     | Trivial                                | Test library        | Test library                  | Trivial + like akka                  |
+| Runtime     | JVM/JS + (Native soon)                 | JVM                 | JVM                           | JVM                                  |
+| Focus       | Expressive event driven state machines | CQRS+Event-sourcing | Actor model/Erlang OTP on JVM | Purely functional behaviors for Akka |
+| Ecosystem   | Typelevel                              | Java                | Lightbend                     | Typelevel over akka                  |
+|             |                                        |                     |                               |                                      |
+
+* Production ready Postgres based backends are provided in a doobie and skunk flavor.
+
 
 ### Your home grown toolbox
 Event sourcing does not require any framework and almost always they mess up the work, as mentioned by Greg Young and other pioneers of ES/CQRS, and it does not need a long way to go in order to reach this conclusion, it is sufficient to use one of the available frameworks for a real project and you will reach the same conclusion (if you care for simplicity); so it is almost always better to develop your home grown toolbox and utilities, right?!  
