@@ -87,8 +87,6 @@ private final class DoobieJournalReader[F[_]: Concurrent, E](
   def readAll: Stream[F, EventMessage[E]] = reader.readAll.transact(trx)
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
     reader.readAllAfter(seqNr).transact(trx)
-  def notifications: Stream[F, StreamId] =
-    ??? // TODO how to implement the doobie version?
 }
 
 private final class DoobieOutboxReader[F[_]: Concurrent, N](

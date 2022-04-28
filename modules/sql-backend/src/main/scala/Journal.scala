@@ -36,7 +36,6 @@ trait JournalReader[F[_], E] {
 
   def readAll: Stream[F, EventMessage[E]]
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]]
-  def notifications: Stream[F, StreamId]
 }
 
 final case class EventMessage[+T](metadata: EventMetadata, payload: T)
