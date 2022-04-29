@@ -54,6 +54,8 @@ lazy val modules = List(
   skunkCirceCodecs,
   skunkUpickeCodec,
   doobieBackend,
+  doobieCirceCodecs,
+  doobieUpickeCodec,
   docs,
   unidocs,
   examples,
@@ -169,6 +171,7 @@ lazy val skunkBackend = module("skunk") {
 
 lazy val doobieBackend = module("doobie") {
   crossProject(JVMPlatform)
+    .crossType(CrossType.Pure)
     .dependsOn(sqlBackend)
     .enablePlugins(NoPublishPlugin)
     .settings(
@@ -198,6 +201,32 @@ lazy val skunkUpickeCodec = module("skunk-upickle") {
     .dependsOn(skunkBackend)
     .settings(
       description := "uPickle codecs for skunk backend",
+      libraryDependencies ++= Seq(
+        "com.lihaoyi" %%% "upickle" % Versions.upickle
+      )
+    )
+}
+
+lazy val doobieCirceCodecs = module("doobie-circe") {
+  crossProject(JVMPlatform)
+    .crossType(CrossType.Pure)
+    .enablePlugins(NoPublishPlugin)
+    .dependsOn(doobieBackend)
+    .settings(
+      description := "Circe codecs for doobie backend",
+      libraryDependencies ++= Seq(
+        "io.circe" %%% "circe-parser" % Versions.circe
+      )
+    )
+}
+
+lazy val doobieUpickeCodec = module("doobie-upickle") {
+  crossProject(JVMPlatform)
+    .crossType(CrossType.Pure)
+    .enablePlugins(NoPublishPlugin)
+    .dependsOn(doobieBackend)
+    .settings(
+      description := "uPickle codecs for doobie backend",
       libraryDependencies ++= Seq(
         "com.lihaoyi" %%% "upickle" % Versions.upickle
       )

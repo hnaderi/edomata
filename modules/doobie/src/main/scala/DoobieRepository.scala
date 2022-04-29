@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package doobie
 
 import _root_.doobie.ConnectionIO
 import _root_.doobie.FC
@@ -34,35 +35,21 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-// final class DoobieBackend[F[_], S, E, R, N] private (
-//     _journal: JournalReader[ConnectionIO, E],
-//     _outbox: OutboxReader[ConnectionIO, N],
-//     compiler: Compiler[F, E, N],
-//     snapshot: SnapshotStore[F, S, E, R],
-//     trx: Transactor[F]
-// )(using m: ModelTC[S, E, R], F: Temporal[F], clock: Clock[F])
-//     extends Backend[F, S, E, R, N](compiler) {
-//   lazy val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
-//   lazy val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
-//   lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
-// }
+private final class DoobieRepository[F[_], S, E, R, N](trx: Transactor[F])(using
+    F: Concurrent[F],
+    clock: Clock[F]
+) extends Repository[F, S, E, R, N] {
+  def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] = ???
+  def append(
+      ctx: RequestContext[?, ?],
+      version: SeqNr,
+      newState: S,
+      events: NonEmptyChain[E],
+      notifications: Chain[N]
+  ): F[Unit] = ???
 
-object DoobieBackend {
-
-  def apply[F[_]: Concurrent](trx: Transactor[F]): Builder[F] = Builder(trx)
-
-  final class Builder[F[_]: Concurrent](trx: Transactor[F]) {
-
-    def build[C, S, E, R, N](
-        domain: Domain[C, S, E, R, N],
-        namespace: PGNamespace
-    )(using
-        m: ModelTC[S, E, R]
-    ): F[Backend[F, S, E, R, N]] = {
-      val s: F[Int] = doobie.Queries.setupSchema(namespace).run.transact(trx)
-
-      ???
-    }
-
-  }
+  def notify(
+      ctx: RequestContext[?, ?],
+      notifications: NonEmptyChain[N]
+  ): F[Unit] = ???
 }

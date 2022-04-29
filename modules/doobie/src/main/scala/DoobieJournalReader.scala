@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package doobie
 
 import _root_.doobie.ConnectionIO
 import _root_.doobie.FC
@@ -34,35 +35,25 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-// final class DoobieBackend[F[_], S, E, R, N] private (
-//     _journal: JournalReader[ConnectionIO, E],
-//     _outbox: OutboxReader[ConnectionIO, N],
-//     compiler: Compiler[F, E, N],
-//     snapshot: SnapshotStore[F, S, E, R],
-//     trx: Transactor[F]
-// )(using m: ModelTC[S, E, R], F: Temporal[F], clock: Clock[F])
-//     extends Backend[F, S, E, R, N](compiler) {
-//   lazy val outbox: OutboxReader[F, N] = DoobieOutboxReader(trx, _outbox)
-//   lazy val journal: JournalReader[F, E] = DoobieJournalReader(trx, _journal)
-//   lazy val repository: Repository[F, S, E, R] = Repository(journal, snapshot)
-// }
+private final class DoobieJournalReader[F[_]: Concurrent, E](
+    trx: Transactor[F],
+    reader: JournalReader[ConnectionIO, E]
+) extends JournalReader[F, E] {
+  def readStream(streamId: StreamId): Stream[F, EventMessage[E]] =
+    reader.readStream(streamId).transact(trx)
+  def readStreamAfter(
+      streamId: StreamId,
+      version: EventVersion
+  ): Stream[F, EventMessage[E]] =
+    reader.readStreamAfter(streamId, version).transact(trx)
 
-object DoobieBackend {
+  def readStreamBefore(
+      streamId: StreamId,
+      version: EventVersion
+  ): Stream[F, EventMessage[E]] =
+    reader.readStreamBefore(streamId, version).transact(trx)
 
-  def apply[F[_]: Concurrent](trx: Transactor[F]): Builder[F] = Builder(trx)
-
-  final class Builder[F[_]: Concurrent](trx: Transactor[F]) {
-
-    def build[C, S, E, R, N](
-        domain: Domain[C, S, E, R, N],
-        namespace: PGNamespace
-    )(using
-        m: ModelTC[S, E, R]
-    ): F[Backend[F, S, E, R, N]] = {
-      val s: F[Int] = doobie.Queries.setupSchema(namespace).run.transact(trx)
-
-      ???
-    }
-
-  }
+  def readAll: Stream[F, EventMessage[E]] = reader.readAll.transact(trx)
+  def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
+    reader.readAllAfter(seqNr).transact(trx)
 }
