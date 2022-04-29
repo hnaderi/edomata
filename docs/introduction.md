@@ -60,4 +60,5 @@ This library is meant to help with this problem, so it can be both a way to show
 - [Design goals](about/design_goals.md)
 - [Getting started](tutorials/0_getting_started.md)
 - [Principles](principles/index.md)
-- [FAQ](faq.md)
+- [List of modules](other/modules.md)
+- [FAQ](other/faq.md)
