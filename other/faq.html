@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Skunk</title>
+    <title>FAQ</title>
     
       <meta name="author" content="Hossein Naderi"/>
     
@@ -73,11 +73,11 @@
         <li class="level2"><a href="../principles/index.html">Principles</a></li>
         <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
         <li class="level1 nav-header">backends</li>
-        <li class="level2 active"><a href="#">Skunk</a></li>
-        <li class="level2"><a href="doobie.html">Doobie</a></li>
+        <li class="level2"><a href="../backends/skunk.html">Skunk</a></li>
+        <li class="level2"><a href="../backends/doobie.html">Doobie</a></li>
         <li class="level1 nav-header">other</li>
-        <li class="level2"><a href="../other/modules.html">Modules</a></li>
-        <li class="level2"><a href="../other/faq.html">FAQ</a></li>
+        <li class="level2"><a href="modules.html">Modules</a></li>
+        <li class="level2 active"><a href="#">FAQ</a></li>
       </ul>
 
       <ul class="nav-list">
@@ -98,10 +98,15 @@
     <div id="container">
 
       <nav id="page-nav">
-        <p class="header"><a href="#">Skunk</a></p>
+        <p class="header"><a href="#">FAQ</a></p>
 
         <ul class="nav-list">
-          <li class="level1"><a href="#install">Install</a></li>
+          <li class="level1"><a href="#should-i-use-it">Should I use it?</a></li>
+          <li class="level2"><a href="#are-you-sure-event-sourcing-cqrs-is-solution-to-your-problem">Are you sure event sourcing/CQRS is solution to your problem?</a></li>
+          <li class="level2"><a href="#are-you-your-team-familiar-with-cats-and-other-typelevel-libraries-or-haskell">Are you/your team familiar with Cats and other typelevel libraries/ or haskell?</a></li>
+          <li class="level1"><a href="#why-yet-another-lib">Why yet another lib?</a></li>
+          <li class="level1"><a href="#can-i-use-a-different-backend">Can I use a different backend?</a></li>
+          <li class="level1"><a href="#what-the-point-of-this-library-i-can-create-my-own-data-structures">What the point of this library? I can create my own data structures?</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -109,13 +114,38 @@
 
       <main class="content">
 
-        <h1 id="skunk" class="title">Skunk</h1>
+        <h1 id="faq" class="title">FAQ</h1>
         
-        <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.0-259b067-SNAPSHOT&quot;</span></code></pre>
-        <p>or for scala.js</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.0-259b067-SNAPSHOT&quot;</span></code></pre>
-        <p>TBD</p>
+        <h2 id="should-i-use-it" class="section"><a class="anchor-link left" href="#should-i-use-it"><i class="icofont-laika">&#xef71;</i></a>Should I use it?</h2>
+        <p>Like everything in engineering it depends; you should first consider answering the following questions, and your answers will lead you to deciding.</p>
+        
+        <h3 id="are-you-sure-event-sourcing-cqrs-is-solution-to-your-problem" class="section"><a class="anchor-link left" href="#are-you-sure-event-sourcing-cqrs-is-solution-to-your-problem"><i class="icofont-laika">&#xef71;</i></a>Are you sure event sourcing/CQRS is solution to your problem?</h3>
+        <p>This is the most common problem developers face when want to use any tools or frameworks in this context;
+        if you are not sure, or don&#39;t have experience using those techniques,
+        chances are really high that you would not be happy to use these techniques for a real project for the first time, as these techniques will introduce a lot of different challenges and accidental complexity if not used in the right context;
+        so you should consider using other techniques which require other tools.<br>
+        On the other hand, if you know what you are doing and have experience using these techniques, or are trying to learn something new without commitments of a real project that&#39;s perfect! I&#39;m pretty sure you&#39;ll find this library at least interesting.</p>
+        
+        <h3 id="are-you-your-team-familiar-with-cats-and-other-typelevel-libraries-or-haskell" class="section"><a class="anchor-link left" href="#are-you-your-team-familiar-with-cats-and-other-typelevel-libraries-or-haskell"><i class="icofont-laika">&#xef71;</i></a>Are you/your team familiar with Cats and other typelevel libraries/ or haskell?</h3>
+        <p>While this library is designed to be as general as possible, but ideas and communities are vital parts of designing and developing software and if you feel new, you should get yourself familiar. there are a lot of docs/tutorials/talks/books that can help you dive in, and typelevel community is one of the most friendly and informed ones out there, and you&#39;ll get help if you ask.<br>
+        If you are familiar, then Welcome! :)</p>
+        
+        <h2 id="why-yet-another-lib" class="section"><a class="anchor-link left" href="#why-yet-another-lib"><i class="icofont-laika">&#xef71;</i></a>Why yet another lib?</h2>
+        <p>I discussed it in <a href="../introduction.html#rationale">rationale</a>.</p>
+        
+        <h2 id="can-i-use-a-different-backend" class="section"><a class="anchor-link left" href="#can-i-use-a-different-backend"><i class="icofont-laika">&#xef71;</i></a>Can I use a different backend?</h2>
+        <p>Absolutely! backends are just simple interpreters for you programs, you can implement them as easily as creating a function that takes an app and returns an effect, as simple as that.<br>
+        I also might add new backends in the future if requested, feel free to open issues or pull requests!</p>
+        
+        <h2 id="what-the-point-of-this-library-i-can-create-my-own-data-structures" class="section"><a class="anchor-link left" href="#what-the-point-of-this-library-i-can-create-my-own-data-structures"><i class="icofont-laika">&#xef71;</i></a>What the point of this library? I can create my own data structures?</h2>
+        <p>Exactly! that&#39;s how simple it is. I started to think about creating this library after a lot of times doing exactly that!
+        While it&#39;s not rocket science to create a monadic data type, it&#39;s not what you want to focus on when you are writing business logic;
+        and creating effect stacks of <code>IRWST</code>, <code>ReaderT[[tt]=&gt;&gt;WriterT[[t]=&gt;&gt;EitherT[F, NonEmptyChain[R], t], List[E], tt], C]</code> won&#39;t be much appealing either!<br>
+        and having that much flexibility leads to unnecessary cognitive load, which we can use on solving real business problems.<br>
+        If you are familiar with how this library is built and its ideas, it won&#39;t be more than a few opinionated, tailored data types for creating programs, which is exactly the goal of this library.</p>
+        <blockquote>
+          <blockquote>Note that I&#39;ve not checked that huge type with compiler, but you&#39;ll get the point :))</blockquote>
+        </blockquote>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
