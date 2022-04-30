@@ -47,7 +47,11 @@ object BackendCodec {
   private val pgJsonBPut: Put[PGobject] =
     Put.Advanced.other[PGobject](NonEmptyList.of("jsonb"))
 
-  sealed abstract class JsonBase[T](put: Put[PGobject], get: Get[PGobject])(
+  sealed abstract class JsonBase[T](
+      put: Put[PGobject],
+      get: Get[PGobject],
+      val tpe: String
+  )(
       encode: T => String,
       decode: String => Either[String, T]
   ) extends BackendCodec[T] {
@@ -67,15 +71,11 @@ object BackendCodec {
 
   @implicitNotFound("Cannot find a way to build json codec for ${T}")
   final class Json[T](encode: T => String, decode: String => Either[String, T])
-      extends JsonBase[T](pgJsonPut, pgJsonGet)(encode, decode) {
-    final def tpe = "json"
-  }
+      extends JsonBase[T](pgJsonPut, pgJsonGet, "json")(encode, decode)
 
   @implicitNotFound("Cannot find a way to build jsonb codec for ${T}")
   final class JsonB[T](encode: T => String, decode: String => Either[String, T])
-      extends JsonBase[T](pgJsonBPut, pgJsonBGet)(encode, decode) {
-    final def tpe = "jsonb"
-  }
+      extends JsonBase[T](pgJsonBPut, pgJsonBGet, "jsonb")(encode, decode)
 
   @implicitNotFound("Cannot find a way to build binary codec for ${T}")
   final class Binary[T](
