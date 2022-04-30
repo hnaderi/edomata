@@ -24,12 +24,18 @@ import cats.effect.implicits.*
 import cats.implicits.*
 import edomata.core.*
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.*
+
+trait CommandHandler[F[_], S, E, R, N] {
+  def apply[C](
+      app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
+  )(using ModelTC[S, E, R]): DomainService[F, CommandMessage[C], R]
+}
 
 object CommandHandler {
   private val void: EitherNec[Nothing, Unit] = Right(())
 
-  def apply[F[_]: Monad, C, S, E, R, N](
+  private def run[F[_]: Monad, C, S, E, R, N](
       repository: Repository[F, S, E, R, N],
       app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
   )(using ModelTC[S, E, R]): DomainService[F, CommandMessage[C], R] =
@@ -57,4 +63,35 @@ object CommandHandler {
         case AggregateState.Conflicted(ls, lEv, errs) => errs.asLeft.pure
         case CommandState.Redundant                   => voidF
       }
+
+  def apply[F[_]: Monad, S, E, R, N](
+      repository: Repository[F, S, E, R, N]
+  ): CommandHandler[F, S, E, R, N] = new {
+    def apply[C](
+        app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
+    )(using ModelTC[S, E, R]): DomainService[F, CommandMessage[C], R] =
+      run(repository, app)
+  }
+
+  def withRetry[F[_]: Temporal, S, E, R, N](
+      repository: Repository[F, S, E, R, N],
+      maxRetry: Int = 5,
+      retryInitialDelay: FiniteDuration = 2.seconds
+  ): CommandHandler[F, S, E, R, N] = new {
+    def apply[C](
+        app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
+    )(using ModelTC[S, E, R]): DomainService[F, CommandMessage[C], R] =
+      val handler = CommandHandler(repository).apply(app)
+      cmd => retry(maxRetry, retryInitialDelay)(handler(cmd))
+  }
+
+  private def retry[F[_]: Temporal, T](max: Int, wait: FiniteDuration)(
+      f: F[T]
+  ): F[T] =
+    f.recoverWith {
+      case BackendError.VersionConflict if max > 0 =>
+        retry(max - 1, wait * 2)(f).delayBy(wait)
+    }.adaptErr { case BackendError.VersionConflict =>
+      BackendError.MaxRetryExceeded
+    }
 }

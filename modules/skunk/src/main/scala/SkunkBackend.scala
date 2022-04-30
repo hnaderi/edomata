@@ -148,14 +148,8 @@ object SkunkBackend {
             .eval(CommandStore.inMem(100))
             .map(CachedRepository(skRepo, _, s))
         else Resource.pure(skRepo)
+      h = CommandHandler.withRetry(compiler, maxRetry, retryInitialDelay)
 
-    } yield Backend(
-      compiler,
-      _outbox,
-      _journal,
-      _repo,
-      maxRetry,
-      retryInitialDelay
-    )
+    } yield Backend(h, _outbox, _journal, _repo)
   }
 }

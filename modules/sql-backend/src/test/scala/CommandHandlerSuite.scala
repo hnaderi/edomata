@@ -38,7 +38,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
       flag <- IO.ref(false)
       app: APP = Edomaton.eval(flag.set(true))
       r <- repo(CommandState.Redundant)
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.listActions.assertEquals(Nil)
       _ <- flag.get.assertEquals(false)
@@ -52,7 +52,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", version))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.listActions.assertEquals(
         List(
@@ -76,7 +76,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", version))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.listActions.assertEquals(
         List(
@@ -93,7 +93,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", version))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals("oops!".leftNec)
       _ <- r.listActions.assertEquals(
         List(
@@ -109,7 +109,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", version))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals("oops!".leftNec)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
@@ -121,7 +121,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", version))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(().rightNec)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
@@ -133,7 +133,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", version))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals("bad event".leftNec)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
@@ -149,7 +149,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
       r <- repo(
         AggregateState.Conflicted("", evMsg, NonEmptyChain(rejection))
       )
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(rejection.leftNec)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
@@ -162,7 +162,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
     for {
       r <- repo(AggregateState.Valid("", 0))
-      s = CommandHandler(r, app)
+      s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
