@@ -57,14 +57,4 @@ object CommandHandler {
         case AggregateState.Conflicted(ls, lEv, errs) => errs.asLeft.pure
         case CommandState.Redundant                   => voidF
       }
-
-  private[backend] def retry[F[_]: Temporal, T](max: Int, wait: FiniteDuration)(
-      f: F[T]
-  ): F[T] =
-    f.recoverWith {
-      case BackendError.VersionConflict if max > 0 =>
-        retry(max - 1, wait * 2)(f).delayBy(wait)
-    }.adaptErr { case BackendError.VersionConflict =>
-      BackendError.MaxRetryExceeded
-    }
 }

@@ -149,17 +149,13 @@ object SkunkBackend {
             .map(CachedRepository(skRepo, _, s))
         else Resource.pure(skRepo)
 
-    } yield new {
-      def compile[C](
-          app: Edomaton[F, RequestContext[C, S], R, E, N, Unit]
-      ): DomainService[F, CommandMessage[C], R] = cmd =>
-        CommandHandler.retry(maxRetry, retryInitialDelay) {
-          CommandHandler(compiler, app).apply(cmd)
-        }
-      val outbox: OutboxReader[F, N] = _outbox
-      val journal: JournalReader[F, E] = _journal
-      val repository: RepositoryReader[F, S, E, R] = _repo
-
-    }
+    } yield Backend(
+      compiler,
+      _outbox,
+      _journal,
+      _repo,
+      maxRetry,
+      retryInitialDelay
+    )
   }
 }
