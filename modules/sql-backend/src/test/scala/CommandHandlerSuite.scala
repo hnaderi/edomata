@@ -19,6 +19,7 @@ package edomata.backend
 import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
+import cats.effect.testkit.TestControl
 import cats.implicits.*
 import edomata.core.*
 import edomata.syntax.all.*
@@ -27,6 +28,7 @@ import munit.CatsEffectSuite
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.util.UUID
+import scala.concurrent.duration.*
 
 import CommandHandlerSuite.*
 import SUT.given_ModelTC_State_Event_Rejection
@@ -164,6 +166,39 @@ class CommandHandlerSuite extends CatsEffectSuite {
       r <- repo(AggregateState.Valid("", 0))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
+      _ <- r.listActions.assertEquals(Nil)
+    } yield ()
+  }
+
+  test("Must retry on version conflict") {
+    for {
+      c <- IO.ref(3)
+      app: APP = SUT.dsl.eval(
+        c.updateAndGet(_ - 1)
+          .map(_ == 0)
+          .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
+      )
+      r <- repo(AggregateState.Valid("", 0))
+      s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
+      _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
+      _ <- r.listActions.assertEquals(Nil)
+    } yield ()
+  }
+
+  test("Must fail with max retry on too many version conflicts") {
+    for {
+      c <- IO.ref(4)
+      app: APP = SUT.dsl.eval(
+        c.updateAndGet(_ - 1)
+          .map(_ == 0)
+          .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
+      )
+      r <- repo(AggregateState.Valid("", 0))
+      s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
+      _ <- TestControl
+        .executeEmbed(s.apply(cmd))
+        .attempt
+        .assertEquals(BackendError.MaxRetryExceeded.asLeft)
       _ <- r.listActions.assertEquals(Nil)
     } yield ()
   }
