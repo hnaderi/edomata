@@ -1,7 +1,7 @@
-import laika.rewrite.link.ApiLinks
-import laika.rewrite.link.LinkConfig
 import Dependencies._
 import laika.io.config.SiteConfig
+import laika.rewrite.link.ApiLinks
+import laika.rewrite.link.LinkConfig
 import sbt.ThisBuild
 import sbtcrossproject.CrossProject
 
@@ -24,6 +24,7 @@ inThisBuild(
     tlCiReleaseBranches := Seq("main"),
     tlSitePublishBranch := Some("main"),
     githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava),
+    // githubWorkflowBuildPreamble ++= dockerComposeUp,
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -33,6 +34,13 @@ inThisBuild(
         url = url("https://hnaderi.ir")
       )
     )
+  )
+)
+
+lazy val dockerComposeUp = Seq(
+  WorkflowStep.Run(
+    commands = List("docker-compose up -d"),
+    name = Some("Start up Postgres")
   )
 )
 
@@ -56,6 +64,7 @@ lazy val modules = List(
   doobieBackend,
   doobieCirceCodecs,
   doobieUpickeCodec,
+  backendTests,
   docs,
   unidocs,
   examples,
@@ -164,7 +173,8 @@ lazy val skunkBackend = module("skunk") {
     .settings(
       description := "Skunk based backend for edomata",
       libraryDependencies ++= Seq(
-        "org.tpolecat" %%% "skunk-core" % Versions.skunk
+        "org.tpolecat" %%% "skunk-core" % Versions.skunk,
+        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test
       )
     )
 }
@@ -229,6 +239,28 @@ lazy val doobieUpickeCodec = module("doobie-upickle") {
       description := "uPickle codecs for doobie backend",
       libraryDependencies ++= Seq(
         "com.lihaoyi" %%% "upickle" % Versions.upickle
+      )
+    )
+}
+
+lazy val backendTests = module("backend-tests") {
+  crossProject(JVMPlatform, JSPlatform)
+    .crossType(CrossType.Full)
+    .enablePlugins(NoPublishPlugin)
+    .dependsOn(skunkBackend, skunkCirceCodecs, skunkUpickeCodec)
+    .jvmConfigure(
+      _.dependsOn(
+        doobieBackend.jvm,
+        doobieCirceCodecs.jvm,
+        doobieUpickeCodec.jvm
+      )
+    )
+    .settings(
+      description := "Integration tests for postgres backends",
+      libraryDependencies ++= Seq(
+        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit,
+        "org.typelevel" %%% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion,
+        "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect
       )
     )
 }
