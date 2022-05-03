@@ -8,7 +8,7 @@ import laika.sbt.LaikaConfig
 import laika.theme._
 
 object SiteConfigs {
-  def apply(version: String): Helium = Helium.defaults.site
+  def apply(vars: Map[String, String]): Helium = Helium.defaults.site
     .metadata(
       title = Some("Edomata"),
       authors = Seq("Hossein Naderi"),
@@ -29,8 +29,11 @@ object SiteConfigs {
       title = Some("Edomata"),
       subtitle = Some("Event-driven automatons for Scala and Scala.js"),
       latestReleases = Seq(
-        ReleaseInfo("Latest develop Release", version),
-        ReleaseInfo("Stable Release", "N/A yet!")
+        ReleaseInfo(
+          "Latest develop Release",
+          vars.getOrElse("SNAPSHOT_VERSION", "N/A")
+        ),
+        ReleaseInfo("Latest Stable Release", vars.getOrElse("VERSION", "N/A"))
       ),
       license = Some("Apache 2.0"),
       documentationLinks = Seq(

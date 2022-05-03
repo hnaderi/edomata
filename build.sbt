@@ -89,7 +89,7 @@ lazy val docs = project
   .in(file("site"))
   .enablePlugins(TypelevelSitePlugin)
   .settings(
-    tlSiteHeliumConfig := SiteConfigs(version.value),
+    tlSiteHeliumConfig := SiteConfigs(mdocVariables.value),
     tlSiteRelatedProjects := Seq(
       TypelevelProject.Cats,
       TypelevelProject.CatsEffect,
