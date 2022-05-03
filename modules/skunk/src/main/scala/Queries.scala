@@ -107,6 +107,7 @@ END $$$$;
     val setup = sql"""
 CREATE TABLE IF NOT EXISTS $table(
   seqnr bigserial NOT NULL,
+  stream text NOT NULL,
   correlation text NULL,
   causation text NULL,
   payload #${codec.oid.name} NOT NULL,
@@ -125,23 +126,22 @@ where seqnr in ${int8.values.list(l)}
 
     private val metadata: Codec[MessageMetadata] = (text.opt *: text.opt).pimap
     private val itemCodec: Codec[OutboxItem[N]] =
-      (int8 *: timestamptz *: notification *: metadata).pimap
+      (int8 *: text *: timestamptz *: notification *: metadata).pimap
 
     val read: Query[Void, OutboxItem[N]] =
       sql"""
-select seqnr, created, payload, correlation, causation
+select seqnr, stream, created, payload, correlation, causation
 from $table
 where published is NULL
 order by seqnr asc
-limit 10
 """.query(itemCodec)
 
-    type BatchInsert = List[(N, OffsetDateTime, MessageMetadata)]
+    type BatchInsert = List[(N, String, OffsetDateTime, MessageMetadata)]
 
-    private val insertCodec = (notification *: timestamptz *: metadata)
+    private val insertCodec = (notification *: text *: timestamptz *: metadata)
     def insertAll(items: BatchInsert): Command[items.type] =
       sql"""
-insert into $table (payload, created, correlation, causation) values ${insertCodec.values
+insert into $table (payload, stream, created, correlation, causation) values ${insertCodec.values
           .list(items)}
 """.command
   }

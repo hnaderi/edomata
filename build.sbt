@@ -24,7 +24,7 @@ inThisBuild(
     tlCiReleaseBranches := Seq("main"),
     tlSitePublishBranch := Some("main"),
     githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava),
-    // githubWorkflowBuildPreamble ++= dockerComposeUp,
+    githubWorkflowBuildPreamble ++= dockerComposeUp,
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -170,6 +170,7 @@ lazy val skunkBackend = module("skunk") {
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(sqlBackend)
+    .dependsOn(backendTests % Test)
     .settings(
       description := "Skunk based backend for edomata",
       libraryDependencies ++= Seq(
@@ -177,12 +178,18 @@ lazy val skunkBackend = module("skunk") {
         "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test
       )
     )
+    .jsSettings(
+      Test / scalaJSLinkerConfig ~= (_.withModuleKind(
+        ModuleKind.CommonJSModule
+      ))
+    )
 }
 
 lazy val doobieBackend = module("doobie") {
   crossProject(JVMPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(sqlBackend)
+    .dependsOn(backendTests % Test)
     .enablePlugins(NoPublishPlugin)
     .settings(
       description := "Doobie based backend for edomata",
@@ -247,14 +254,7 @@ lazy val backendTests = module("backend-tests") {
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Full)
     .enablePlugins(NoPublishPlugin)
-    .dependsOn(skunkBackend, skunkCirceCodecs, skunkUpickeCodec)
-    .jvmConfigure(
-      _.dependsOn(
-        doobieBackend.jvm,
-        doobieCirceCodecs.jvm,
-        doobieUpickeCodec.jvm
-      )
-    )
+    .dependsOn(sqlBackend)
     .settings(
       description := "Integration tests for postgres backends",
       libraryDependencies ++= Seq(

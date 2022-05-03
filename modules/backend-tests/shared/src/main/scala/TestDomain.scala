@@ -16,16 +16,13 @@
 
 package tests
 
-import edomata.backend.OutboxItem
+import cats.implicits.*
+import edomata.core.*
+import edomata.syntax.all.*
 
-trait OutboxCompatibilitySuite[N](items: List[OutboxItem[N]]) {
-  self: StorageSuite[?, ?, ?, N] =>
-
-  check("Must read all outbox items") { s =>
-    s.outbox.read
-      .take(items.size)
-      .compile
-      .toList
-      .assertEquals(items.sortBy(_.seqNr))
-  }
+object TestDomain extends DomainModel[Int, Int, String] {
+  def initial = 0
+  def transition = i => s => (i + s).validNec
 }
+
+val TestDomainModel = TestDomain.domain[Int, Int]

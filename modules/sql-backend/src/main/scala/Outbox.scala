@@ -32,6 +32,7 @@ trait OutboxReader[F[_], N] {
 
 final case class OutboxItem[N](
     seqNr: SeqNr,
+    streamId: StreamId,
     time: OffsetDateTime,
     data: N,
     metadata: MessageMetadata

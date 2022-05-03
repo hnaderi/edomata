@@ -23,14 +23,14 @@ import munit.CatsEffectSuite
 import munit.Location
 
 abstract class StorageSuite[S, E, R, N](
-    storage: Resource[IO, Storage[IO, S, E, R, N]],
+    storage: Resource[IO, Backend[IO, S, E, R, N]],
     suiteName: String
 ) extends CatsEffectSuite {
   private val storageFixture = ResourceSuiteLocalFixture("Storage", storage)
 
   final override def munitFixtures = List(storageFixture)
 
-  def check(name: String)(f: Storage[IO, S, E, R, N] => IO[Unit])(using
+  def check(name: String)(f: Backend[IO, S, E, R, N] => IO[Unit])(using
       Location
   ) = test(s"${suiteName}: ${name}")(f(storageFixture()))
 }

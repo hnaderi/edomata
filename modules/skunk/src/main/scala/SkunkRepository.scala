@@ -79,7 +79,8 @@ private final class SkunkRepository[F[_], S, E, R, N](
           .use(_.execute(evs))
           .assertInserted(evs.size)
         _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { n =>
-          val ns = notifications.toList.map((_, now, ctx.command.metadata))
+          val ns = notifications.toList
+            .map((_, ctx.command.address, now, ctx.command.metadata))
           s.prepare(outbox.insertAll(ns))
             .use(_.execute(ns))
             .assertInserted(ns.size)
@@ -100,7 +101,9 @@ private final class SkunkRepository[F[_], S, E, R, N](
   ): F[Unit] = trx.use { s =>
     for {
       now <- currentTime
-      ns = notifications.toList.map((_, now, ctx.command.metadata))
+      ns = notifications.toList.map(
+        (_, ctx.command.address, now, ctx.command.metadata)
+      )
       _ <- s
         .prepare(outbox.insertAll(ns))
         .use(_.execute(ns))

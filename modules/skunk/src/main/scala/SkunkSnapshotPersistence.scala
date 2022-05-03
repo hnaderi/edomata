@@ -51,7 +51,7 @@ private object SkunkSnapshotPersistence {
   def apply[F[_]: Concurrent, S](
       pool: Resource[F, Session[F]],
       namespace: PGNamespace
-  )(using codec: BackendCodec[S]) =
+  )(using codec: BackendCodec[S]): F[SkunkSnapshotPersistence[F, S]] =
     val q = Queries.Snapshot[S](namespace, codec)
     pool.use(_.execute(q.setup)).as(new SkunkSnapshotPersistence(pool, q))
 }

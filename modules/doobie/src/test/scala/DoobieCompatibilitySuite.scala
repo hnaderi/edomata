@@ -33,8 +33,7 @@ abstract class DoobiePersistenceSuite
     extends PersistenceSuite(storageJson, "doobie")
 
 object DoobieCompatibilitySuite {
-  def storageJson: Resource[IO, Storage[IO, String, Int, String, String]] = ???
-  def storageJsonb: Resource[IO, Storage[IO, String, Int, String, String]] = ???
-  def storageBinary: Resource[IO, Storage[IO, String, Int, String, String]] =
-    ???
+  def storageJson: Resource[IO, Backend[IO, Int, Int, String, Int]] = ???
+  def storageJsonb: Resource[IO, Backend[IO, Int, Int, String, Int]] = ???
+  def storageBinary: Resource[IO, Backend[IO, Int, Int, String, Int]] = ???
 }

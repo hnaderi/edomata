@@ -5,5 +5,7 @@ services:
     image: postgres:14
     environment:
       - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./testdata.sql:/docker-entrypoint-initdb.d/testdata.sql
     ports:
       - 5432:5432

@@ -17,18 +17,7 @@
 package tests
 
 import cats.effect.IO
-import cats.effect.kernel.Resource
-import edomata.backend.*
 
-abstract class BackendCompatibilitySuite(
-    storage: Resource[IO, Storage[IO, String, Int, String, String]],
-    name: String
-) extends StorageSuite(storage, name),
-      tests.JournalCompatibilitySuite(PreparedData.journal),
-      tests.OutboxCompatibilitySuite(PreparedData.outbox),
-      tests.SnapshotCompatibilitySuite(PreparedData.snapshots),
-      tests.RepositoryCompatibilitySuite(
-        PreparedData.redundantCmd,
-        PreparedData.streamId,
-        PreparedData.aggregate
-      )
+import java.util.UUID
+
+def randomString: IO[String] = IO(UUID.randomUUID.toString)
