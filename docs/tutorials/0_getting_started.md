@@ -1,6 +1,6 @@
 # Getting started
 
-## Install 
+## Add to your build
 
 ```scala
 libraryDependencies += "io.github.hnaderi" %% "edomata-core" % "@VERSION@"
