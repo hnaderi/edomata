@@ -102,6 +102,9 @@
 
         <ul class="nav-list">
           <li class="level1"><a href="#install">Install</a></li>
+          <li class="level1"><a href="#defining-codecs">Defining codecs</a></li>
+          <li class="level2"><a href="#persisted-snapshots">Persisted snapshots</a></li>
+          <li class="level1"><a href="#compiling-application-to-a-service">Compiling application to a service</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -113,9 +116,45 @@
         
         <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.1.0&quot;</span></code></pre>
+        <p>or for integrated modules:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-skunk-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.1.0&quot;</span><span>
+</span><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-skunk-upickle&quot;</span><span> % </span><span class="string-literal">&quot;0.1.0&quot;</span></code></pre>
         <p>or for scala.js</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;io.github.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.1.0&quot;</span></code></pre>
-        <p>TBD</p>
+        
+        <h2 id="defining-codecs" class="section"><a class="anchor-link left" href="#defining-codecs"><i class="icofont-laika">&#xef71;</i></a>Defining codecs</h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">Event</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span><span> </span><span class="comment">// or .json
+</span><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">Notification</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span></code></pre>
+        
+        <h3 id="persisted-snapshots" class="section"><a class="anchor-link left" href="#persisted-snapshots"><i class="icofont-laika">&#xef71;</i></a>Persisted snapshots</h3>
+        <p>if you want to use persisted snapshots, you need to provide codec for your state model too.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">State</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span><span> </span></code></pre>
+        
+        <h2 id="compiling-application-to-a-service" class="section"><a class="anchor-link left" href="#compiling-application-to-a-service"><i class="icofont-laika">&#xef71;</i></a>Compiling application to a service</h2>
+        <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">app</span><span>  = ??? </span><span class="comment">// your application from previous chapter
+</span><span class="keyword">val</span><span> </span><span class="identifier">pool</span><span> : </span><span class="type-name">Resource</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">Session</span><span>[</span><span class="type-name">IO</span><span>]] = ??? </span><span class="comment">// create your own session pool
+</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">buildBackend</span><span> = </span><span class="type-name">SkunkBackend</span><span>(</span><span class="identifier">pool</span><span>)
+  .</span><span class="identifier">builder</span><span>(</span><span class="type-name">YourDomain</span><span>, </span><span class="string-literal">&quot;domainname&quot;</span><span>)          </span><span class="comment">// 1
+</span><span>  </span><span class="comment">// .persistedSnapshot(maxInMem = 200)  // 2
+</span><span>  .</span><span class="identifier">inMemSnapshot</span><span>(</span><span class="number-literal">200</span><span>)
+  .</span><span class="identifier">withRetryConfig</span><span>(</span><span class="identifier">retryInitialDelay</span><span> = </span><span class="number-literal">2</span><span>.</span><span class="identifier">seconds</span><span>)
+  .</span><span class="identifier">build</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">application</span><span> = </span><span class="identifier">buildBackend</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">backend</span><span> =&gt;
+  </span><span class="keyword">val</span><span> </span><span class="identifier">service</span><span> = </span><span class="identifier">backend</span><span>.</span><span class="identifier">compile</span><span>(</span><span class="identifier">app</span><span>)
+  </span><span class="comment">// compiling your application will give you a function
+</span><span>  </span><span class="comment">// that takes a messages and does everything required,
+</span><span>  </span><span class="comment">// and returns result.
+</span><span>
+  </span><span class="identifier">service</span><span>(
+    </span><span class="type-name">CommandMessage</span><span>(</span><span class="string-literal">&quot;abc&quot;</span><span>, </span><span class="type-name">Instant</span><span>.</span><span class="identifier">now</span><span>, </span><span class="string-literal">&quot;a&quot;</span><span>, </span><span class="string-literal">&quot;receive&quot;</span><span>)
+  ).</span><span class="identifier">flatMap</span><span>(</span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>)
+}</span></code></pre>
+        <ol class="arabic">
+          <li>use your domain as described in previous chapter. <code>domainname</code> is used as schema name in postgres.</li>
+          <li>feel free to navigate available options in backend builder.</li>
+        </ol>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">
