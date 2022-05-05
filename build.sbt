@@ -60,10 +60,10 @@ lazy val modules = List(
   sqlBackend,
   skunkBackend,
   skunkCirceCodecs,
-  skunkUpickeCodec,
+  skunkUpickleCodecs,
   doobieBackend,
   doobieCirceCodecs,
-  doobieUpickeCodec,
+  doobieUpickleCodecs,
   backendTests,
   docs,
   unidocs,
@@ -126,7 +126,12 @@ lazy val unidocs = project
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       mdocPlantuml,
       doobieBackend.jvm,
-      examples.jvm
+      doobieCirceCodecs.jvm,
+      doobieUpickleCodecs.jvm,
+      examples.jvm,
+      examples.js,
+      backendTests.jvm,
+      backendTests.js
     )
   )
 
@@ -212,7 +217,7 @@ lazy val skunkCirceCodecs = module("skunk-circe") {
     )
 }
 
-lazy val skunkUpickeCodec = module("skunk-upickle") {
+lazy val skunkUpickleCodecs = module("skunk-upickle") {
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(skunkBackend)
@@ -237,7 +242,7 @@ lazy val doobieCirceCodecs = module("doobie-circe") {
     )
 }
 
-lazy val doobieUpickeCodec = module("doobie-upickle") {
+lazy val doobieUpickleCodecs = module("doobie-upickle") {
   crossProject(JVMPlatform)
     .crossType(CrossType.Pure)
     .enablePlugins(NoPublishPlugin)
@@ -271,7 +276,7 @@ lazy val examples =
     .dependsOn(
       skunkBackend,
       skunkCirceCodecs,
-      skunkUpickeCodec
+      skunkUpickleCodecs
     )
     .enablePlugins(NoPublishPlugin)
 
