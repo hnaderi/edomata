@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://hnaderi.github.io/edomata/icon.png" height="100px" alt="Edomata icon" />
+  <img src="https://edomata.ir/icon.png" height="100px" alt="Edomata icon" />
   <br/>
   <strong>Edomata</strong>
   <i>(Event-driven automata for Scala and Scala.js)</i>
@@ -11,12 +11,13 @@
 [![javadoc](https://javadoc.io/badge2/io.github.hnaderi/edomata-docs_3/scaladoc.svg?style=flat-square)](https://javadoc.io/doc/io.github.hnaderi/edomata-docs_3) 
 <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/hnaderi/edomata/Continuous%20Integration?style=flat-square">
 <img alt="GitHub" src="https://img.shields.io/github/license/hnaderi/edomata?style=flat-square">  
+[![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-blue.svg?style=flat-square&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
 
 Beware that;  
 This library is under active development and may change frequently.
 
 ## Getting started
-visit [Project site](https://hnaderi.github.io/edomata/) to see tutorials and docs.
+visit [Project site](https://edomata.ir/) to see tutorials and docs.
 
 ## Add to your build
 Use latest version from badge above
@@ -28,7 +29,7 @@ or other modules
 ```scala
 libraryDependencies += "io.github.hnaderi" %% "edomata-skunk-circe" % "0.1.0"
 ```  
-See [modules](https://hnaderi.github.io/edomata/other/modules.html) for more info.
+See [modules](https://edomata.ir/other/modules.html) for more info.
 
 or for scala.js
 ```scala
