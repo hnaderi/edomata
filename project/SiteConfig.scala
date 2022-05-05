@@ -76,10 +76,10 @@ object SiteConfigs {
       navLinks = Seq(
         // IconLink.internal(Root / "api" / "index.html", HeliumIcon.api)
         IconLink
-          .external("https://github.com/hnaderi/edomata", HeliumIcon.github)
+          .external("https://edomata.ir/", HeliumIcon.github)
       )
     )
     .site
-    .baseURL("https://hnaderi.github.io/edomata/")
+    .baseURL("https://edomata.ir/")
 
 }
