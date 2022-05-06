@@ -278,6 +278,9 @@ lazy val examples =
       skunkCirceCodecs,
       skunkUpickleCodecs
     )
+    .settings(
+      libraryDependencies += "io.circe" %%% "circe-generic" % Versions.circe
+    )
     .enablePlugins(NoPublishPlugin)
 
 def addAlias(name: String)(tasks: String*) =

@@ -23,9 +23,9 @@ import cats.implicits.*
 import edomata.backend.*
 import edomata.core.*
 import edomata.syntax.all.*
+import io.circe.generic.auto.*
 import natchez.Trace.Implicits.noop
 import skunk.Session
-import upickle.default.*
 
 import java.time.Instant
 import scala.concurrent.duration.*
@@ -84,17 +84,8 @@ object Application extends IOApp.Simple {
     case _ => dsl.reject(Rejection.Unknown)
   }
 
-  // given BackendCodec[Event] = CirceCodec.jsonb(using ???, ???)
-  given ReadWriter[Event.Opened.type] = macroRW
-  given ReadWriter[Event.Received] = macroRW
-  given ReadWriter[Event.Closed.type] = macroRW
-  given ReadWriter[Event] = macroRW
-  given ReadWriter[Updates.Updated] = macroRW
-  given ReadWriter[Updates.Closed] = macroRW
-  given ReadWriter[Updates] = macroRW
-
-  given BackendCodec[Event] = UpickleCodec.jsonb
-  given BackendCodec[Updates] = UpickleCodec.msgpack
+  given BackendCodec[Event] = CirceCodec.jsonb
+  given BackendCodec[Updates] = CirceCodec.jsonb
 
   def backendRes(pool: Resource[IO, Session[IO]]) = SkunkBackend(pool)
     .builder(CounterDomain, "counter")
