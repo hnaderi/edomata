@@ -3,18 +3,18 @@
 ## Install 
 
 ```scala
-libraryDependencies += "io.github.hnaderi" %% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "dev.hnaderi" %% "edomata-skunk" % "@VERSION@"
 ```
 
 or for integrated modules:
 ```scala
-libraryDependencies += "io.github.hnaderi" %% "edomata-skunk-circe" % "@VERSION@"
-libraryDependencies += "io.github.hnaderi" %% "edomata-skunk-upickle" % "@VERSION@"
+libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "@VERSION@"
+libraryDependencies += "dev.hnaderi" %% "edomata-skunk-upickle" % "@VERSION@"
 ```
 
 or for scala.js
 ```scala
-libraryDependencies += "io.github.hnaderi" %%% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "dev.hnaderi" %%% "edomata-skunk" % "@VERSION@"
 ```
 
 ## Defining codecs

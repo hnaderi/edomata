@@ -17,7 +17,7 @@ inThisBuild(
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
-    organization := "io.github.hnaderi",
+    organization := "dev.hnaderi",
     organizationName := "Hossein Naderi",
     startYear := Some(2021),
     tlSonatypeUseLegacyHost := false,
@@ -30,8 +30,8 @@ inThisBuild(
       Developer(
         id = "hnaderi",
         name = "Hossein Naderi",
-        email = "hossein-naderi@hotmail.com",
-        url = url("https://hnaderi.ir")
+        email = "mail@hnaderi.dev",
+        url = url("https://hnaderi.dev")
       )
     )
   )

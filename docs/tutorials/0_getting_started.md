@@ -3,12 +3,12 @@
 ## Add to your build
 
 ```scala
-libraryDependencies += "io.github.hnaderi" %% "edomata-core" % "@VERSION@"
+libraryDependencies += "dev.hnaderi" %% "edomata-core" % "@VERSION@"
 ```
 
 or for scala.js
 ```scala
-libraryDependencies += "io.github.hnaderi" %%% "edomata-core" % "@VERSION@"
+libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "@VERSION@"
 ```
 
 ## Imports
