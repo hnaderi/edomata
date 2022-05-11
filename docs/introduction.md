@@ -57,8 +57,8 @@ Designing DDD systems requires a lot of experience, which is really hard to conv
 This library is meant to help with this problem, so it can be both a way to show how those ideas can be mapped to FP, and also probably a handy toolbox acting like a seed to grow your own home grown toolbox.
 
 ## Next
-- [Design goals](about/design_goals.md)
 - [Getting started](tutorials/0_getting_started.md)
 - [Principles](principles/index.md)
-- [List of modules](other/modules.md)
 - [FAQ](other/faq.md)
+- [Design goals](about/design_goals.md)
+- [List of modules](other/modules.md)
