@@ -204,7 +204,7 @@ sealed trait DecisionConstructors {
   ): Decision[R, E, T] = eit.fold(Rejected(_), pure(_))
 }
 
-type D[R, E] = [T] =>> Decision[R, E, T]
+private type D[R, E] = [T] =>> Decision[R, E, T]
 
 sealed trait DecisionCatsInstances0 extends DecisionCatsInstances1 {
   given [R, E]: MonadError[D[R, E], NonEmptyChain[R]] =
