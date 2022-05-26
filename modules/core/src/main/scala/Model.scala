@@ -16,6 +16,7 @@
 
 package edomata.core
 
+import cats.Applicative
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.data.ValidatedNec
@@ -25,7 +26,6 @@ import scala.annotation.implicitAmbiguous
 import scala.annotation.implicitNotFound
 
 import Decision.*
-import cats.Applicative
 
 /** A type class that captures domain model
   *
@@ -142,5 +142,11 @@ private[edomata] transparent trait ModelSyntax {
         f: State => Decision[Rejection, Event, T]
     ): Decision[Rejection, Event, State] =
       m.perform(self, f(self).void)
+
+    /** Helps with deciding based on state and then applying the decision */
+    def decideReturn[T](
+        f: State => Decision[Rejection, Event, T]
+    ): Decision[Rejection, Event, (State, T)] =
+      m.handle(self, f(self))
   }
 }
