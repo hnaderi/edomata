@@ -25,6 +25,7 @@ import scala.annotation.implicitAmbiguous
 import scala.annotation.implicitNotFound
 
 import Decision.*
+import cats.Applicative
 
 /** A type class that captures domain model
   *
@@ -110,6 +111,10 @@ abstract class DomainModel[State, Event, Rejection] { self =>
     final protected val App: DomainDSL[C, State, Event, Rejection, N] =
       DomainDSL()
     final val domain: Domain[C, State, Event, Rejection, N] = Domain()
+
+    extension [T](dec: Decision[Rejection, Event, T]) {
+      def toApp[F[_]: Applicative]: App[F, T] = App.decide(dec)
+    }
   }
 }
 

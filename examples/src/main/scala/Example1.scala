@@ -111,8 +111,9 @@ object Application extends IOApp.Simple {
 }
 
 object CounterService extends Counter.Service[String, Updates] {
-  def apply[F[_]: Monad](): App[F, Unit] = App.router {
-    case "" => App.unit
-    case _  => App.reject(Rejection.Unknown)
+  import App.*
+  def apply[F[_]: Monad](): App[F, Unit] = router {
+    case "" => state.flatMap(_.receive(2).void.toApp)
+    case _  => reject(Rejection.Unknown)
   }
 }
