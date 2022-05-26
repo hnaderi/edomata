@@ -103,6 +103,14 @@ abstract class DomainModel[State, Event, Rejection] { self =>
     def initial = self.initial
     def transition = self.transition
   }
+
+  trait Service[C, N] {
+    final type App[F[_], T] =
+      Edomaton[F, RequestContext[C, State], Rejection, Event, N, T]
+    final protected val App: DomainDSL[C, State, Event, Rejection, N] =
+      DomainDSL()
+    final val domain: Domain[C, State, Event, Rejection, N] = Domain()
+  }
 }
 
 private[edomata] transparent trait ModelSyntax {

@@ -16,6 +16,7 @@
 
 package edomata.examples.nr1
 
+import cats.Monad
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.kernel.Resource
@@ -72,7 +73,7 @@ object Application extends IOApp.Simple {
 
   private val dsl = CounterDomain.dsl
 
-  def app: dsl.App[IO, Unit] = dsl.router {
+  def app = dsl.router {
     case "" => dsl.read[IO].map(_.command).map(_.deriveMeta).void
     case "receive" =>
       for {
@@ -88,7 +89,7 @@ object Application extends IOApp.Simple {
   given BackendCodec[Updates] = CirceCodec.jsonb
 
   def backendRes(pool: Resource[IO, Session[IO]]) = SkunkBackend(pool)
-    .builder(CounterDomain, "counter")
+    .builder(CounterService.domain, "counter")
     // .persistedSnapshot(???, maxInMem = 200)
     .inMemSnapshot(200)
     .withRetryConfig(retryInitialDelay = 2.seconds)
@@ -99,6 +100,7 @@ object Application extends IOApp.Simple {
 
   val application = database.flatMap(backendRes).use { backend =>
     val service = backend.compile(app)
+    val srv2 = backend.compile(CounterService())
 
     service(
       CommandMessage("abc", Instant.now, "a", "receive")
@@ -106,4 +108,11 @@ object Application extends IOApp.Simple {
   }
 
   def run: IO[Unit] = application
+}
+
+object CounterService extends Counter.Service[String, Updates] {
+  def apply[F[_]: Monad](): App[F, Unit] = App.router {
+    case "" => App.unit
+    case _  => App.reject(Rejection.Unknown)
+  }
 }
