@@ -31,6 +31,7 @@ import cats.kernel.Eq
 import scala.annotation.tailrec
 
 import Decision._
+import scala.annotation.targetName
 
 /** Represents programs that decide in an event driven context
   *
@@ -126,6 +127,19 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
   /** Ignores output value */
   def void: Decision[R, E, Unit] = map(_ => ())
 
+  /** Validates output using a ValidatedNec */
+  def validate[R2 >: R, B](f: A => ValidatedNec[R2, B]): Decision[R2, E, B] =
+    flatMap(a => Decision.validate(f(a)))
+
+  /** Validates output using an EitherNec */
+  @targetName("validateEitherNec")
+  def validate[R2 >: R, B](f: A => EitherNec[R2, B]): Decision[R2, E, B] =
+    flatMap(a => Decision.fromEitherNec(f(a)))
+
+  /** Validates output using an Either */
+  @targetName("validateEither")
+  def validate[R2 >: R, B](f: A => Either[R2, B]): Decision[R2, E, B] =
+    flatMap(a => Decision.fromEither(f(a)))
 }
 
 object Decision extends DecisionConstructors, DecisionCatsInstances0 {
