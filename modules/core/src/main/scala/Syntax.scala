@@ -21,6 +21,6 @@ object all extends AllSyntax
 
 trait AllSyntax
     extends core.ModelSyntax,
-      core.ValidatedSyntax,
+      core.DecisionSyntax,
       core.EdomatonSyntax,
       core.DomainSyntax

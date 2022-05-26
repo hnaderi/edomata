@@ -31,7 +31,6 @@ import cats.kernel.Eq
 import scala.annotation.tailrec
 
 import Decision._
-import cats.syntax.validated
 
 /** Represents programs that decide in an event driven context
   *
@@ -168,6 +167,8 @@ sealed trait DecisionConstructors {
 
   /** Constructs a program that uses a validation to decide whether to output a
     * value or reject with error(s)
+    *
+    * You can also use .toDecision syntax for more convenience
     */
   def validate[R, E, T](
       validation: ValidatedNec[R, T]
@@ -176,6 +177,31 @@ sealed trait DecisionConstructors {
       case Validated.Invalid(e) => Rejected(e)
       case Validated.Valid(a)   => InDecisive(a)
     }
+
+  /** Constructs a program from an optional value, that outputs value if exists
+    * or rejects otherwise
+    *
+    * You can also use .toDecision syntax for more convenience
+    */
+  def fromOption[R, E, T](
+      opt: Option[T],
+      orElse: R,
+      other: R*
+  ): Decision[R, E, T] = opt.fold(reject(orElse, other: _*))(pure(_))
+
+  /** Constructs a program that either outputs a value or rejects
+    */
+  def fromEither[R, E, T](
+      eit: Either[R, T]
+  ): Decision[R, E, T] = eit.fold(reject(_), pure(_))
+
+  /** Constructs a program that either outputs a value or rejects
+    *
+    * You can also use .toDecision syntax for more convenience.
+    */
+  def fromEitherNec[R, E, T](
+      eit: EitherNec[R, T]
+  ): Decision[R, E, T] = eit.fold(Rejected(_), pure(_))
 }
 
 type D[R, E] = [T] =>> Decision[R, E, T]
@@ -253,11 +279,21 @@ sealed trait DecisionCatsInstances1 {
   }
 }
 
-private[edomata] transparent trait ValidatedSyntax {
+private[edomata] transparent trait DecisionSyntax {
   extension [R, T](self: ValidatedNec[R, T]) {
     def toDecision[E]: Decision[R, E, T] = self match {
       case Validated.Valid(t)   => Decision.InDecisive(t)
       case Validated.Invalid(r) => Decision.Rejected(r)
     }
+  }
+
+  extension [T](self: Option[T]) {
+    def toDecision[R](orElse: R, others: R*): Decision[R, Nothing, T] =
+      Decision.fromOption(self, orElse, others: _*)
+  }
+
+  extension [R, T](self: EitherNec[R, T]) {
+    def toDecision: Decision[R, Nothing, T] =
+      Decision.fromEitherNec(self)
   }
 }
