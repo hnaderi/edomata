@@ -23,7 +23,6 @@ import cats.implicits.*
 import cats.kernel.Eq
 
 import Edomaton.*
-import scala.annotation.targetName
 
 /** Represents programs that are event driven state machines (a Mealy machine)
   *
@@ -132,26 +131,6 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   /** alias for map(_=> b) */
   inline def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
-
-  /** Validates output using a ValidatedNec */
-  def validate[B](f: A => ValidatedNec[R, B])(using
-      Monad[F]
-  ): Edomaton[F, Env, R, E, N, B] =
-    flatMap(a => Edomaton.validate(f(a)))
-
-  /** Validates output using an EitherNec */
-  @targetName("validateEitherNec")
-  def validate[B](f: A => EitherNec[R, B])(using
-      Monad[F]
-  ): Edomaton[F, Env, R, E, N, B] =
-    flatMap(a => Edomaton.fromEitherNec(f(a)))
-
-  /** Validates output using an Either */
-  @targetName("validateEither")
-  def validate[B](f: A => Either[R, B])(using
-      Monad[F]
-  ): Edomaton[F, Env, R, E, N, B] =
-    flatMap(a => Edomaton.fromEither(f(a)))
 
   /** Decides based on output */
   def decide[B](f: A => Decision[R, E, B])(using
