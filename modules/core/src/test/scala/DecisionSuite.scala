@@ -33,7 +33,7 @@ import org.scalacheck.Prop.forAll
 import Generators.*
 
 class DecisionSuite extends DisciplineSuite {
-  private given [T: Arbitrary]: Arbitrary[D[T]] = Arbitrary(
+  private given [T: Arbitrary]: Arbitrary[Dec[T]] = Arbitrary(
     Arbitrary.arbitrary[T].flatMap(t => Generators.anySut.map(_.as(t)))
   )
   private given Arbitrary[NonEmptyChain[String]] = Arbitrary(
@@ -42,13 +42,13 @@ class DecisionSuite extends DisciplineSuite {
 
   checkAll(
     "laws",
-    MonadErrorTests[D, NonEmptyChain[String]].monadError[Int, Int, String]
+    MonadErrorTests[Dec, NonEmptyChain[String]].monadError[Int, Int, String]
   )
   checkAll(
     "laws",
-    TraverseTests[D].traverse[Int, Int, Int, Set[Int], Option, Option]
+    TraverseTests[Dec].traverse[Int, Int, Int, Set[Int], Option, Option]
   )
-  checkAll("laws", EqTests[D[Long]].eqv)
+  checkAll("laws", EqTests[Dec[Long]].eqv)
   checkAll("laws", SerializableTests.serializable[SUT](Decision.pure(123L)))
 
   property("Accepted accumulates") {
