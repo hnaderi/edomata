@@ -153,6 +153,12 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   ): Edomaton[F, Env, R, E, N, B] =
     flatMap(a => Edomaton.fromEither(f(a)))
 
+  /** Decides based on output */
+  def decide[B](f: A => Decision[R, E, B])(using
+      Monad[F]
+  ): Edomaton[F, Env, R, E, N, B] =
+    flatMap(a => Edomaton.decide(f(a)))
+
   /** Clears all notifications so far */
   def reset(using Functor[F]): Edomaton[F, Env, R, E, N, A] =
     transform(_.reset)
