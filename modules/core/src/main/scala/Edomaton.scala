@@ -16,18 +16,14 @@
 
 package edomata.core
 
-import cats.Applicative
-import cats.Contravariant
-import cats.FlatMap
-import cats.Functor
-import cats.Monad
+import cats.*
 import cats.arrow.FunctionK
-import cats.data.NonEmptyChain
-import cats.data.ValidatedNec
+import cats.data.*
 import cats.implicits.*
 import cats.kernel.Eq
 
 import Edomaton.*
+import scala.annotation.targetName
 
 /** Represents programs that are event driven state machines (a Mealy machine)
   *
@@ -137,6 +133,26 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   inline def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
 
+  /** Validates output using a ValidatedNec */
+  def validate[B](f: A => ValidatedNec[R, B])(using
+      Monad[F]
+  ): Edomaton[F, Env, R, E, N, B] =
+    flatMap(a => Edomaton.validate(f(a)))
+
+  /** Validates output using an EitherNec */
+  @targetName("validateEitherNec")
+  def validate[B](f: A => EitherNec[R, B])(using
+      Monad[F]
+  ): Edomaton[F, Env, R, E, N, B] =
+    flatMap(a => Edomaton.fromEitherNec(f(a)))
+
+  /** Validates output using an Either */
+  @targetName("validateEither")
+  def validate[B](f: A => Either[R, B])(using
+      Monad[F]
+  ): Edomaton[F, Env, R, E, N, B] =
+    flatMap(a => Edomaton.fromEither(f(a)))
+
   /** Clears all notifications so far */
   def reset(using Functor[F]): Edomaton[F, Env, R, E, N, A] =
     transform(_.reset)
@@ -218,13 +234,14 @@ sealed transparent trait EdomatonInstances {
 sealed transparent trait EdomatonConstructors {
 
   /** constructs an edomaton that outputs a pure value */
-  def pure[F[_]: Monad, Env, R, E, N, T](
+  def pure[F[_]: Applicative, Env, R, E, N, T](
       t: T
   ): Edomaton[F, Env, R, E, N, T] =
     Edomaton(_ => Response.pure(t).pure)
 
   /** an edomaton with trivial output */
-  def unit[F[_]: Monad, Env, R, E, N, T]: Edomaton[F, Env, R, E, N, Unit] =
+  def unit[F[_]: Applicative, Env, R, E, N, T]
+      : Edomaton[F, Env, R, E, N, Unit] =
     pure(())
 
   /** constructs an edomaton from an effect that results in a response */
@@ -272,4 +289,30 @@ sealed transparent trait EdomatonConstructors {
   def validate[F[_]: Applicative, Env, R, E, N, T](
       v: ValidatedNec[R, T]
   ): Edomaton[F, Env, R, E, N, T] = lift(Response.validate(v))
+
+  /** Constructs a program from an optional value, that outputs value if exists
+    * or rejects otherwise
+    *
+    * You can also use .toDecision syntax for more convenience
+    */
+  def fromOption[F[_]: Applicative, Env, R, E, N, T](
+      opt: Option[T],
+      orElse: R,
+      other: R*
+  ): Edomaton[F, Env, R, E, N, T] = opt.fold(reject(orElse, other: _*))(pure(_))
+
+  /** Constructs a program that either outputs a value or rejects
+    */
+  def fromEither[F[_]: Applicative, Env, R, E, N, T](
+      eit: Either[R, T]
+  ): Edomaton[F, Env, R, E, N, T] = eit.fold(reject(_), pure(_))
+
+  /** Constructs a program that either outputs a value or rejects
+    *
+    * You can also use .toDecision syntax for more convenience.
+    */
+  def fromEitherNec[F[_]: Applicative, Env, R, E, N, T](
+      eit: EitherNec[R, T]
+  ): Edomaton[F, Env, R, E, N, T] =
+    eit.fold(errs => lift(Response(Decision.Rejected(errs))), pure(_))
 }
