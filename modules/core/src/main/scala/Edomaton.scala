@@ -90,7 +90,7 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
 
   /** sequences another edomaton without considering output for this one
     *
-    * alias for flatMap(_=> f)
+    * alias for flatMap(_ => f)
     */
   inline def andThen[Env2 <: Env, B](
       f: => Edomaton[F, Env2, R, E, N, B]
@@ -131,6 +131,9 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   /** alias for map(_=> b) */
   inline def as[B](b: B)(using Functor[F]): Edomaton[F, Env, R, E, N, B] =
     map(_ => b)
+
+  /** Ignores output value */
+  def void(using Functor[F]): Edomaton[F, Env, R, E, N, Unit] = as(())
 
   /** Decides based on output */
   def decide[B](f: A => Decision[R, E, B])(using
