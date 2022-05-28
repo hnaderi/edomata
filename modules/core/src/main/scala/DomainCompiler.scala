@@ -16,6 +16,7 @@
 
 package edomata.core
 
+import cats.Applicative
 import cats.Monad
 import cats.data.Chain
 import cats.data.EitherNec
@@ -83,5 +84,13 @@ private[edomata] transparent trait EdomatonSyntax {
     inline def execute(
         ctx: RequestContext[C, S]
     ): F[EdomatonResult[S, E, R, N]] = DomainCompiler.execute(app, ctx)
+  }
+
+  private def fk[F[_]: Applicative]: cats.arrow.FunctionK[cats.Id, F] = new {
+    def apply[A](a: A): F[A] = Applicative[F].pure(a)
+  }
+
+  extension (app: Edomaton[cats.Id, ?, ?, ?, ?, ?]) {
+    def liftTo[F[_]](using F: Applicative[F]) = app.mapK(fk[F])
   }
 }

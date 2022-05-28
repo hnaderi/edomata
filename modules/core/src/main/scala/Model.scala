@@ -108,8 +108,12 @@ abstract class DomainModel[State, Event, Rejection] { self =>
   trait Service[C, N] {
     final type App[F[_], T] =
       Edomaton[F, RequestContext[C, State], Rejection, Event, N, T]
+
+    final type PureApp[T] = App[cats.Id, T]
+
     final protected val App: DomainDSL[C, State, Event, Rejection, N] =
       DomainDSL()
+
     final val domain: Domain[C, State, Event, Rejection, N] = Domain()
 
     extension [T](dec: Decision[Rejection, Event, T]) {
