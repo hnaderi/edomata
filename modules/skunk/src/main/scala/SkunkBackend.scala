@@ -53,6 +53,20 @@ object SkunkBackend {
         PGNamespace(namespace),
         Resource.eval(SnapshotStore.inMem(1000))
       )
+
+    inline def builder[C, S, E, R, N](
+        service: edomata.core.DomainModel[S, E, R]#Service[C, N],
+        inline namespace: String
+    )(using
+        model: ModelTC[S, E, R]
+    ): DomainBuilder[F, C, S, E, R, N] =
+      DomainBuilder(
+        pool,
+        service.domain,
+        model,
+        PGNamespace(namespace),
+        Resource.eval(SnapshotStore.inMem(1000))
+      )
   }
 
   final case class DomainBuilder[

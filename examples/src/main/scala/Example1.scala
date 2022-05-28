@@ -89,7 +89,7 @@ object Application extends IOApp.Simple {
   given BackendCodec[Updates] = CirceCodec.jsonb
 
   def backendRes(pool: Resource[IO, Session[IO]]) = SkunkBackend(pool)
-    .builder(CounterService.domain, "counter")
+    .builder(CounterService, "counter")
     // .persistedSnapshot(???, maxInMem = 200)
     .inMemSnapshot(200)
     .withRetryConfig(retryInitialDelay = 2.seconds)
