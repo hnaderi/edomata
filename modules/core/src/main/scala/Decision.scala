@@ -29,9 +29,9 @@ import cats.data.ValidatedNec
 import cats.kernel.Eq
 
 import scala.annotation.tailrec
+import scala.annotation.targetName
 
 import Decision._
-import scala.annotation.targetName
 
 /** Represents programs that decide in an event driven context
   *

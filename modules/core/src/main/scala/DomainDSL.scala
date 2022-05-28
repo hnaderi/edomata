@@ -18,7 +18,7 @@ package edomata.core
 
 import cats.Applicative
 import cats.Monad
-import cats.data.ValidatedNec
+import cats.data.*
 import cats.implicits.*
 
 final class Domain[C, S, E, R, N](
@@ -79,6 +79,20 @@ final class DomainDSL[C, S, E, R, N](
       v: ValidatedNec[R, T]
   ): App[F, T] =
     Edomaton.validate(v)
+
+  inline def fromOption[F[_]: Applicative, Env, R, E, N, T](
+      opt: Option[T],
+      orElse: R,
+      other: R*
+  ): Edomaton[F, Env, R, E, N, T] = Edomaton.fromOption(opt, orElse, other: _*)
+
+  inline def fromEither[F[_]: Applicative, Env, R, E, N, T](
+      eit: Either[R, T]
+  ): Edomaton[F, Env, R, E, N, T] = Edomaton.fromEither(eit)
+
+  inline def fromEitherNec[F[_]: Applicative, Env, R, E, N, T](
+      eit: EitherNec[R, T]
+  ): Edomaton[F, Env, R, E, N, T] = Edomaton.fromEitherNec(eit)
 
   def state[F[_]: Monad]: App[F, S] =
     Edomaton.read.map(_.state)
