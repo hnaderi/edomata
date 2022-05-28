@@ -83,7 +83,7 @@ sealed trait ModelTC[State, Event, Rejection] {
   * @tparam Rejection
   *   domain error type
   */
-abstract class DomainModel[State, Event, Rejection] { self =>
+trait DomainModel[State, Event, Rejection] { self =>
 
   /** Initial or empty value for this domain model
     *
