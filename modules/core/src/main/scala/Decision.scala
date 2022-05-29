@@ -30,6 +30,7 @@ import cats.kernel.Eq
 
 import scala.annotation.tailrec
 import scala.annotation.targetName
+import scala.util.NotGiven
 
 import Decision._
 
@@ -154,23 +155,61 @@ object Decision extends DecisionConstructors, DecisionCatsInstances0 {
 sealed trait DecisionConstructors {
 
   /** Constructs a program that outputs a pure value */
-  def apply[R, E, T](t: T): Decision[R, E, T] = InDecisive(t)
+  def apply[T](t: T): Decision[Nothing, Nothing, T] = InDecisive(t)
 
   /** Constructs a program that outputs a pure value */
-  def pure[R, E, T](t: T): Decision[R, E, T] = InDecisive(t)
+  def pure[T](t: T): Decision[Nothing, Nothing, T] = InDecisive(t)
 
   /** Constructs a program that outputs a trivial output */
-  def unit[R, E]: Decision[R, E, Unit] = InDecisive(())
+  def unit: Decision[Nothing, Nothing, Unit] = InDecisive(())
 
   /** Constructs a program that decides to accept a sequence of events */
-  def accept[R, E](ev: E, evs: E*): Decision[R, E, Unit] =
+  def accept[E](ev: E, evs: E*): Decision[Nothing, E, Unit] =
     acceptReturn(())(ev, evs: _*)
 
   /** Constructs a program that decides to accept a sequence of events and also
     * returns an output
     */
-  def acceptReturn[R, E, T](t: T)(ev: E, evs: E*): Decision[R, E, T] =
+  def acceptReturn[E, T](t: T)(ev: E, evs: E*): Decision[Nothing, E, T] =
     Accepted(NonEmptyChain.of(ev, evs: _*), t)
+
+  /** Constructs a program that decides to accept a sequence of events or do
+    * nothing based on a boolean predicate
+    */
+  def acceptWhen[E](
+      predicate: => Boolean
+  )(ev: E, evs: E*): Decision[Nothing, E, Unit] =
+    if predicate then accept(ev, evs: _*)
+    else unit
+
+  /** Constructs a program that decides to accept an optional single event or do
+    * nothing
+    */
+  def acceptWhen[E](ev: Option[E]): Decision[Nothing, E, Unit] =
+    ev.fold(unit)(accept(_))
+
+  /** Constructs a program that decides to accept an optional single event or
+    * reject otherwise
+    */
+  def acceptWhen[R, E](
+      ev: Option[E]
+  )(orElse: R, other: R*): Decision[R, E, Unit] =
+    ev.fold(reject(orElse, other: _*))(accept(_))
+
+  /** Constructs a program that decides to accept an optional single event or
+    * reject otherwise
+    */
+  def acceptWhen[R, E](
+      eit: Either[R, E]
+  ): Decision[R, E, Unit] = eit.fold(reject(_), accept(_))
+
+  /** Constructs a program that decides to accept an optional single event or
+    * reject otherwise
+    */
+  @targetName("acceptWhenEitherNec")
+  def acceptWhen[R, E](
+      eit: EitherNec[R, E]
+  ): Decision[R, E, Unit] = eit.fold(Rejected(_), accept(_))
 
   /** Constructs a program that decides to reject with a sequence of reasons */
   def reject[R, E](
@@ -179,14 +218,29 @@ sealed trait DecisionConstructors {
   ): Decision[R, E, Nothing] =
     Rejected(NonEmptyChain.of(reason, otherReasons: _*))
 
+  /** Constructs a program that decides to reject with a sequence of reasons if
+    * a predicate satisfies
+    */
+  def rejectWhen[R](
+      predicate: => Boolean
+  )(ev: R, evs: R*): Decision[R, Nothing, Unit] =
+    if predicate then reject(ev, evs: _*)
+    else unit
+
+  /** Constructs a program that decides to reject with an optional single reason
+    * or do nothing otherwise
+    */
+  def rejectWhen[R](ev: Option[R]): Decision[R, Nothing, Unit] =
+    ev.fold(unit)(reject(_))
+
   /** Constructs a program that uses a validation to decide whether to output a
     * value or reject with error(s)
     *
     * You can also use .toDecision syntax for more convenience
     */
-  def validate[R, E, T](
+  def validate[R, T](
       validation: ValidatedNec[R, T]
-  ): Decision[R, E, T] =
+  ): Decision[R, Nothing, T] =
     validation match {
       case Validated.Invalid(e) => Rejected(e)
       case Validated.Valid(a)   => InDecisive(a)
@@ -197,25 +251,25 @@ sealed trait DecisionConstructors {
     *
     * You can also use .toDecision syntax for more convenience
     */
-  def fromOption[R, E, T](
+  def fromOption[R, T](
       opt: Option[T],
       orElse: R,
       other: R*
-  ): Decision[R, E, T] = opt.fold(reject(orElse, other: _*))(pure(_))
+  ): Decision[R, Nothing, T] = opt.fold(reject(orElse, other: _*))(pure(_))
 
   /** Constructs a program that either outputs a value or rejects
     */
-  def fromEither[R, E, T](
+  def fromEither[R, T](
       eit: Either[R, T]
-  ): Decision[R, E, T] = eit.fold(reject(_), pure(_))
+  ): Decision[R, Nothing, T] = eit.fold(reject(_), pure(_))
 
   /** Constructs a program that either outputs a value or rejects
     *
     * You can also use .toDecision syntax for more convenience.
     */
-  def fromEitherNec[R, E, T](
+  def fromEitherNec[R, T](
       eit: EitherNec[R, T]
-  ): Decision[R, E, T] = eit.fold(Rejected(_), pure(_))
+  ): Decision[R, Nothing, T] = eit.fold(Rejected(_), pure(_))
 }
 
 private type D[R, E] = [T] =>> Decision[R, E, T]
@@ -295,19 +349,35 @@ sealed trait DecisionCatsInstances1 {
 
 private[edomata] transparent trait DecisionSyntax {
   extension [R, T](self: ValidatedNec[R, T]) {
-    def toDecision[E]: Decision[R, E, T] = self match {
-      case Validated.Valid(t)   => Decision.InDecisive(t)
-      case Validated.Invalid(r) => Decision.Rejected(r)
-    }
+    def toDecision[E]: Decision[R, E, T] = Decision.validate(self)
   }
+
+  private type NonChain[R] = NotGiven[R <:< NonEmptyChain[Nothing]]
 
   extension [T](self: Option[T]) {
     def toDecision[R](orElse: R, others: R*): Decision[R, Nothing, T] =
       Decision.fromOption(self, orElse, others: _*)
+    def toAccepted: Decision[Nothing, T, Unit] = Decision.acceptWhen(self)
+    def toAcceptedOr[R](orElse: R, others: R*): Decision[R, T, Unit] =
+      Decision.acceptWhen(self)(orElse, others: _*)
+    def toRejected: Decision[T, Nothing, Unit] = Decision.rejectWhen(self)
   }
 
   extension [R, T](self: EitherNec[R, T]) {
     def toDecision: Decision[R, Nothing, T] =
       Decision.fromEitherNec(self)
+    def toAccepted: Decision[R, T, Unit] = Decision.acceptWhen(self)
+  }
+
+  extension [R, T](self: Either[R, T])(using NonChain[R]) {
+    def toDecision: Decision[R, Nothing, T] =
+      Decision.fromEither(self)
+    def toAccepted: Decision[R, T, Unit] = Decision.acceptWhen(self)
+  }
+
+  extension [T](value: T) {
+    def asDecision: Decision[Nothing, Nothing, T] = Decision.pure(value)
+    def accept: Decision[Nothing, T, Unit] = Decision.accept(value)
+    def reject: Decision[T, Nothing, Nothing] = Decision.reject(value)
   }
 }

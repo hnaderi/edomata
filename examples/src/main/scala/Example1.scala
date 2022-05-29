@@ -117,3 +117,16 @@ object CounterService extends Counter.Service[String, Updates] {
     case _  => reject(Rejection.Unknown)
   }
 }
+
+object SyntaxExample {
+  val l1 = Left(Rejection.Unknown).toDecision
+  val l2 = Left(Rejection.Unknown).toAccepted
+  val l3 = Rejection.Unknown.asLeft.toAccepted
+  val l4 = Event.Closed.rightNec.toAccepted
+  val l5 = Event.Closed.some.toAccepted
+  val l6 = Rejection.Unknown.some.toRejected
+  val l7 = Event.Closed.some.toAcceptedOr(Rejection.Unknown)
+  val l8 = Event.Closed.accept
+  val l9 = Rejection.Unknown.reject
+  val l10 = 1.asDecision
+}
