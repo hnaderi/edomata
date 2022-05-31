@@ -65,6 +65,7 @@ lazy val modules = List(
   doobieCirceCodecs,
   doobieUpickleCodecs,
   backendTests,
+  munitTestkit,
   docs,
   unidocs,
   examples,
@@ -268,6 +269,16 @@ lazy val backendTests = module("backend-tests") {
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect
       )
     )
+}
+
+lazy val munitTestkit = module("munit") {
+  crossProject(JVMPlatform, JSPlatform)
+    .crossType(CrossType.Pure)
+    .settings(
+      description := "munit integration for edomata",
+      libraryDependencies += "org.scalameta" %%% "munit" % Versions.MUnit
+    )
+    .dependsOn(core)
 }
 
 lazy val examples =
