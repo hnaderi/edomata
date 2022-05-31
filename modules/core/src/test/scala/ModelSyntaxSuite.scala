@@ -29,6 +29,9 @@ class ModelSyntaxSuite extends FunSuite {
 
     assertEquals(1.accept(2, 3), 1.perform(Decision.accept(2, 3)))
     assertEquals(1.accept(2, 3), Decision.acceptReturn(6)(2, 3))
+
+    // Not to be confused with value constructor
+    assertEquals(1.accept, Decision.accept(1))
   }
 }
 
