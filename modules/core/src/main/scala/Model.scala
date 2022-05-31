@@ -152,5 +152,9 @@ private[edomata] transparent trait ModelSyntax {
         f: State => Decision[Rejection, Event, T]
     ): Decision[Rejection, Event, (State, T)] =
       m.handle(self, f(self))
+
+    /** Applies events to state, returns new state */
+    def accept(ev: Event, evs: Event*): Decision[Rejection, Event, State] =
+      m.perform(self, Decision.accept(ev, evs: _*))
   }
 }
