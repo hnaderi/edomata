@@ -74,9 +74,10 @@ object SiteConfigs {
       homeLink = ImageLink
         .internal(Root / "introduction.md", Image.internal(Root / "icon.png")),
       navLinks = Seq(
-        // IconLink.internal(Root / "api" / "index.html", HeliumIcon.api)
         IconLink
-          .external("https://edomata.ir/", HeliumIcon.github)
+          .external("https://github.com/hnaderi/edomata/", HeliumIcon.github),
+        IconLink
+          .external("https://edomata.ir/", HeliumIcon.home)
       )
     )
     .site
