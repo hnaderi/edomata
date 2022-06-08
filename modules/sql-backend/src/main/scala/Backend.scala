@@ -20,5 +20,6 @@ final class Backend[F[_], S, E, R, N](
     val compile: CommandHandler[F, S, E, R, N],
     val outbox: OutboxReader[F, N],
     val journal: JournalReader[F, E],
-    val repository: RepositoryReader[F, S, E, R]
+    val repository: RepositoryReader[F, S, E, R],
+    val updates: NotificationsConsumer[F]
 )

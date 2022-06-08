@@ -152,10 +152,11 @@ object SkunkBackend {
       (jQ, nQ, cQ) = qs
       given ModelTC[S, E, R] = model
       s <- snapshot
+      updates <- Resource.eval(Notifications[F])
       _outbox = SkunkOutboxReader(pool, nQ)
       _journal = SkunkJournalReader(pool, jQ)
       _repo = RepositoryReader(_journal, s)
-      skRepo = SkunkRepository(pool, jQ, nQ, cQ, _repo)
+      skRepo = SkunkRepository(pool, jQ, nQ, cQ, _repo, updates)
       compiler <-
         if cached then
           Resource
@@ -164,6 +165,6 @@ object SkunkBackend {
         else Resource.pure(skRepo)
       h = CommandHandler.withRetry(compiler, maxRetry, retryInitialDelay)
 
-    } yield Backend(h, _outbox, _journal, _repo)
+    } yield Backend(h, _outbox, _journal, _repo, updates)
   }
 }

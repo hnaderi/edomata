@@ -57,6 +57,9 @@ abstract class PersistenceSuite(
         .compile
         .toList
         .assertEquals(List(4, 5, 6))
+
+      _ <- s.updates.journal.head.compile.lastOrError.assertEquals(())
+      _ <- s.updates.outbox.head.compile.lastOrError.assertEquals(())
     } yield ()
   }
 
@@ -79,6 +82,8 @@ abstract class PersistenceSuite(
         .compile
         .toList
         .assertEquals(List(4, 5, 6))
+
+      _ <- s.updates.outbox.head.compile.lastOrError.assertEquals(())
     } yield ()
   }
 

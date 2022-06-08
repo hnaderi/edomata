@@ -35,7 +35,8 @@ private final class SkunkRepository[F[_], S, E, R, N](
     journal: Queries.Journal[E],
     outbox: Queries.Outbox[N],
     cmds: Queries.Commands,
-    repository: RepositoryReader[F, S, E, R]
+    repository: RepositoryReader[F, S, E, R],
+    updates: NotificationsPublisher[F]
 )(using F: Sync[F], clock: Clock[F])
     extends Repository[F, S, E, R, N] {
 
@@ -94,20 +95,23 @@ private final class SkunkRepository[F[_], S, E, R, N](
     .adaptErr { case SqlState.UniqueViolation(ex) =>
       BackendError.VersionConflict
     }
+    .flatMap(_ => updates.notifyJournal >> updates.notifyOutbox)
 
   def notify(
       ctx: RequestContext[?, ?],
       notifications: NonEmptyChain[N]
-  ): F[Unit] = trx.use { s =>
-    for {
-      now <- currentTime
-      ns = notifications.toList.map(
-        (_, ctx.command.address, now, ctx.command.metadata)
-      )
-      _ <- s
-        .prepare(outbox.insertAll(ns))
-        .use(_.execute(ns))
-        .assertInserted(ns.size)
-    } yield ()
-  }
+  ): F[Unit] = trx
+    .use { s =>
+      for {
+        now <- currentTime
+        ns = notifications.toList.map(
+          (_, ctx.command.address, now, ctx.command.metadata)
+        )
+        _ <- s
+          .prepare(outbox.insertAll(ns))
+          .use(_.execute(ns))
+          .assertInserted(ns.size)
+      } yield ()
+    }
+    .flatMap(_ => updates.notifyOutbox)
 }
