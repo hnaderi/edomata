@@ -111,6 +111,8 @@ trait DomainModel[State, Event, Rejection] { self =>
 
     final type PureApp[T] = App[cats.Id, T]
 
+    final type Handler[F[_]] = DomainService[F, CommandMessage[C], Rejection]
+
     final protected val App: DomainDSL[C, State, Event, Rejection, N] =
       DomainDSL()
 
