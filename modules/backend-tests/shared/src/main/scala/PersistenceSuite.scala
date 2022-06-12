@@ -16,6 +16,7 @@
 
 package tests
 
+import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.*
@@ -84,6 +85,30 @@ abstract class PersistenceSuite(
         .assertEquals(List(4, 5, 6))
 
       _ <- s.updates.outbox.head.compile.lastOrError.assertEquals(())
+    } yield ()
+  }
+
+  check("Must consume outbox correctly") { s =>
+    for {
+      cmd <- someCmd
+      _ <- s
+        .compile(Edomaton.lift(Response.publish(4, 5, 6)))
+        .apply(cmd)
+
+      items <- s.outbox.read.compile.toList
+      _ <- IO(assert(items.length >= 3))
+      consumed = items.head
+      _ <- s.outbox.markAsSent(consumed)
+
+      items2 <- s.outbox.read.compile.toList
+      _ <- IO(assert(items2.length >= 2))
+      _ <- IO(assertEquals(items2, items.tail))
+
+      consumedAll = NonEmptyChain.fromSeq(items2).get
+      _ <- s.outbox.markAllAsSent(consumedAll)
+
+      items3 <- s.outbox.read.compile.toList
+      _ <- IO(assert(!items3.containsSlice(items2)))
     } yield ()
   }
 

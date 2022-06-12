@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS $table(
       sql"""
 update $table
 set published = $timestamptz
-where seqnr in ${int8.values.list(l)}
+where seqnr in ${int8.list(l).values}
 """.command
 
     private val metadata: Codec[MessageMetadata] = (text.opt *: text.opt).pimap
