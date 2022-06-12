@@ -30,10 +30,10 @@ import java.util.UUID
 
 private[backend] object Queries {
   def setupSchema(namespace: PGNamespace): Command[Void] =
-    sql"""create schema if not exists #$namespace;""".command
+    sql"""create schema if not exists "#$namespace";""".command
 
   final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
-    private val table = sql"#$namespace.journal"
+    private val table = sql""""#$namespace".journal"""
     private val event = codec.codec
 
     def setup: Command[Void] = sql"""
@@ -101,7 +101,7 @@ END $$$$;
   }
 
   final class Outbox[N](namespace: PGNamespace, codec: BackendCodec[N]) {
-    private val table = sql"#$namespace.outbox"
+    private val table = sql""""#$namespace".outbox"""
     private val notification = codec.codec
 
     val setup = sql"""
@@ -150,7 +150,7 @@ insert into $table (payload, stream, created, correlation, causation) values ${i
       namespace: PGNamespace,
       codec: BackendCodec[S]
   ) {
-    private val table = sql"#$namespace.snapshots"
+    private val table = sql""""#$namespace".snapshots"""
     private val state = codec.codec
 
     val setup: Command[Void] = sql"""
@@ -182,7 +182,7 @@ set version = excluded.version,
   }
 
   final class Commands(namespace: PGNamespace) {
-    private val table = sql"#$namespace.commands"
+    private val table = sql""""#$namespace".commands"""
 
     val setup: Command[Void] = sql"""
 CREATE TABLE IF NOT EXISTS $table (

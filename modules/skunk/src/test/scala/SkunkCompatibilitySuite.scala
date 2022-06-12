@@ -51,6 +51,12 @@ class SkunkPersistenceSuite
       "skunk"
     )
 
+class SkunkPersistenceKeywordNamespaceSuite
+    extends PersistenceSuite(
+      backend("order", jsonbCodec),
+      "skunk"
+    )
+
 object SkunkCompatibilitySuite {
   val jsonCodec: BackendCodec.Json[Int] =
     BackendCodec.Json(_.toString, _.toIntOption.toRight("Not a number"))
