@@ -93,4 +93,6 @@ class JournalReaderStub[E](data: Stream[IO, EventMessage[E]])
   def readAll: Stream[IO, EventMessage[E]] = data
   def readAllAfter(seqNr: SeqNr): Stream[IO, EventMessage[E]] =
     data.filter(_.metadata.seqNr > seqNr)
+  def readAllBefore(seqNr: SeqNr): Stream[IO, EventMessage[E]] =
+    data.filter(_.metadata.seqNr < seqNr)
 }

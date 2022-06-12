@@ -112,45 +112,75 @@ abstract class PersistenceSuite(
     } yield ()
   }
 
-  // check("Must read all journal") { s =>
-  //   s.journal.readAll.compile.toList.assertEquals(journal)
-  // }
+  check("Must read all journal") { s =>
+    for {
+      cmd <- someCmd
+      _ <- s
+        .compile(Edomaton.lift(Response.accept(1, 2, 3)))
+        .apply(cmd)
 
-  // check("Must read all journal after") { s =>
-  //   s.journal
-  //     .readAllAfter(3)
-  //     .compile
-  //     .toList
-  //     .assertEquals(
-  //       journal.filter(_.metadata.seqNr > 3)
-  //     )
-  // }
+      events <- s.journal.readAll.take(10).compile.toList
+      evSize = events.size
+      _ <- IO(assert(evSize >= 3))
+      sortedEvents = events.sortBy(_.metadata.seqNr)
+      _ <- IO(assertEquals(events, sortedEvents))
 
-  // check("Must read single stream from journal") { s =>
-  //   s.journal
-  //     .readStream(streamId)
-  //     .compile
-  //     .toList
-  //     .assertEquals(stream)
-  // }
+      pivotIdx = evSize / 2
+      pivot = events(pivotIdx).metadata.seqNr
 
-  // check("Must read single stream from journal after") { s =>
-  //   s.journal
-  //     .readStreamAfter(streamId, 3)
-  //     .compile
-  //     .toList
-  //     .assertEquals(
-  //       stream.filter(_.metadata.seqNr > 3)
-  //     )
-  // }
+      before = events.take(pivotIdx)
+      after = events.drop(pivotIdx)
 
-  // check("Must read single stream from journal before") { s =>
-  //   s.journal
-  //     .readStreamBefore("", 3)
-  //     .compile
-  //     .toList
-  //     .assertEquals(
-  //       stream.filter(_.metadata.seqNr < 3)
-  //     )
-  // }
+      _ <- s.journal
+        .readAllBefore(pivot)
+        .take(before.size)
+        .compile
+        .toList
+        .assertEquals(before)
+
+      _ <- s.journal
+        .readAllAfter(pivot - 1)
+        .take(after.size)
+        .compile
+        .toList
+        .assertEquals(after)
+    } yield ()
+  }
+
+  check("Must read single stream from journal") { s =>
+    for {
+      cmd <- someCmd
+      _ <- s
+        .compile(Edomaton.lift(Response.accept(1, 2, 3)))
+        .apply(cmd)
+
+      events <- s.journal.readStream(cmd.address).take(10).compile.toList
+      _ <- IO(assertEquals(events.size, 3))
+      sortedBySeqNr = events.sortBy(_.metadata.seqNr)
+      sortedByVersion = events.sortBy(_.metadata.version)
+      _ <- IO(assertEquals(events, sortedBySeqNr))
+      _ <- IO(assertEquals(events, sortedByVersion))
+      _ <- IO(assert(events.forall(_.metadata.stream == cmd.address)))
+
+      pivotIdx = 1
+      pivot = events(pivotIdx).metadata.version
+
+      before = events.take(pivotIdx)
+      after = events.drop(pivotIdx)
+
+      _ <- s.journal
+        .readStreamBefore(cmd.address, pivot)
+        .take(before.size)
+        .compile
+        .toList
+        .assertEquals(before)
+
+      _ <- s.journal
+        .readStreamAfter(cmd.address, pivot - 1)
+        .take(after.size)
+        .compile
+        .toList
+        .assertEquals(after)
+    } yield ()
+  }
 }

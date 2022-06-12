@@ -60,4 +60,7 @@ private final class SkunkJournalReader[F[_]: Concurrent, E](
 
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
     run(q.readAllAfter)(seqNr)
+
+  def readAllBefore(seqNr: SeqNr): Stream[F, EventMessage[E]] =
+    run(q.readAllBefore)(seqNr)
 }

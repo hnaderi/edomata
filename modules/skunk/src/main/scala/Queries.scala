@@ -87,6 +87,10 @@ END $$$$;
       sql"select $readFields from $table where seqnr > $int8 order by seqnr asc"
         .query(readCodec)
 
+    def readAllBefore: Query[Long, EventMessage[E]] =
+      sql"select $readFields from $table where seqnr < $int8 order by seqnr asc"
+        .query(readCodec)
+
     def readStream: Query[String, EventMessage[E]] =
       sql"select $readFields from $table where stream = $text order by version asc"
         .query(readCodec)
