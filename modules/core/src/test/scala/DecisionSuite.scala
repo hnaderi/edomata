@@ -17,7 +17,7 @@
 package edomata.core
 
 import cats.Monad
-import cats.data.NonEmptyChain
+import cats.data.*
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.kernel.laws.discipline.SerializableTests
@@ -70,6 +70,49 @@ class DecisionSuite extends DisciplineSuite {
       val c = a.flatMap(_ => b)
 
       assertEquals(c, a)
+    }
+  }
+
+  private val anyValidationEN: Gen[Long => EitherNec[String, Long]] =
+    Gen.function1(anySut.map(_.toEither))
+  private val anyValidationE: Gen[Long => Either[String, Long]] =
+    anyValidationEN.map(_.andThen(_.leftMap(_.head)))
+  private val anyValidationV: Gen[Long => ValidatedNec[String, Long]] =
+    Gen.function1(anySut.map(_.toValidated))
+
+  property("validation using ValidatedNec") {
+    forAll(anySut, anyValidationV) { (a, f) =>
+      assertEquals(a.validate(f), a.flatMap(v => Decision.validate(f(v))))
+    }
+  }
+
+  property("validation using Either") {
+    forAll(anySut, anyValidationE) { (a, f) =>
+      assertEquals(a.validate(f), a.flatMap(v => Decision.fromEither(f(v))))
+    }
+  }
+
+  property("validation using EitherNec") {
+    forAll(anySut, anyValidationEN) { (a, f) =>
+      assertEquals(a.validate(f), a.flatMap(v => Decision.fromEitherNec(f(v))))
+    }
+  }
+
+  property("assertion using ValidatedNec") {
+    forAll(anySut, anyValidationV) { (a, f) =>
+      assertEquals(a.assert(f), a.flatTap(v => Decision.validate(f(v))))
+    }
+  }
+
+  property("assertion using Either") {
+    forAll(anySut, anyValidationE) { (a, f) =>
+      assertEquals(a.assert(f), a.flatTap(v => Decision.fromEither(f(v))))
+    }
+  }
+
+  property("assertion using EitherNec") {
+    forAll(anySut, anyValidationEN) { (a, f) =>
+      assertEquals(a.assert(f), a.flatTap(v => Decision.fromEitherNec(f(v))))
     }
   }
 }

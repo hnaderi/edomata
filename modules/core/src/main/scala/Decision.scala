@@ -89,6 +89,12 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
       f: => Decision[R2, E2, B]
   ): Decision[R2, E2, B] = flatMap(_ => f)
 
+  def as[B](b: B): Decision[R, E, B] = map(_ => b)
+
+  def flatTap[R2 >: R, E2 >: E, B](
+      f: A => Decision[R2, E2, B]
+  ): Decision[R2, E2, A] = flatMap(a => f(a).as(a))
+
   /** whether is rejected or not */
   def isRejected: Boolean = self match {
     case Rejected(_) => true
@@ -141,6 +147,21 @@ sealed trait Decision[+R, +E, +A] extends Product with Serializable { self =>
   @targetName("validateEither")
   def validate[R2 >: R, B](f: A => Either[R2, B]): Decision[R2, E, B] =
     flatMap(a => Decision.fromEither(f(a)))
+
+  /** Asserts output using a ValidatedNec without changing it */
+  def assert[R2 >: R, B](f: A => ValidatedNec[R2, B]): Decision[R2, E, A] =
+    flatTap(a => Decision.validate(f(a)))
+
+  /** Asserts output using an EitherNec without changing it */
+  @targetName("assertEitherNec")
+  def assert[R2 >: R, B](f: A => EitherNec[R2, B]): Decision[R2, E, A] =
+    flatTap(a => Decision.fromEitherNec(f(a)))
+
+  /** Asserts output using an Either without changing it */
+  @targetName("assertEither")
+  def assert[R2 >: R, B](f: A => Either[R2, B]): Decision[R2, E, A] =
+    flatTap(a => Decision.fromEither(f(a)))
+
 }
 
 object Decision extends DecisionConstructors, DecisionCatsInstances0 {
