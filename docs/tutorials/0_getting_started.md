@@ -66,6 +66,16 @@ val d2 = Decision.accept("Missile Launched!")
 val d3 = Decision.reject("No remained missiles to launch!")
 ```
 
+You can also use the following syntax if you import syntax modules  
+
+```scala mdoc:to-string
+import edomata.syntax.all.*
+
+1.asDecision
+"Missile Launched!".accept
+"No remained missiles to launch!".reject
+```
+
 decisions are composable  
 ```scala mdoc:to-string
 val d4 = d1.map(_ * 2)
@@ -106,7 +116,7 @@ We'll start by modeling domain events first, that we have from event storming or
 
 > I'll use scala 3 enums for modeling ADTs, as they are neat and more close to what modeling is all about; but you can use `sealed trait`s and normal `case class`es too
 
-```scala mdoc:reset-object
+```scala mdoc:reset
 enum Event {
   case Opened
   case Deposited(amount: BigDecimal)
@@ -151,29 +161,29 @@ enum Account {
   case Open(balance: BigDecimal)
   case Close
   
-  def open : Decision[Rejection, Event, Account] = this.decide { // 1
+  def open : Decision[Rejection, Event, Open] = this.decide { // 1
     case New => Decision.accept(Event.Opened)
     case _ => Decision.reject(Rejection.ExistingAccount)
-  }
+  }.validate(_.mustBeOpen) // 2
   
-  def close : Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account => // 2, 3
-    if account.balance == 0 then Decision.accept(Event.Closed)
+  def close : Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account => // 3, 4
+    if account.balance == 0 then Event.Closed.accept
     else Decision.reject(Rejection.NotSettled)
   })
   
-  def withdraw(amount: BigDecimal): Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account => 
+  def withdraw(amount: BigDecimal): Decision[Rejection, Event, Open] = this.perform(mustBeOpen.toDecision.flatMap { account => 
     if account.balance >= amount && amount > 0 
     then Decision.accept(Event.Withdrawn(amount))
     else Decision.reject(Rejection.InsufficientBalance) 
     // We can model rejections to have values, which helps a lot for showing error messages, but it's out of scope for this document
-  })
+  }).validate(_.mustBeOpen)
 
-  def deposit(amount: BigDecimal): Decision[Rejection, Event, Account] = this.perform(mustBeOpen.toDecision.flatMap { account =>
+  def deposit(amount: BigDecimal): Decision[Rejection, Event, Open] = this.perform(mustBeOpen.toDecision.flatMap { account =>
     if amount > 0 then Decision.accept(Event.Deposited(amount))
     else Decision.reject(Rejection.BadRequest)
-  })
+  }).validate(_.mustBeOpen)
   
-  def mustBeOpen : ValidatedNec[Rejection, Open] = this match { // 5
+  private def mustBeOpen : ValidatedNec[Rejection, Open] = this match { // 5
     case o@Open(_) => o.validNec
     case New => Rejection.NoSuchAccount.invalidNec
     case Close => Rejection.AlreadyClosed.invalidNec
@@ -182,9 +192,9 @@ enum Account {
 ```
 
 1. `.decide` is an extension method from edomata syntax that helps with deciding and transitioning to new state which I'll describe below
-2. `.perform` like `.decide` takes a decision as argument, an runs the decision on current state to return new state, it is basically a helper for folding to let you reuse `transition` and not repeating yourself
-3. `Decision` can be converted `.toValidated`, `.toOption` or `.toEither`.
-4. `.handle` is like `.perform`, but returns output paired with new state
+2. `.validate` ensures that after applying decision events, we will end up in an `Open` state, and will returns `Open` instead of simply `Account`
+3. `.perform` like `.decide` takes a decision as argument, an runs the decision on current state to return new state, it is basically a helper for folding to let you reuse `transition` and not repeating yourself
+4. `Decision` can be converted `.toValidated`, `.toOption` or `.toEither`.
 5. as functional data structures are composable, you can extract common use cases like validations.
 
 but you might say, domain logic is not just deciding, you must perform the actions you decided; and you are right, let's go to that part:
@@ -194,7 +204,7 @@ but you might say, domain logic is not just deciding, you must perform the actio
 In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use `DomainModel`, which is a helper class that creates required stuff for next steps:
 
 ```scala mdoc
-object Account extends DomainModel[Account, Event, Rejection]{
+object Account extends DomainModel[Account, Event, Rejection] {
   def initial = New  // 1
   def transition = { // 2
     case Event.Opened => _ => Open(0).validNec
@@ -282,59 +292,34 @@ enum Notification {
 }
 ```
 
-In contrast to `Decision` or other alike data structures, `Edomaton` type is somewhat larger than normal and it's not really ergonomic to type it every time you need to create an edomaton, to facilitate that a builder DSL is provided that helps with that:
-
-```scala mdoc:silent
-// let's use IO as our side effect
-import cats.effect.IO
-
-val dsl = Account.dsl[Command, Notification]
-
-val e1 : dsl.App[IO, Int] = dsl.pure(1)
-val e2 = dsl.pure[IO, Int](1)
-val e3 = e1 >> e2.map(_ * 2)
-val e4 = (e1, e2).mapN(_ + _)
-val e5 = dsl.eval(IO.println("Hello world!"))
-```
-
 and we can create our first service:
 
-```scala mdoc:silent
-object AccountService {
+```scala
+object AccountService extends Account.Service[Command, Notification] {
   import cats.Monad
 
-  private val dsl = Account.dsl[Command, Notification]
-  
-  def apply[F[_] : Monad] = dsl.router[F, Unit] {
+  def apply[F[_] : Monad] : App[F, Unit] = App.router {
 
     case Command.Open => for {
-      s <- dsl.state
-      ns <- dsl.decide(s.open)
-      acc <- dsl.aggregateId
-      _ <- dsl.publish(Notification.AccountOpened(acc))
+      ns <- App.state.decide(_.open)
+      acc <- App.aggregateId
+      _ <- App.publish(Notification.AccountOpened(acc))
     } yield ()
 
     case Command.Deposit(amount) => for {
-      s <- dsl.state
-      deposited <- dsl.decide(s.deposit(amount))
-      openAccount <- dsl.validate(deposited.mustBeOpen)
-      accId <- dsl.aggregateId
-      _ <- dsl.publish(Notification.BalanceUpdated(accId, openAccount.balance))
+      deposited <- App.state.decide(_.deposit(amount))
+      accId <- App.aggregateId
+      _ <- App.publish(Notification.BalanceUpdated(accId, deposited.balance))
     } yield ()
 
     case Command.Withdraw(amount) => for {
-      s <- dsl.state
-      withdrawn <- dsl.decide(s.withdraw(amount))
-      openAccount <- dsl.validate(withdrawn.mustBeOpen)
-      accId <- dsl.aggregateId
-      _ <- dsl.publish(Notification.BalanceUpdated(accId, openAccount.balance))
+      withdrawn <- App.state.decide(_.withdraw(amount))
+      accId <- App.aggregateId
+      _ <- App.publish(Notification.BalanceUpdated(accId, withdrawn.balance))
     } yield ()
 
-    case Command.Close => for {
-      s <- dsl.state
-      ns <- dsl.decide(s.close)
-    } yield ()
-
+    case Command.Close => 
+      App.state.decide(_.close).void
   }
 
 }
@@ -348,7 +333,7 @@ As said earlier, everything in Edomata is just a normal value, and you can treat
 `Edomaton`s take an environment, and work in that context to produce a result; 
 using default dsl like what we've done in this tutorial creates `Edomaton`s that require a data type called `RequestContext` which is a pretty standard modeling of a request context in an event-driven setup.
 
-```scala mdoc
+```scala
 import java.time.Instant
 
 val scenario1 = RequestContext(
@@ -366,7 +351,7 @@ There are 2 ways for running an `Edomaton` to get its result:
 
 - Recommended way is to use `.execute` which takes input and returns processed results, which is used in real backends too.
 
-```scala mdoc:to-string
+```scala
 // as we've written our service definition in a tagless style, 
 // we are free to provide any type param that satisfies required typeclasses
 
@@ -374,11 +359,13 @@ import cats.Id
 val obtained = AccountService[Id].execute(scenario1)
 
 // or even use a real IO monad if needed
+import cats.effect.IO
+
 AccountService[IO].execute(scenario1)
 ```
 - or you can use `.run`, which takes input and returns raw `Response` model, which you can interpret however you like.
 
-```scala mdoc:to-string
+```scala
 AccountService[Id].run(scenario1)
 ```
 
