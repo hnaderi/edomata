@@ -152,6 +152,15 @@
 </span><span class="comment">// d2: Decision[Nothing, String, Unit] = Accepted(Chain(Missile Launched!),())
 </span><span class="keyword">val</span><span> </span><span class="identifier">d3</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>)
 </span><span class="comment">// d3: Decision[String, Nothing, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
+        <p>You can also use the following syntax if you import syntax modules<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.*
+
+</span><span class="number-literal">1</span><span>.</span><span class="identifier">asDecision</span><span>
+</span><span class="comment">// res0: Decision[Nothing, Nothing, Int] = InDecisive(1)
+</span><span class="string-literal">&quot;Missile Launched!&quot;</span><span>.</span><span class="identifier">accept</span><span>
+</span><span class="comment">// res1: Decision[Nothing, String, Unit] = Accepted(Chain(Missile Launched!),())
+</span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>.</span><span class="identifier">reject</span><span>
+</span><span class="comment">// res2: Decision[String, Nothing, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
         <p>decisions are composable<br></p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d4</span><span> = </span><span class="identifier">d1</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> * </span><span class="number-literal">2</span><span>)
 </span><span class="comment">// d4: Decision[Nothing, Nothing, Int] = InDecisive(2)
@@ -219,29 +228,29 @@
   </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>(</span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
   </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span>
   
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">open</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">decide</span><span> { </span><span class="comment">// 1
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">open</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">decide</span><span> { </span><span class="comment">// 1
 </span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span> =&gt; </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Opened</span><span>)
     </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">ExistingAccount</span><span>)
-  }
-  
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">close</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; </span><span class="comment">// 2, 3
-</span><span>    </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> == </span><span class="number-literal">0</span><span> </span><span class="keyword">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Closed</span><span>)
+  }.</span><span class="identifier">validate</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>) </span><span class="comment">// 2
+</span><span>  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">close</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; </span><span class="comment">// 3, 4
+</span><span>    </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> == </span><span class="number-literal">0</span><span> </span><span class="keyword">then</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Closed</span><span>.</span><span class="identifier">accept</span><span>
     </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">NotSettled</span><span>)
   })
   
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">withdraw</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; 
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">withdraw</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; 
     </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> &gt;= </span><span class="identifier">amount</span><span> &amp;&amp; </span><span class="identifier">amount</span><span> &gt; </span><span class="number-literal">0</span><span> 
     </span><span class="keyword">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">amount</span><span>))
     </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">InsufficientBalance</span><span>) 
     </span><span class="comment">// We can model rejections to have values, which helps a lot for showing error messages, but it&#39;s out of scope for this document
-</span><span>  })
+</span><span>  }).</span><span class="identifier">validate</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>)
 
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">deposit</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt;
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">deposit</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt;
     </span><span class="keyword">if</span><span> </span><span class="identifier">amount</span><span> &gt; </span><span class="number-literal">0</span><span> </span><span class="keyword">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Deposited</span><span>(</span><span class="identifier">amount</span><span>))
     </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">BadRequest</span><span>)
-  })
+  }).</span><span class="identifier">validate</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>)
   
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">mustBeOpen</span><span> : </span><span class="type-name">ValidatedNec</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span> </span><span class="keyword">match</span><span> { </span><span class="comment">// 5
+  </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">mustBeOpen</span><span> : </span><span class="type-name">ValidatedNec</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span> </span><span class="keyword">match</span><span> { </span><span class="comment">// 5
 </span><span>    </span><span class="keyword">case</span><span> </span><span class="identifier">o</span><span class="annotation">@Open</span><span>(</span><span class="identifier">_</span><span>) =&gt; </span><span class="identifier">o</span><span>.</span><span class="identifier">validNec</span><span>
     </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">NoSuchAccount</span><span>.</span><span class="identifier">invalidNec</span><span>
     </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">AlreadyClosed</span><span>.</span><span class="identifier">invalidNec</span><span>
@@ -249,16 +258,16 @@
 }</span></code></pre>
         <ol class="arabic">
           <li><code>.decide</code> is an extension method from edomata syntax that helps with deciding and transitioning to new state which I&#39;ll describe below</li>
+          <li><code>.validate</code> ensures that after applying decision events, we will end up in an <code>Open</code> state, and will returns <code>Open</code> instead of simply <code>Account</code></li>
           <li><code>.perform</code> like <code>.decide</code> takes a decision as argument, an runs the decision on current state to return new state, it is basically a helper for folding to let you reuse <code>transition</code> and not repeating yourself</li>
           <li><code>Decision</code> can be converted <code>.toValidated</code>, <code>.toOption</code> or <code>.toEither</code>.</li>
-          <li><code>.handle</code> is like <code>.perform</code>, but returns output paired with new state</li>
           <li>as functional data structures are composable, you can extract common use cases like validations.</li>
         </ol>
         <p>but you might say, domain logic is not just deciding, you must perform the actions you decided; and you are right, let&#39;s go to that part:</p>
         
         <h3 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h3>
         <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates required stuff for next steps:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Account</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">DomainModel</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>]{
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Account</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">DomainModel</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>] {
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">initial</span><span> = </span><span class="type-name">New</span><span>  </span><span class="comment">// 1
 </span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">transition</span><span> = { </span><span class="comment">// 2
 </span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Opened</span><span> =&gt; </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Open</span><span>(</span><span class="number-literal">0</span><span>).</span><span class="identifier">validNec</span><span>
@@ -292,13 +301,13 @@
         <h3 id="testing-domain-model" class="section"><a class="anchor-link left" href="#testing-domain-model"><i class="icofont-laika">&#xef71;</i></a>Testing domain model</h3>
         <p>As everything is pure and all the logic is implemented as programs that are values, you can easily test everything:<br></p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>.</span><span class="identifier">open</span><span>
-</span><span class="comment">// res1: Decision[Rejection, Event, Account] = Accepted(Chain(Opened),Open(0))
+</span><span class="comment">// res4: Decision[Rejection, Event, Open] = Accepted(Chain(Opened),Open(0))
 </span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">10</span><span>).</span><span class="identifier">deposit</span><span>(</span><span class="number-literal">2</span><span>)
-</span><span class="comment">// res2: Decision[Rejection, Event, Account] = Accepted(Chain(Deposited(2)),Open(12))
+</span><span class="comment">// res5: Decision[Rejection, Event, Open] = Accepted(Chain(Deposited(2)),Open(12))
 </span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">5</span><span>).</span><span class="identifier">close</span><span>
-</span><span class="comment">// res3: Decision[Rejection, Event, Account] = Rejected(Chain(NotSettled))
+</span><span class="comment">// res6: Decision[Rejection, Event, Account] = Rejected(Chain(NotSettled))
 </span><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>.</span><span class="identifier">open</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">close</span><span>)
-</span><span class="comment">// res4: Decision[Rejection, Event, Account] = Accepted(Chain(Opened, Closed),Close)</span></code></pre>
+</span><span class="comment">// res7: Decision[Rejection, Event, Account] = Accepted(Chain(Opened, Closed),Close)</span></code></pre>
         
         <h2 id="service-layer" class="section"><a class="anchor-link left" href="#service-layer"><i class="icofont-laika">&#xef71;</i></a>Service layer</h2>
         <p>Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:<br></p>
@@ -343,53 +352,32 @@
   </span><span class="keyword">case</span><span> </span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accountId</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
   </span><span class="keyword">case</span><span> </span><span class="type-name">AccountClosed</span><span>(</span><span class="identifier">accountId</span><span>: </span><span class="type-name">String</span><span>)
 }</span></code></pre>
-        <p>In contrast to <code>Decision</code> or other alike data structures, <code>Edomaton</code> type is somewhat larger than normal and it&#39;s not really ergonomic to type it every time you need to create an edomaton, to facilitate that a builder DSL is provided that helps with that:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// let&#39;s use IO as our side effect
-</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
-
-</span><span class="keyword">val</span><span> </span><span class="identifier">dsl</span><span> = </span><span class="type-name">Account</span><span>.</span><span class="identifier">dsl</span><span>[</span><span class="type-name">Command</span><span>, </span><span class="type-name">Notification</span><span>]
-
-</span><span class="keyword">val</span><span> </span><span class="identifier">e1</span><span> : </span><span class="identifier">dsl</span><span>.</span><span class="type-name">App</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">Int</span><span>] = </span><span class="identifier">dsl</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="number-literal">1</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">e2</span><span> = </span><span class="identifier">dsl</span><span>.</span><span class="identifier">pure</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">Int</span><span>](</span><span class="number-literal">1</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">e3</span><span> = </span><span class="identifier">e1</span><span> &gt;&gt; </span><span class="identifier">e2</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> * </span><span class="number-literal">2</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">e4</span><span> = (</span><span class="identifier">e1</span><span>, </span><span class="identifier">e2</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>)
-</span><span class="keyword">val</span><span> </span><span class="identifier">e5</span><span> = </span><span class="identifier">dsl</span><span>.</span><span class="identifier">eval</span><span>(</span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>(</span><span class="string-literal">&quot;Hello world!&quot;</span><span>))</span></code></pre>
         <p>and we can create our first service:</p>
-        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">AccountService</span><span> {
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">AccountService</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Account</span><span>.</span><span class="type-name">Service</span><span>[</span><span class="type-name">Command</span><span>, </span><span class="type-name">Notification</span><span>] {
   </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Monad</span><span>
 
-  </span><span class="keyword">private</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">dsl</span><span> = </span><span class="type-name">Account</span><span>.</span><span class="identifier">dsl</span><span>[</span><span class="type-name">Command</span><span>, </span><span class="type-name">Notification</span><span>]
-  
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>] : </span><span class="type-name">Monad</span><span>] = </span><span class="identifier">dsl</span><span>.</span><span class="identifier">router</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">Unit</span><span>] {
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>] : </span><span class="type-name">Monad</span><span>] : </span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">Unit</span><span>] = </span><span class="type-name">App</span><span>.</span><span class="identifier">router</span><span> {
 
     </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Open</span><span> =&gt; </span><span class="keyword">for</span><span> {
-      </span><span class="identifier">s</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">state</span><span>
-      </span><span class="identifier">ns</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">s</span><span>.</span><span class="identifier">open</span><span>)
-      </span><span class="identifier">acc</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">aggregateId</span><span>
-      </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">AccountOpened</span><span>(</span><span class="identifier">acc</span><span>))
+      </span><span class="identifier">ns</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">open</span><span>)
+      </span><span class="identifier">acc</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">aggregateId</span><span>
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">AccountOpened</span><span>(</span><span class="identifier">acc</span><span>))
     } </span><span class="keyword">yield</span><span> ()
 
     </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Deposit</span><span>(</span><span class="identifier">amount</span><span>) =&gt; </span><span class="keyword">for</span><span> {
-      </span><span class="identifier">s</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">state</span><span>
-      </span><span class="identifier">deposited</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">s</span><span>.</span><span class="identifier">deposit</span><span>(</span><span class="identifier">amount</span><span>))
-      </span><span class="identifier">openAccount</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">validate</span><span>(</span><span class="identifier">deposited</span><span>.</span><span class="identifier">mustBeOpen</span><span>)
-      </span><span class="identifier">accId</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">aggregateId</span><span>
-      </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accId</span><span>, </span><span class="identifier">openAccount</span><span>.</span><span class="identifier">balance</span><span>))
+      </span><span class="identifier">deposited</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">deposit</span><span>(</span><span class="identifier">amount</span><span>))
+      </span><span class="identifier">accId</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">aggregateId</span><span>
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accId</span><span>, </span><span class="identifier">deposited</span><span>.</span><span class="identifier">balance</span><span>))
     } </span><span class="keyword">yield</span><span> ()
 
     </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Withdraw</span><span>(</span><span class="identifier">amount</span><span>) =&gt; </span><span class="keyword">for</span><span> {
-      </span><span class="identifier">s</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">state</span><span>
-      </span><span class="identifier">withdrawn</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">s</span><span>.</span><span class="identifier">withdraw</span><span>(</span><span class="identifier">amount</span><span>))
-      </span><span class="identifier">openAccount</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">validate</span><span>(</span><span class="identifier">withdrawn</span><span>.</span><span class="identifier">mustBeOpen</span><span>)
-      </span><span class="identifier">accId</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">aggregateId</span><span>
-      </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accId</span><span>, </span><span class="identifier">openAccount</span><span>.</span><span class="identifier">balance</span><span>))
+      </span><span class="identifier">withdrawn</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withdraw</span><span>(</span><span class="identifier">amount</span><span>))
+      </span><span class="identifier">accId</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">aggregateId</span><span>
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accId</span><span>, </span><span class="identifier">withdrawn</span><span>.</span><span class="identifier">balance</span><span>))
     } </span><span class="keyword">yield</span><span> ()
 
-    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Close</span><span> =&gt; </span><span class="keyword">for</span><span> {
-      </span><span class="identifier">s</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">state</span><span>
-      </span><span class="identifier">ns</span><span> &lt;- </span><span class="identifier">dsl</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">s</span><span>.</span><span class="identifier">close</span><span>)
-    } </span><span class="keyword">yield</span><span> ()
-
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Close</span><span> =&gt; 
+      </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">close</span><span>).</span><span class="identifier">void</span><span>
   }
 
 }</span></code></pre>
@@ -399,7 +387,7 @@
         <p>As said earlier, everything in Edomata is just a normal value, and you can treat them like normal data.<br>
         <code>Edomaton</code>s take an environment, and work in that context to produce a result; 
         using default dsl like what we&#39;ve done in this tutorial creates <code>Edomaton</code>s that require a data type called <code>RequestContext</code> which is a pretty standard modeling of a request context in an event-driven setup.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">scenario1</span><span> = </span><span class="type-name">RequestContext</span><span>(
   </span><span class="identifier">command</span><span> = </span><span class="type-name">CommandMessage</span><span>(
@@ -409,20 +397,7 @@
     </span><span class="identifier">payload</span><span> = </span><span class="type-name">Command</span><span>.</span><span class="type-name">Open</span><span>
   ),
   </span><span class="identifier">state</span><span> = </span><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>
-)
-</span><span class="comment">// scenario1: RequestContext[Command, Account] = RequestContext(
-//   CommandMessage(
-//     &quot;some random id for request&quot;,
-//     -1000000000-01-01T00:00:00Z,
-//     &quot;our account id&quot;,
-//     Open,
-//     MessageMetadata(
-//       Some(&quot;some random id for request&quot;),
-//       Some(&quot;some random id for request&quot;)
-//     )
-//   ),
-//   New
-// )</span></code></pre>
+)</span></code></pre>
         <p>There are 2 ways for running an <code>Edomaton</code> to get its result:<br></p>
         <ul>
           <li>Recommended way is to use <code>.execute</code> which takes input and returns processed results, which is used in real backends too.</li>
@@ -432,16 +407,15 @@
 </span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Id</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">obtained</span><span> = </span><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
-</span><span class="comment">// obtained: EdomatonResult[Account, Event, Rejection, Notification] = Accepted(Open(0),Chain(Opened),Chain(AccountOpened(our account id)))
-</span><span>
+
 </span><span class="comment">// or even use a real IO monad if needed
-</span><span class="type-name">AccountService</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
-</span><span class="comment">// res5: IO[EdomatonResult[Account, Event, Rejection, Notification]] = IO(...)</span></code></pre>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
+
+</span><span class="type-name">AccountService</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)</span></code></pre>
         <ul>
           <li>or you can use <code>.run</code>, which takes input and returns raw <code>Response</code> model, which you can interpret however you like.</li>
         </ul>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)
-</span><span class="comment">// res6: Response[Rejection, Event, Notification, Unit] = Response(Accepted(Chain(Opened),()),Chain(AccountOpened(our account id)))</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)</span></code></pre>
         <p>now we can easily assert our expectations using our favorite test framework</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">assertEquals</span><span>(
   </span><span class="identifier">obtained</span><span>,
