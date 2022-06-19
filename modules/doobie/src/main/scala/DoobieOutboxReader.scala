@@ -17,17 +17,11 @@
 package edomata.backend
 package doobie
 
-import _root_.doobie.ConnectionIO
-import _root_.doobie.FC
 import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
-import cats.data.Chain
-import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
-import cats.effect.Temporal
 import cats.effect.kernel.Clock
-import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.core.*
 import fs2.Stream
@@ -35,11 +29,16 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-private final class DoobieOutboxReader[F[_]: Concurrent, N](
+private final class DoobieOutboxReader[F[_]: Concurrent: Clock, N](
     trx: Transactor[F],
-    reader: OutboxReader[ConnectionIO, N]
+    qs: Queries.Outbox[N]
 ) extends OutboxReader[F, N] {
-  def read: Stream[F, OutboxItem[N]] = reader.read.transact(trx)
+  def read: Stream[F, OutboxItem[N]] = qs.read.stream.transact(trx)
   def markAllAsSent(items: NonEmptyChain[OutboxItem[N]]): F[Unit] =
-    reader.markAllAsSent(items).transact(trx)
+    Clock[F].realTimeInstant.flatMap(time =>
+      qs.markAsPublished(items.map(_.seqNr), time.atOffset(ZoneOffset.UTC))
+        .run
+        .transact(trx)
+        .void
+    )
 }

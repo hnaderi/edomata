@@ -17,17 +17,9 @@
 package edomata.backend
 package doobie
 
-import _root_.doobie.ConnectionIO
-import _root_.doobie.FC
 import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
-import cats.data.Chain
-import cats.data.EitherNec
-import cats.data.NonEmptyChain
 import cats.effect.Concurrent
-import cats.effect.Temporal
-import cats.effect.kernel.Clock
-import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.core.*
 import fs2.Stream
@@ -37,26 +29,25 @@ import java.time.ZoneOffset
 
 private final class DoobieJournalReader[F[_]: Concurrent, E](
     trx: Transactor[F],
-    reader: JournalReader[ConnectionIO, E]
+    qs: Queries.Journal[E]
 ) extends JournalReader[F, E] {
   def readStream(streamId: StreamId): Stream[F, EventMessage[E]] =
-    reader.readStream(streamId).transact(trx)
+    qs.readStream(streamId).stream.transact(trx)
   def readStreamAfter(
       streamId: StreamId,
       version: EventVersion
   ): Stream[F, EventMessage[E]] =
-    reader.readStreamAfter(streamId, version).transact(trx)
+    qs.readStreamAfter(streamId, version).stream.transact(trx)
 
   def readStreamBefore(
       streamId: StreamId,
       version: EventVersion
   ): Stream[F, EventMessage[E]] =
-    reader.readStreamBefore(streamId, version).transact(trx)
+    qs.readStreamBefore(streamId, version).stream.transact(trx)
 
-  def readAll: Stream[F, EventMessage[E]] = reader.readAll.transact(trx)
+  def readAll: Stream[F, EventMessage[E]] = qs.readAll.stream.transact(trx)
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
-    reader.readAllAfter(seqNr).transact(trx)
-
+    qs.readAllAfter(seqNr).stream.transact(trx)
   def readAllBefore(seqNr: SeqNr): Stream[F, EventMessage[E]] =
-    reader.readAllBefore(seqNr).transact(trx)
+    qs.readAllBefore(seqNr).stream.transact(trx)
 }
