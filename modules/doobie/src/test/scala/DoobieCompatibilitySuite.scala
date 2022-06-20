@@ -16,24 +16,71 @@
 
 package tests
 
+import _root_.doobie.util.transactor.Transactor
 import cats.effect.IO
 import cats.effect.kernel.Resource
+import cats.implicits.*
 import edomata.backend.*
+import edomata.backend.doobie.*
+import scodec.bits.ByteVector
 
 import DoobieCompatibilitySuite.*
 
-abstract class DoobieJsonCompatibilitySuite
-    extends BackendCompatibilitySuite(storageJson, "doobie json")
-abstract class DoobieJsonbCompatibilitySuite
-    extends BackendCompatibilitySuite(storageJsonb, "doobie jsonb")
-abstract class DoobieBinaryCompatibilitySuite
-    extends BackendCompatibilitySuite(storageBinary, "doobie binary")
+class DoobieJsonCompatibilitySuite
+    extends BackendCompatibilitySuite(
+      backend("compatibility_json", jsonCodec),
+      "doobie json"
+    )
+class DoobieJsonbCompatibilitySuite
+    extends BackendCompatibilitySuite(
+      backend("compatibility_jsonb", jsonbCodec),
+      "doobie jsonb"
+    )
+class DoobieBinaryCompatibilitySuite
+    extends BackendCompatibilitySuite(
+      backend("compatibility_binary", binCodec),
+      "doobie binary"
+    )
 
-abstract class DoobiePersistenceSuite
-    extends PersistenceSuite(storageJson, "doobie")
+class DoobiePersistenceSuite
+    extends PersistenceSuite(
+      backend("doobie_persistence", jsonbCodec),
+      "doobie"
+    )
+
+class DoobiePersistenceKeywordNamespaceSuite
+    extends PersistenceSuite(
+      backend("order", jsonbCodec),
+      "doobie"
+    )
 
 object DoobieCompatibilitySuite {
-  def storageJson: Resource[IO, Backend[IO, Int, Int, String, Int]] = ???
-  def storageJsonb: Resource[IO, Backend[IO, Int, Int, String, Int]] = ???
-  def storageBinary: Resource[IO, Backend[IO, Int, Int, String, Int]] = ???
+  val jsonCodec: BackendCodec.Json[Int] =
+    BackendCodec.Json(_.toString, _.toIntOption.toRight("Not a number"))
+  val jsonbCodec: BackendCodec.JsonB[Int] =
+    BackendCodec.JsonB(_.toString, _.toIntOption.toRight("Not a number"))
+  val binCodec: BackendCodec.Binary[Int] = BackendCodec.Binary(
+    i => ByteVector.fromHex(i.toString).get.toArray,
+    a => Either.catchNonFatal(ByteVector(a).toHex.toInt).leftMap(_.getMessage)
+  )
+
+  inline def backend(
+      inline name: String,
+      codec: BackendCodec[Int]
+  ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestDomain.given_ModelTC_State_Event_Rejection
+    val trx = Transactor
+      .fromDriverManager[IO](
+        driver = "org.postgresql.Driver",
+        url = "jdbc:postgresql:postgres",
+        user = "postgres",
+        pass = "postgres"
+      )
+
+    DoobieBackend(trx)
+      .builder(TestDomainModel, name)
+      // Zero for no buffering in tests
+      .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+      .build
 }

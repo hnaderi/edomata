@@ -30,12 +30,15 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 private[backend] object Queries {
-  private def escape(name: PGNamespace) = sql"\"${Fragment.const(name)}\""
+  private def escapeStr(name: PGNamespace) = s""""$name""""
+  private def escape(name: PGNamespace) = Fragment.const(escapeStr(name))
+
   def setupSchema(namespace: PGNamespace): Update0 =
     sql"""create schema if not exists ${escape(namespace)};""".update
 
   final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
-    private val table = Fragment.const(s"\"$namespace\".journal")
+    private val table = sql"${escape(namespace)}.journal"
+    private val tableStr = s"${escapeStr(namespace)}.journal"
     private val payloadOid = Fragment.const(codec.tpe)
     private given Meta[E] = codec.codec
 
@@ -72,7 +75,7 @@ END $$$$;
         n: List[InsertRow]
     ): ConnectionIO[Int] =
       val sql =
-        """insert into $table ("id", "stream", "time", "version", "payload") values (?, ?, ?, ?, ?)"""
+        s"""insert into $tableStr ("id", "stream", "time", "version", "payload") values (?, ?, ?, ?, ?)"""
       Update[InsertRow](sql).updateMany(n)
 
     private val readFields = sql"id, time, seqnr, version, stream, payload"
@@ -104,6 +107,7 @@ END $$$$;
 
   final class Outbox[N](namespace: PGNamespace, codec: BackendCodec[N]) {
     private val table = sql"${escape(namespace)}.outbox"
+    private val tableStr = s"${escapeStr(namespace)}.outbox"
     private given Meta[N] = codec.codec
 
     val setup: Update0 = sql"""
@@ -136,8 +140,8 @@ order by seqnr asc
 
     type ToInsert = (N, String, OffsetDateTime, MessageMetadata)
     def insertAll(items: List[ToInsert]): ConnectionIO[Int] =
-      val sql = """
-insert into $table (payload, stream, created, correlation, causation) values (?, ?, ?, ?, ?)
+      val sql = s"""
+insert into $tableStr (payload, stream, created, correlation, causation) values (?, ?, ?, ?, ?)
 """
       Update[ToInsert](sql).updateMany(items)
   }
@@ -147,6 +151,7 @@ insert into $table (payload, stream, created, correlation, causation) values (?,
       codec: BackendCodec[S]
   ) {
     private val table = sql"${escape(namespace)}.snapshots"
+    private val tableStr = s"${escapeStr(namespace)}.snapshots"
     private given Meta[S] = codec.codec
 
     val setup: Update0 = sql"""
@@ -160,8 +165,8 @@ CREATE TABLE IF NOT EXISTS $table (
 
     type ToInsert = (String, AggregateState.Valid[S])
     def put(l: List[ToInsert]): ConnectionIO[Int] =
-      val sql = """
-insert into $table (id, state, "version") values (?, ?, ?)
+      val sql = s"""
+insert into $tableStr (id, state, "version") values (?, ?, ?)
 on conflict (id) do update
 set version = excluded.version,
     state   = excluded.state
