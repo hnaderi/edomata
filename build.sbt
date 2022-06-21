@@ -126,9 +126,6 @@ lazy val unidocs = project
     description := "unified docs for edomata",
     ScalaUnidoc / unidoc / unidocProjectFilter := inAnyProject -- inProjects(
       mdocPlantuml,
-      doobieBackend.jvm,
-      doobieCirceCodecs.jvm,
-      doobieUpickleCodecs.jvm,
       examples.jvm,
       examples.js,
       backendTests.jvm,
@@ -196,7 +193,6 @@ lazy val doobieBackend = module("doobie") {
     .crossType(CrossType.Pure)
     .dependsOn(sqlBackend)
     .dependsOn(backendTests % Test)
-    .enablePlugins(NoPublishPlugin)
     .settings(
       description := "Doobie based backend for edomata",
       libraryDependencies ++= Seq(
@@ -233,7 +229,6 @@ lazy val skunkUpickleCodecs = module("skunk-upickle") {
 lazy val doobieCirceCodecs = module("doobie-circe") {
   crossProject(JVMPlatform)
     .crossType(CrossType.Pure)
-    .enablePlugins(NoPublishPlugin)
     .dependsOn(doobieBackend)
     .settings(
       description := "Circe codecs for doobie backend",
@@ -246,7 +241,6 @@ lazy val doobieCirceCodecs = module("doobie-circe") {
 lazy val doobieUpickleCodecs = module("doobie-upickle") {
   crossProject(JVMPlatform)
     .crossType(CrossType.Pure)
-    .enablePlugins(NoPublishPlugin)
     .dependsOn(doobieBackend)
     .settings(
       description := "uPickle codecs for doobie backend",
