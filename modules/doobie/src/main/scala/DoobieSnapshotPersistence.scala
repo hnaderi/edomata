@@ -24,21 +24,27 @@ import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.implicits.*
 import edomata.core.*
+import fs2.Chunk
 import fs2.Stream
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
-private final class DoobieOutboxReader[F[_]: Concurrent: Clock, N](
+private final class DoobieSnapshotPersistence[F[_]: Concurrent, S](
     trx: Transactor[F],
-    qs: Queries.Outbox[N]
-) extends OutboxReader[F, N] {
-  def read: Stream[F, OutboxItem[N]] = qs.read.stream.transact(trx)
-  def markAllAsSent(items: NonEmptyChain[OutboxItem[N]]): F[Unit] =
-    Clock[F].realTimeInstant.flatMap(time =>
-      qs.markAsPublished(items.map(_.seqNr), time.atOffset(ZoneOffset.UTC))
-        .run
-        .transact(trx)
-        .void
-    )
+    qs: Queries.Snapshot[S]
+) extends SnapshotPersistence[F, S] {
+  def get(id: StreamId): F[Option[AggregateState.Valid[S]]] =
+    qs.get(id).option.transact(trx)
+  def put(items: Chunk[SnapshotItem[S]]): F[Unit] =
+    qs.put(items.toList).transact(trx).void
+}
+
+private object DoobieSnapshotPersistence {
+  def apply[F[_]: Concurrent, S](
+      pool: Transactor[F],
+      namespace: PGNamespace
+  )(using codec: BackendCodec[S]): F[DoobieSnapshotPersistence[F, S]] =
+    val q = Queries.Snapshot[S](namespace, codec)
+    q.setup.run.transact(pool).as(new DoobieSnapshotPersistence(pool, q))
 }

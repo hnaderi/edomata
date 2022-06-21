@@ -21,6 +21,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.Backend
+import edomata.backend.BackendError
 import edomata.core.CommandMessage
 import edomata.core.Edomaton
 import edomata.core.Response
@@ -38,6 +39,32 @@ abstract class PersistenceSuite(
     CommandMessage(_, Instant.EPOCH, _, "command")
   )
 
+  type SUT = Backend[IO, Int, Int, String, Int]
+
+  private def assertJournal(
+      s: SUT,
+      address: String
+  )(evs: Int*) = s.journal
+    .readStream(address)
+    .map(_.payload)
+    .compile
+    .toList
+    .assertEquals(evs.toList)
+  private def assertOutbox(
+      s: SUT,
+      address: String
+  )(evs: Int*) = s.outbox.read
+    .filter(_.streamId == address)
+    .map(_.data)
+    .compile
+    .toList
+    .assertEquals(evs.toList)
+
+  private def assertNotifiedJournal(s: SUT) =
+    s.updates.journal.head.compile.lastOrError.assertEquals(())
+  private def assertNotifiedOutbox(s: SUT) =
+    s.updates.outbox.head.compile.lastOrError.assertEquals(())
+
   check("Must append correctly") { s =>
     for {
       cmd <- someCmd
@@ -45,22 +72,38 @@ abstract class PersistenceSuite(
         .compile(Edomaton.lift(Response.accept(1, 2, 3).publish(4, 5, 6)))
         .apply(cmd)
 
-      _ <- s.journal
-        .readStream(cmd.address)
-        .map(_.payload)
-        .compile
-        .toList
-        .assertEquals(List(1, 2, 3))
+      _ <- assertJournal(s, cmd.address)(1, 2, 3)
+      _ <- assertOutbox(s, cmd.address)(4, 5, 6)
 
-      _ <- s.outbox.read
-        .filter(_.streamId == cmd.address)
-        .map(_.data)
-        .compile
-        .toList
-        .assertEquals(List(4, 5, 6))
+      _ <- assertNotifiedJournal(s)
+      _ <- assertNotifiedOutbox(s)
+    } yield ()
+  }
 
-      _ <- s.updates.journal.head.compile.lastOrError.assertEquals(())
-      _ <- s.updates.outbox.head.compile.lastOrError.assertEquals(())
+  check("Appending must be idempotent") { s =>
+    for {
+      cmd <- someCmd
+      append = s
+        .compile(Edomaton.lift(Response.accept(1, 2, 3).publish(4, 5, 6)))
+        .apply(cmd)
+        .attempt
+
+      _ <- List
+        .fill(20)(append)
+        .parSequence
+        .map(ats =>
+          ats.foreach {
+            case Right(_)                           => ()
+            case Left(BackendError.VersionConflict) => ()
+            case Left(other) => fail("Invalid implementation", other)
+          }
+        )
+
+      _ <- assertJournal(s, cmd.address)(1, 2, 3)
+      _ <- assertOutbox(s, cmd.address)(4, 5, 6)
+
+      _ <- assertNotifiedJournal(s)
+      _ <- assertNotifiedOutbox(s)
     } yield ()
   }
 
