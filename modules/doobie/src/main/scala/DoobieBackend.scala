@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package doobie
+package edomata.doobie
 
 import _root_.doobie.ConnectionIO
 import _root_.doobie.FC
@@ -30,6 +29,7 @@ import cats.effect.kernel.Async
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.implicits.*
+import edomata.backend.*
 import edomata.core.*
 import fs2.Stream
 
@@ -81,7 +81,7 @@ object DoobieBackend {
       E,
       R,
       N
-  ] private[backend] (
+  ] private[doobie] (
       private val pool: Transactor[F],
       private val domain: Domain[C, S, E, R, N],
       private val model: ModelTC[S, E, R],

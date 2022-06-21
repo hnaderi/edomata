@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package doobie
+package edomata.doobie
 
 import _root_.doobie.*
 import _root_.doobie.free.connection.ConnectionIO
@@ -23,13 +22,14 @@ import _root_.doobie.implicits.*
 import _root_.doobie.postgres.implicits.*
 import _root_.doobie.util.fragment.Fragment
 import cats.data.NonEmptyChain
+import edomata.backend.*
 import edomata.core.CommandMessage
 import edomata.core.MessageMetadata
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-private[backend] object Queries {
+private[doobie] object Queries {
   private def escapeStr(name: PGNamespace) = s""""$name""""
   private def escape(name: PGNamespace) = Fragment.const(escapeStr(name))
 

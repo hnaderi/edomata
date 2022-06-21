@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package doobie
+package edomata.doobie
 
 import cats.MonadError
 import cats.implicits.*
+import edomata.backend.*
 
 extension [F[_]](self: F[Int])(using F: MonadError[F, Throwable]) {
-  private[backend] def assertInserted(size: Long): F[Unit] = self.flatMap { i =>
+  private[doobie] def assertInserted(size: Long): F[Unit] = self.flatMap { i =>
     if i == size then F.unit
     else
       F.raiseError(
@@ -30,5 +30,5 @@ extension [F[_]](self: F[Int])(using F: MonadError[F, Throwable]) {
         )
       )
   }
-  private[backend] def assertInserted: F[Unit] = assertInserted(1)
+  private[doobie] def assertInserted: F[Unit] = assertInserted(1)
 }

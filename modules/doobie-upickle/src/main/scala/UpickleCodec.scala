@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package doobie
+package edomata.doobie
 
 import cats.implicits.*
 import upickle.default.*
+
 import BackendCodec.*
 
 object UpickleCodec {

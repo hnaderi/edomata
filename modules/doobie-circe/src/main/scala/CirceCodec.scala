@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package doobie
+package edomata.doobie
 
 import _root_.doobie.*
 import cats.implicits.*

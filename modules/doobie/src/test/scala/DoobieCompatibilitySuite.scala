@@ -21,7 +21,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.*
-import edomata.backend.doobie.*
+import edomata.doobie.*
 import scodec.bits.ByteVector
 
 import DoobieCompatibilitySuite.*
