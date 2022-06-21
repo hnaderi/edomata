@@ -120,7 +120,7 @@ private final class LRUCache[F[_], I, T] private (
   }
 }
 
-object LRUCache {
+private object LRUCache {
   final case class CacheItem[I, T](
       val key: I,
       var value: T,
