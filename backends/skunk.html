@@ -102,6 +102,7 @@
 
         <ul class="nav-list">
           <li class="level1"><a href="#install">Install</a></li>
+          <li class="level1"><a href="#imports">Imports</a></li>
           <li class="level1"><a href="#defining-codecs">Defining codecs</a></li>
           <li class="level2"><a href="#persisted-snapshots">Persisted snapshots</a></li>
           <li class="level1"><a href="#compiling-application-to-a-service">Compiling application to a service</a></li>
@@ -121,6 +122,9 @@
 </span><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-skunk-upickle&quot;</span><span> % </span><span class="string-literal">&quot;0.5.0&quot;</span></code></pre>
         <p>or for scala.js</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-skunk&quot;</span><span> % </span><span class="string-literal">&quot;0.5.0&quot;</span></code></pre>
+        
+        <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">skunk</span><span>.*</span></code></pre>
         
         <h2 id="defining-codecs" class="section"><a class="anchor-link left" href="#defining-codecs"><i class="icofont-laika">&#xef71;</i></a>Defining codecs</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">Event</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span><span> </span><span class="comment">// or .json
