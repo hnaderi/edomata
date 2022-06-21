@@ -21,7 +21,7 @@ import cats.MonadError
 import cats.implicits.*
 
 extension [F[_]](self: F[Int])(using F: MonadError[F, Throwable]) {
-  private[backend] def assertInserted(size: Int): F[Unit] = self.flatMap { i =>
+  private[backend] def assertInserted(size: Long): F[Unit] = self.flatMap { i =>
     if i == size then F.unit
     else
       F.raiseError(

@@ -19,6 +19,7 @@ package doobie
 
 import _root_.doobie.*
 import _root_.doobie.implicits.*
+import _root_.doobie.postgres.sqlstate
 import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
@@ -80,16 +81,18 @@ private final class DoobieRepository[F[_], S, E, R, N](
       )
     )
     query = for {
-      _ <- j.append(evs)
+      _ <- j.append(evs).assertInserted(events.size)
       _ <- NonEmptyChain.fromChain(notifications).fold(FC.unit) { n =>
         o.insertAll(
           n.toList.map((_, ctx.command.address, now, ctx.command.metadata))
-        )
+        ).assertInserted(notifications.size)
       }
-      _ <- cmds.insert(ctx.command).run
+      _ <- cmds.insert(ctx.command).run.assertInserted
     } yield ()
 
-    _ <- query.transact(trx)
+    _ <- query.transact(trx).attemptSomeSqlState {
+      case sqlstate.class23.UNIQUE_VIOLATION => BackendError.VersionConflict
+    }
     _ <- updates.notifyJournal
     _ <- updates.notifyOutbox
   } yield ()
@@ -102,7 +105,7 @@ private final class DoobieRepository[F[_], S, E, R, N](
     ns = notifications.toList.map(
       (_, ctx.command.address, now, ctx.command.metadata)
     )
-    _ <- o.insertAll(ns).transact(trx)
+    _ <- o.insertAll(ns).assertInserted(notifications.size).transact(trx)
     _ <- updates.notifyOutbox
   } yield ()
 }
