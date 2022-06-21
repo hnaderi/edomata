@@ -17,6 +17,11 @@ or for scala.js
 libraryDependencies += "dev.hnaderi" %%% "edomata-skunk" % "@VERSION@"
 ```
 
+## Imports
+```scala
+import edomata.skunk.*
+```
+
 ## Defining codecs
 
 ```scala
