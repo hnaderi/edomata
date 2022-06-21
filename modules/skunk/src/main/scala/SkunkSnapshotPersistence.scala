@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
+import _root_.skunk.Codec
+import _root_.skunk.Session
+import _root_.skunk.data.Identifier
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
@@ -25,12 +28,10 @@ import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Temporal
 import cats.implicits.*
+import edomata.backend.*
 import edomata.core.*
 import fs2.Chunk
 import fs2.Stream
-import skunk.Codec
-import skunk.Session
-import skunk.data.Identifier
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset

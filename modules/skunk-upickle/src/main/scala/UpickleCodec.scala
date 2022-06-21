@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
 import cats.implicits.*
-import edomata.backend.BackendCodec.Binary
-import edomata.backend.BackendCodec.Json
-import edomata.backend.BackendCodec.JsonB
+import edomata.skunk.BackendCodec.Binary
+import edomata.skunk.BackendCodec.Json
+import edomata.skunk.BackendCodec.JsonB
 import upickle.default.*
 
 object UpickleCodec {

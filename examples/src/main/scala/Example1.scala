@@ -21,7 +21,7 @@ import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.*
+import edomata.skunk.*
 import edomata.core.*
 import edomata.syntax.all.*
 import io.circe.generic.auto.*

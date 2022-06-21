@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
+import _root_.skunk.data.Completion
 import cats.Functor
 import cats.MonadError
 import cats.effect.kernel.Clock
 import cats.implicits.*
-import skunk.data.Completion
+import edomata.backend.*
 
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import java.time.Instant
 
 private def currentTime[F[_]: Functor](using
     clock: Clock[F]
@@ -34,7 +35,7 @@ private def currentTime[F[_]: Functor](using
   )
 
 extension [F[_]](self: F[Completion])(using F: MonadError[F, Throwable]) {
-  private[backend] def assertInserted(size: Int): F[Unit] = self.flatMap {
+  private[skunk] def assertInserted(size: Int): F[Unit] = self.flatMap {
     case Completion.Insert(i) =>
       if i == size then F.unit
       else
@@ -50,5 +51,5 @@ extension [F[_]](self: F[Completion])(using F: MonadError[F, Throwable]) {
         )
       )
   }
-  private[backend] def assertInserted: F[Unit] = assertInserted(1)
+  private[skunk] def assertInserted: F[Unit] = assertInserted(1)
 }

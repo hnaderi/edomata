@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
+import _root_.skunk.*
+import _root_.skunk.data.Completion
 import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
@@ -23,9 +25,8 @@ import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Sync
 import cats.implicits.*
+import edomata.backend.*
 import edomata.core.*
-import skunk.*
-import skunk.data.Completion
 
 import java.time.ZoneOffset
 import java.util.UUID

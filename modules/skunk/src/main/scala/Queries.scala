@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
+import _root_.skunk.*
+import _root_.skunk.codec.all.*
+import _root_.skunk.implicits.*
 import cats.data.NonEmptyList
+import edomata.backend.*
 import edomata.core.CommandMessage
 import edomata.core.MessageMetadata
-import skunk.*
-import skunk.codec.all.*
-import skunk.implicits.*
 
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 
-private[backend] object Queries {
+private[skunk] object Queries {
   def setupSchema(namespace: PGNamespace): Command[Void] =
     sql"""create schema if not exists "#$namespace";""".command
 

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
-import skunk.Codec
-import skunk.codec.binary.bytea
-import skunk.data.Type
+import _root_.skunk.Codec
+import _root_.skunk.codec.binary.bytea
+import _root_.skunk.data.Type
+import edomata.backend.*
 
 import scala.annotation.implicitNotFound
 

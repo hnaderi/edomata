@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
+import _root_.skunk.*
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
@@ -25,11 +26,9 @@ import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Temporal
 import cats.implicits.*
+import edomata.backend.*
 import edomata.core.*
 import fs2.Stream
-import skunk.Codec
-import skunk.Session
-import skunk.data.Identifier
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -40,7 +39,7 @@ private final class SkunkJournalReader[F[_]: Concurrent, E](
     q: Queries.Journal[E]
 ) extends JournalReader[F, E] {
 
-  private def run[A, B](q: skunk.Query[A, B])(a: A) =
+  private def run[A, B](q: Query[A, B])(a: A) =
     Stream.resource(pool.flatMap(_.prepare(q))).flatMap(_.stream(a, 100))
 
   def readStream(streamId: StreamId): Stream[F, EventMessage[E]] =
@@ -56,7 +55,7 @@ private final class SkunkJournalReader[F[_]: Concurrent, E](
       version: EventVersion
   ): Stream[F, EventMessage[E]] = run(q.readStreamBefore)((streamId, version))
 
-  def readAll: Stream[F, EventMessage[E]] = run(q.readAll)(skunk.Void)
+  def readAll: Stream[F, EventMessage[E]] = run(q.readAll)(Void)
 
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]] =
     run(q.readAllAfter)(seqNr)

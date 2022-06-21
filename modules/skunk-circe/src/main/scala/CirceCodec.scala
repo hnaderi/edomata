@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package edomata.skunk
 
 import cats.implicits.*
-import edomata.backend.BackendCodec.Json
-import edomata.backend.BackendCodec.JsonB
+import edomata.skunk.BackendCodec.Json
+import edomata.skunk.BackendCodec.JsonB
 import io.circe.Decoder
 import io.circe.Encoder
 import io.circe.parser.decode

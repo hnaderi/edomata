@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package edomata.backend
+package tests
 
+import _root_.skunk.Session
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.*
 import edomata.core.DomainModel
+import edomata.skunk.*
 import edomata.syntax.all.*
 import natchez.Trace.Implicits.noop
 import scodec.bits.ByteVector
-import skunk.Session
-import tests.*
 
 import SkunkCompatibilitySuite.*
 
