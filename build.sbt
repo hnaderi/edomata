@@ -7,7 +7,7 @@ import sbtcrossproject.CrossProject
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala3 = "3.1.2"
+lazy val scala3 = "3.1.3"
 val PrimaryJava = JavaSpec.temurin("8")
 val LTSJava = JavaSpec.temurin("17")
 
@@ -81,7 +81,7 @@ lazy val root = tlCrossRootProject
 lazy val mdocPlantuml = project
   .in(file("mdoc-plantuml"))
   .settings(
-    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2022.5"
+    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2022.6"
   )
   .enablePlugins(MdocPlugin)
   .enablePlugins(NoPublishPlugin)
@@ -146,7 +146,7 @@ lazy val core = module("core") {
     )
     .jsSettings(
       libraryDependencies ++= Seq(
-        "io.github.cquiroz" %%% "scala-java-time" % "2.3.0",
+        "io.github.cquiroz" %%% "scala-java-time" % "2.4.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0")
           .cross(CrossVersion.for3Use2_13)
       )

@@ -3,8 +3,8 @@ import sbt._
 object Dependencies {
   object Versions {
     val cats = "2.7.0"
-    val fs2 = "3.2.7"
-    val catsEffect = "3.3.13"
+    val fs2 = "3.2.9"
+    val catsEffect = "3.3.12"
     val skunk = "0.3.1"
     val scalaCheck = "1.15.4"
     val MUnit = "0.7.29"
