@@ -132,13 +132,13 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.* </span><span class="comment">// for convenient extension methods</span></code></pre>
         
         <h2 id="layers-of-abstraction" class="section"><a class="anchor-link left" href="#layers-of-abstraction"><i class="icofont-laika">&#xef71;</i></a>Layers of abstraction</h2>
-        <p><img src="https://www.plantuml.com/plantuml/svg/jLN1Rjim3BtdAtGEq04TqcozjLtgxj3JDc2NNcY9iOd8b2VA3e9X_pxQNb0tJT9qQ0qa5iIdznv5IhwI136jSvd8YhY629Mv0RigOcZOVGa-HBFedn50Id1XJLoO9NZ1KUJRi2eoHlDfD7yTOrWFRBEBsNnsCOfbWTE1q7VyrI1RlAUb_XXlGdGONm3VgVNwAu8YJw3kqQVYJjSVa3zAiYj64NC-6U_VF-I2MbAK-Jqn-kmXVvmUCtMppnp_6GleVo9BDN3Qak_KDClcsVpycEwZmi-I4kxtyc57s46270GFg5v-raQwFKrrNrx8YTBcO4gBwu-N_q_E8HtoVKz5cUuY8h-AVd_vdeY2JI4UK7t6yig4yeuAudljbzLe3FxTsBr7coYml44B7ol8RW_hsMpm3JIpB3icE3KUDXXbCfqQ5oeWrZaTavYwYTYFaKM7Og0e8XQW_KdSGYGzrp8vwnTgL1lNs1AuGBEC_TMI_EQ15MlMwBtHApxt92KwapT2dGaSbbV1eLTw7Yd4e7IwjBloEs-2iIMBWxaADfs5u5iqedUNmULIgpImgVCMjTqgOgh0AwrJ1L4pfl0DwlTYu6WacLnJSLZLUkOuFV5IrvuiT8NVIii3TrGsL5NtraoTrutRchn2Tle1-mi0" alt=""><br></p>
+        <p><img src="https://www.plantuml.com/plantuml/svg/jLN1Rjim3BtdAtGEq04TqcozjLtgxj3JDc2NNcY9iOd8b2VA3e9X_pxQNb0tJT9qQ0qa5iIdznv5IhwI136jSvd8YhY629Mv0RigOcZOVGa-HBFedn50Id1XJLoO9NZ1KUJRi2eoHlDfD7yTOrWFRBEBsNnsCOfbWTE1q7VyrI1RlAUb_XXlGdGONm3VgVNwAu8YJw3kqQVYJjSVa3zAiYj64NC-6U_VF-I2MbAK-Jqn-kmXVvmUCtMppnp_6GleVo9BDN3Qak_KDClcsVpycEwZmi-I4kxtyc57s46270GFg5v-raQwFKrrNrx8YTBcO4gBwu-N_q_E8HtoVKz5cUuY8h-AVd_vdeY2JI4UK7t6yig4yeuAudljbzLe3FxTsBr7coYml44B7ol8RW_hsMpm3JIpB3icE3KUDXXbCfqQ5oeWrZaTavYwYTYFaKM7Og0e8XQW_KdSGYGzrp8vwnTgL1lNs1AuGBEC_TMI_EQ15MlMwBr1lUDpJrAYCtaZrBd0ONqL77hbvv543CgdQxixlpCd65koEBYhODDv2Bv58tfv6LmkjKm3crflKVkj8gOAlD8wLH1rOmhVe7um1ev6aiar5uTLhOUEqnClTUt9GbVvhRGyS4TbGrLrRqtLUTsvhSahPATViBy0" alt=""><br></p>
         
         <h2 id="domain-layer" class="section"><a class="anchor-link left" href="#domain-layer"><i class="icofont-laika">&#xef71;</i></a>Domain layer</h2>
         
         <h3 id="decision" class="section"><a class="anchor-link left" href="#decision"><i class="icofont-laika">&#xef71;</i></a>Decision</h3>
-        <p>It all start with decisions!<br>
-        Decision models programs that decide in a event driven context, these programs are pure and can:</p>
+        <p>It all starts with decisions!<br>
+        Decision models programs that decide in an event-driven context, these programs are pure and can:</p>
         <ul>
           <li>accept events<br></li>
           <li>reject with errors<br></li>
@@ -168,7 +168,7 @@
 </span><span class="comment">// d5: Decision[Nothing, String, Int] = Accepted(Chain(Missile Launched!),1)
 </span><span class="keyword">val</span><span> </span><span class="identifier">d6</span><span> = </span><span class="identifier">d5</span><span> &gt;&gt; </span><span class="identifier">d3</span><span>
 </span><span class="comment">// d6: Decision[String, String, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
-        <p>you can also use for comprehensions:<br></p>
+        <p>You can also use for-comprehension:<br></p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d7</span><span> = </span><span class="keyword">for</span><span> {
   </span><span class="identifier">i</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="number-literal">1</span><span>)
   </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;A&quot;</span><span>) </span><span class="comment">// accepting one event
@@ -194,8 +194,8 @@
           <li>We can deposit/withdraw some amount of assets to an open account<br></li>
           <li>We must be able to close an account, if it is settled (meaning its balance is zero)<br></li>
         </ul>
-        <p>We&#39;ll start by modeling domain events first, that we have from event storming or other kind of design practices:<br></p>
-        <blockquote>I&#39;ll use scala 3 enums for modeling ADTs, as they are neat and more close to what modeling is all about; but you can use <code>sealed trait</code>s and normal <code>case class</code>es too</blockquote>
+        <p>We&#39;ll start by modeling domain events first, that we have from event storming or other kinds of design practices:<br></p>
+        <blockquote>I&#39;ll use scala 3 enums for modeling ADTs, as they are neat and closer to what modeling is all about; but you can use <code>sealed trait</code>s and normal <code>case class</code>es too</blockquote>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Event</span><span> {
   </span><span class="keyword">case</span><span> </span><span class="type-name">Opened</span><span>
   </span><span class="keyword">case</span><span> </span><span class="type-name">Deposited</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
@@ -257,16 +257,16 @@
   }
 }</span></code></pre>
         <ol class="arabic">
-          <li><code>.decide</code> is an extension method from edomata syntax that helps with deciding and transitioning to new state which I&#39;ll describe below</li>
-          <li><code>.validate</code> ensures that after applying decision events, we will end up in an <code>Open</code> state, and will returns <code>Open</code> instead of simply <code>Account</code></li>
-          <li><code>.perform</code> like <code>.decide</code> takes a decision as argument, an runs the decision on current state to return new state, it is basically a helper for folding to let you reuse <code>transition</code> and not repeating yourself</li>
+          <li><code>.decide</code> is an extension method from Edomata syntax that helps with deciding and transitioning to a new state which I&#39;ll describe below</li>
+          <li><code>.validate</code> ensures that after applying decision events, we will end up in an <code>Open</code> state, and will return <code>Open</code> instead of simply <code>Account</code></li>
+          <li><code>.perform</code> like <code>.decide</code> takes a decision as an argument, and runs the decision on the current state to return new state, it is basically a helper for folding to let you reuse <code>transition</code> and not repeating yourself</li>
           <li><code>Decision</code> can be converted <code>.toValidated</code>, <code>.toOption</code> or <code>.toEither</code>.</li>
           <li>as functional data structures are composable, you can extract common use cases like validations.</li>
         </ol>
         <p>but you might say, domain logic is not just deciding, you must perform the actions you decided; and you are right, let&#39;s go to that part:</p>
         
         <h3 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h3>
-        <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates required stuff for next steps:</p>
+        <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates the required stuff for the next steps:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Account</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">DomainModel</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>] {
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">initial</span><span> = </span><span class="type-name">New</span><span>  </span><span class="comment">// 1
 </span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">transition</span><span> = { </span><span class="comment">// 2
@@ -282,20 +282,20 @@
             <code>initial</code> is the initial state of your domain model which is the first start in timeline changes, you can assume that it&#39;s like <code>None</code> in <code>Option[T]</code>. beside it being required for our tutorial purposes, defining an initial state has the following advantages:
             <ul>
               <li>Model consistency; you are always working with your domain model, not with <code>Option[YourModel]</code></li>
-              <li>It enables to add new default values in future, where your model evolves and reduces number of times where an upcasting or migration is required.</li>
+              <li>It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.</li>
             </ul>
           </li>
-          <li><code>transition</code> is the fold function that given an event, tells how to go to next state. it&#39;s a function in <code>E =&gt; S =&gt; ValidatedNec[R, S]</code>. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, changing your transition to a conflicting logic with history of already created timelines.</li>
+          <li><code>transition</code> is the fold function that given an event, tells how to go to the next state. it&#39;s a function in <code>E =&gt; S =&gt; ValidatedNec[R, S]</code>. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, or changing your transition to a conflicting logic with a history of already created timelines.</li>
         </ol>
         
         <h4 id="tip" class="section"><a class="anchor-link left" href="#tip"><i class="icofont-laika">&#xef71;</i></a>Tip</h4>
         <blockquote>Writing transition without using a library for optics and lenses would be cumbersome and not expressive enough for domain modeling; I suggest you to use the great <a href="https://www.optics.dev/Monocle/">monocle</a> library which provides neat macros for lenses, and you don&#39;t even need to think about it twice after using it for the first time.</blockquote>
         
         <h4 id="thinking-further" class="section"><a class="anchor-link left" href="#thinking-further"><i class="icofont-laika">&#xef71;</i></a>Thinking further</h4>
-        <blockquote>Writing event driven (and specifically event sourced) domain models deals with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you&#39;ll read from a journal; for example, in the example above, we might receive a Withdrawn event on <code>New</code> or <code>Closed</code> state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can&#39;t even find a balance to decrement! in non functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.</blockquote>
+        <blockquote>Writing event-driven (and specifically event-sourced) domain models deal with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you&#39;ll read from a journal; for example, in the example above, we might receive a Withdrawn event on <code>New</code> or <code>Closed</code> state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can&#39;t even find a balance to decrement! in non-functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.</blockquote>
         
         <h4 id="info-1" class="section"><a class="anchor-link left" href="#info-1"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
-        <blockquote>If you have a programming error in your folding which can cause conflicts, edomata has your back! it won&#39;t let your program to reach a result where it can be persisted and corrupting data; we&#39;ll see this in next chapters.</blockquote>
+        <blockquote>If you have a programming error in your folding which can cause conflicts, Edomata has your back! it won&#39;t let your program to reach a result where it can be persisted and corrupting data; we&#39;ll see this in the next chapters.</blockquote>
         <p>As simple as that!</p>
         
         <h3 id="testing-domain-model" class="section"><a class="anchor-link left" href="#testing-domain-model"><i class="icofont-laika">&#xef71;</i></a>Testing domain model</h3>
@@ -316,11 +316,11 @@
           <li>interact with them</li>
           <li>possibly perform some side effects</li>
         </ul>
-        <p>you can do all that without edomata, as everything in edomata is just pure data and you can use it however you like; but here we&#39;ll focus on what edomata has to offer.<br>
-        Edomata is designed around the idea of event driven state machines,
-        and it&#39;s not surprising that tools that it provides for building services are also event driven state machines!
+        <p>you can do all that without Edomata, as everything in Edomata is just pure data and you can use it however you like; but here we&#39;ll focus on what Edomata has to offer.<br>
+        Edomata is designed around the idea of event-driven state machines,
+        and it&#39;s not surprising that the tools that it provides for building services are also event-driven state machines!
         these state machines are like <a href="../principles/index.html#actor-model">actors</a> that respond to incoming messages which are domain commands,
-        may possibly change state through emiting some events as we&#39;ve seen in domain modeling above,
+        may possibly change state through emitting some events as we&#39;ve seen in domain modeling above,
         and possibly emit some other type of events for communication and integration with other services;
         while doing so, they can also perform any side effects that are idempotent,
         as these machines may be run several times in case of failure. that takes us to the next building block:</p>
@@ -328,10 +328,10 @@
         <h3 id="edomaton" class="section"><a class="anchor-link left" href="#edomaton"><i class="icofont-laika">&#xef71;</i></a>Edomaton</h3>
         <p>An <code>Edomaton</code> is an event-driven automata (pl. Edomata) that can do the following:<br></p>
         <ul>
-          <li>read current state</li>
+          <li>read the current state</li>
           <li>ask what is requested (command message)</li>
           <li>perform side effects</li>
-          <li>decide (as described in decision above)</li>
+          <li>decide (as described in the decision above)</li>
           <li>notify (emit notifications, integration events, ...)</li>
           <li>output a value</li>
         </ul>
@@ -339,7 +339,7 @@
         
         <h4 id="info-2" class="section"><a class="anchor-link left" href="#info-2"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
         <blockquote>an <code>Edomaton</code> is like an employee, while a <code>Decision</code> is like a business rule</blockquote>
-        <p>for creating our first <code>Edomaton</code>, we need to model 2 more ADTs; commands and notifications.</p>
+        <p>for creating our first <code>Edomaton</code>, we need to model 2 more ADTs; commands, and notifications.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Command</span><span> {
   </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>
   </span><span class="keyword">case</span><span> </span><span class="type-name">Deposit</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
@@ -386,7 +386,7 @@
         <h3 id="testing-an-edomaton" class="section"><a class="anchor-link left" href="#testing-an-edomaton"><i class="icofont-laika">&#xef71;</i></a>Testing an edomaton</h3>
         <p>As said earlier, everything in Edomata is just a normal value, and you can treat them like normal data.<br>
         <code>Edomaton</code>s take an environment, and work in that context to produce a result; 
-        using default dsl like what we&#39;ve done in this tutorial creates <code>Edomaton</code>s that require a data type called <code>RequestContext</code> which is a pretty standard modeling of a request context in an event-driven setup.</p>
+        using default DSL like what we&#39;ve done in this tutorial creates <code>Edomaton</code>s that require a data type called <code>RequestContext</code> which is pretty standard modeling of a request context in an event-driven setup.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">scenario1</span><span> = </span><span class="type-name">RequestContext</span><span>(
@@ -403,7 +403,7 @@
           <li>Recommended way is to use <code>.execute</code> which takes input and returns processed results, which is used in real backends too.</li>
         </ul>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// as we&#39;ve written our service definition in a tagless style, 
-// we are free to provide any type param that satisfies required typeclasses
+// we are free to provide any type param that satisfies required type-classes
 </span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Id</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">obtained</span><span> = </span><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
