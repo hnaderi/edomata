@@ -7,7 +7,11 @@ import sbtcrossproject.CrossProject
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala3 = "3.1.3"
+val scala212 = "2.12.16"
+val scala213 = "2.13.8"
+val scala3 = "3.1.3"
+val supportScalaVersions = Seq(scala212, scala213, scala3)
+
 val PrimaryJava = JavaSpec.temurin("8")
 val LTSJava = JavaSpec.temurin("17")
 
@@ -15,6 +19,7 @@ inThisBuild(
   List(
     tlBaseVersion := "0.5",
     scalaVersion := scala3,
+    crossScalaVersions := supportScalaVersions,
     fork := true,
     Test / fork := false,
     organization := "dev.hnaderi",
@@ -164,6 +169,7 @@ lazy val sqlBackend = module("sql-backend") {
         "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test,
         "org.typelevel" %%% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion % Test,
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect % Test,
+        "dev.hnaderi" %%% "named-codec" % "0.0.1",
         "co.fs2" %%% "fs2-core" % Versions.fs2
       )
     )
