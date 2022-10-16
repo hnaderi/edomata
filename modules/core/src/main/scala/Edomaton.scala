@@ -98,9 +98,11 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
 
   /** transforms underlying response
     */
-  def transform[B](f: Response[R, E, N, A] => Response[R, E, N, B])(using
+  def transform[R2, E2, N2, B](
+      f: Response[R, E, N, A] => Response[R2, E2, N2, B]
+  )(using
       Functor[F]
-  ): Edomaton[F, Env, R, E, N, B] =
+  ): Edomaton[F, Env, R2, E2, N2, B] =
     Edomaton(run.andThen(_.map(f)))
 
   /** translates this program in another language mapped by a natural
