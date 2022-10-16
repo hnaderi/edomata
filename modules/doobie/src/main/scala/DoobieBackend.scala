@@ -168,6 +168,6 @@ object DoobieBackend {
         else Resource.pure(skRepo)
       h = CommandHandler.withRetry(compiler, maxRetry, retryInitialDelay)
 
-    } yield Backend(h, _outbox, _journal, _repo, updates)
+    } yield BackendImpl(h, _outbox, _journal, _repo, updates)
   }
 }
