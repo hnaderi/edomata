@@ -295,7 +295,7 @@ enum Notification {
 
 and we can create our first service:
 
-```scala
+```scala mdoc
 object AccountService extends Account.Service[Command, Notification] {
   import cats.Monad
 
@@ -334,7 +334,7 @@ As said earlier, everything in Edomata is just a normal value, and you can treat
 `Edomaton`s take an environment, and work in that context to produce a result; 
 using default DSL like what we've done in this tutorial creates `Edomaton`s that require a data type called `RequestContext` which is pretty standard modeling of a request context in an event-driven setup.
 
-```scala
+```scala mdoc
 import java.time.Instant
 
 val scenario1 = RequestContext(
@@ -352,7 +352,7 @@ There are 2 ways for running an `Edomaton` to get its result:
 
 - Recommended way is to use `.execute` which takes input and returns processed results, which is used in real backends too.
 
-```scala
+```scala mdoc:to-string
 // as we've written our service definition in a tagless style, 
 // we are free to provide any type param that satisfies required type-classes
 
@@ -366,13 +366,13 @@ AccountService[IO].execute(scenario1)
 ```
 - or you can use `.run`, which takes input and returns raw `Response` model, which you can interpret however you like.
 
-```scala
+```scala mdoc
 AccountService[Id].run(scenario1)
 ```
 
 now we can easily assert our expectations using our favorite test framework
 
-```scala
+```scala 
 assertEquals(
   obtained,
   EdomatonResult.Accepted(
