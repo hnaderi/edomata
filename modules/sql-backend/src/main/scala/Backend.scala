@@ -16,10 +16,18 @@
 
 package edomata.backend
 
-final class Backend[F[_], S, E, R, N](
-    val compile: CommandHandler[F, S, E, R, N],
-    val outbox: OutboxReader[F, N],
-    val journal: JournalReader[F, E],
-    val repository: RepositoryReader[F, S, E, R],
-    val updates: NotificationsConsumer[F]
-)
+trait Backend[F[_], S, E, R, N] {
+  def compile: CommandHandler[F, S, E, R, N]
+  def outbox: OutboxReader[F, N]
+  def journal: JournalReader[F, E]
+  def repository: RepositoryReader[F, S, E, R]
+  def updates: NotificationsConsumer[F]
+}
+
+private[edomata] final case class BackendImpl[F[_], S, E, R, N](
+    compile: CommandHandler[F, S, E, R, N],
+    outbox: OutboxReader[F, N],
+    journal: JournalReader[F, E],
+    repository: RepositoryReader[F, S, E, R],
+    updates: NotificationsConsumer[F]
+) extends Backend[F, S, E, R, N]
