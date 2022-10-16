@@ -101,6 +101,11 @@
         <p class="header"><a href="#">Processes</a></p>
 
         <ul class="nav-list">
+          <li class="level1"><a href="#reading">Reading</a></li>
+          <li class="level2"><a href="#outbox">Outbox</a></li>
+          <li class="level2"><a href="#journal">Journal</a></li>
+          <li class="level2"><a href="#repository">Repository</a></li>
+          <li class="level1"><a href="#integrating">Integrating</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -109,7 +114,46 @@
       <main class="content">
 
         <h1 id="processes" class="title">Processes</h1>
-        <p>TBD</p>
+        
+        <h2 id="reading" class="section"><a class="anchor-link left" href="#reading"><i class="icofont-laika">&#xef71;</i></a>Reading</h2>
+        <p>Having a backend at hand from previous chapters like:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">backend</span><span> : </span><span class="type-name">Backend</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Notification</span><span>] = ???</span></code></pre>
+        
+        <h3 id="outbox" class="section"><a class="anchor-link left" href="#outbox"><i class="icofont-laika">&#xef71;</i></a>Outbox</h3>
+        <p>For consuming outboxed items, you can use <code>backend.outbox</code> directly, or you can use the provided <code>OutboxConsumer</code> like the following:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">publisher</span><span> : </span><span class="type-name">Stream</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">Nothing</span><span>] = </span><span class="type-name">OutboxConsumer</span><span>(</span><span class="identifier">backend</span><span>){ </span><span class="identifier">item</span><span> =&gt;
+  </span><span class="comment">// use outboxed item
+</span><span>  ???
+}</span></code></pre>
+        <p><code>OutboxConsumer</code> will consume outboxed items, run the provided action on each of them, marks all items as read.<br>
+        It does not handle or recover action failures to simplify error handling on application side.</p>
+        <blockquote>Note that outbox pattern is meant for atomically publishing external messages, and while it has useful data in it, it is not meant to be the medium for processing messages like a queue; and it&#39;s best practice to have exactly one consumer on each outbox</blockquote>
+        
+        <h3 id="journal" class="section"><a class="anchor-link left" href="#journal"><i class="icofont-laika">&#xef71;</i></a>Journal</h3>
+        <p>for reading all journal from the beginning you can use:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">all</span><span> = </span><span class="identifier">backend</span><span>.</span><span class="identifier">journal</span><span>.</span><span class="identifier">readAll</span></code></pre>
+        <p>If you are only interested in a single stream, you can use</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">singleStream</span><span> = </span><span class="identifier">backend</span><span>.</span><span class="identifier">journal</span><span>.</span><span class="identifier">readStream</span><span>(</span><span class="string-literal">&quot;interesting-stream&quot;</span><span>)</span></code></pre>
+        <p>you can also read before or after a specific sequence number</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">allAfter</span><span> = </span><span class="identifier">backend</span><span>.</span><span class="identifier">journal</span><span>.</span><span class="identifier">readAllAfter</span><span>(</span><span class="number-literal">100</span><span>)
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">singleBefore</span><span> = </span><span class="identifier">backend</span><span>.</span><span class="identifier">journal</span><span>.</span><span class="identifier">readStreamBefore</span><span>(</span><span class="string-literal">&quot;interesting-stream&quot;</span><span> ,</span><span class="number-literal">100</span><span>)</span></code></pre>
+        
+        <h3 id="repository" class="section"><a class="anchor-link left" href="#repository"><i class="icofont-laika">&#xef71;</i></a>Repository</h3>
+        <p>You can read the entire history of a single aggregate root</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">history</span><span> : </span><span class="type-name">Stream</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">AggregateState</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>]] = </span><span class="identifier">backend</span><span>.</span><span class="identifier">repository</span><span>.</span><span class="identifier">history</span><span>(</span><span class="string-literal">&quot;interesting-stream&quot;</span><span>)</span></code></pre>
+        
+        <h4 id="tip" class="section"><a class="anchor-link left" href="#tip"><i class="icofont-laika">&#xef71;</i></a>Tip</h4>
+        <blockquote>Note that when you read from repository, you get <code>AggregateState</code>, which contains aggregate version on valid streams, or last valid state along with errors and the event that caused this conflict.<br>
+        It&#39;s worth noting that your journal are never gonna become corrupt by conflicting decisions, as they are prevented before being written to the journal by conflict protection implemented in Edomata; however if you change 
+        the meaning of events, you can change the meaning of history, and face a conflicting stream history.
+        It is one of the most important assumptions of event sourcing, that history won&#39;t change its meaning and is not specific to this library, so you should invest in more compatibility testing when you are doing a migration or huge change.</blockquote>
+        <p>Or read current state of the write side projection</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">current</span><span> : </span><span class="type-name">IO</span><span>[</span><span class="type-name">AggregateState</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>]] = </span><span class="identifier">backend</span><span>.</span><span class="identifier">repository</span><span>.</span><span class="identifier">get</span><span>(</span><span class="string-literal">&quot;interesting-stream&quot;</span><span>)</span></code></pre>
+        
+        <h2 id="integrating" class="section"><a class="anchor-link left" href="#integrating"><i class="icofont-laika">&#xef71;</i></a>Integrating</h2>
+        <p>You can easily use provided streams and read functionality to implement any complex processes or business workflows.<br>
+        for example a process manager would be just a possibly stateful stream that handles notifications, 
+        or a new custom read side projections would be just another stream that handle journal events.</p>
 
         <hr style="margin-top: 30px"/>
         <footer style="font-size: 90%; text-align: center">

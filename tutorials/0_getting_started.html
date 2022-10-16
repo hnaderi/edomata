@@ -387,7 +387,7 @@
         <p>As said earlier, everything in Edomata is just a normal value, and you can treat them like normal data.<br>
         <code>Edomaton</code>s take an environment, and work in that context to produce a result; 
         using default DSL like what we&#39;ve done in this tutorial creates <code>Edomaton</code>s that require a data type called <code>RequestContext</code> which is pretty standard modeling of a request context in an event-driven setup.</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">scenario1</span><span> = </span><span class="type-name">RequestContext</span><span>(
   </span><span class="identifier">command</span><span> = </span><span class="type-name">CommandMessage</span><span>(
@@ -397,7 +397,20 @@
     </span><span class="identifier">payload</span><span> = </span><span class="type-name">Command</span><span>.</span><span class="type-name">Open</span><span>
   ),
   </span><span class="identifier">state</span><span> = </span><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>
-)</span></code></pre>
+)
+</span><span class="comment">// scenario1: RequestContext[Command, Account] = RequestContext(
+//   command = CommandMessage(
+//     id = &quot;some random id for request&quot;,
+//     time = -1000000000-01-01T00:00:00Z,
+//     address = &quot;our account id&quot;,
+//     payload = Open,
+//     metadata = MessageMetadata(
+//       correlation = Some(value = &quot;some random id for request&quot;),
+//       causation = Some(value = &quot;some random id for request&quot;)
+//     )
+//   ),
+//   state = New
+// )</span></code></pre>
         <p>There are 2 ways for running an <code>Edomaton</code> to get its result:<br></p>
         <ul>
           <li>Recommended way is to use <code>.execute</code> which takes input and returns processed results, which is used in real backends too.</li>
@@ -407,15 +420,21 @@
 </span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Id</span><span>
 </span><span class="keyword">val</span><span> </span><span class="identifier">obtained</span><span> = </span><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
-
+</span><span class="comment">// obtained: EdomatonResult[Account, Event, Rejection, Notification] = Accepted(Open(0),Chain(Opened),Chain(AccountOpened(our account id)))
+</span><span>
 </span><span class="comment">// or even use a real IO monad if needed
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
 
-</span><span class="type-name">AccountService</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)</span></code></pre>
+</span><span class="type-name">AccountService</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
+</span><span class="comment">// res8: IO[EdomatonResult[Account, Event, Rejection, Notification]] = IO(...)</span></code></pre>
         <ul>
           <li>or you can use <code>.run</code>, which takes input and returns raw <code>Response</code> model, which you can interpret however you like.</li>
         </ul>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)
+</span><span class="comment">// res9: Response[Rejection, Event, Notification, Unit] = Response(
+//   result = Accepted(events = Singleton(a = Opened), result = ()),
+//   notifications = Singleton(a = AccountOpened(accountId = &quot;our account id&quot;))
+// )</span></code></pre>
         <p>now we can easily assert our expectations using our favorite test framework</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">assertEquals</span><span>(
   </span><span class="identifier">obtained</span><span>,
