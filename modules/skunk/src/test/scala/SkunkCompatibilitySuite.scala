@@ -82,9 +82,10 @@ object SkunkCompatibilitySuite {
         Some("postgres"),
         4
       )
-      .flatMap(
-        SkunkBackend(_)
-          .builder(TestDomainModel, name)
+      .flatMap(pool =>
+        Backend
+          .builder(TestDomainModel)
+          .using(SkunkDriver(PGNamespace(name), pool))
           // Zero for no buffering in tests
           .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
           .build
