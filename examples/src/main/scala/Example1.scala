@@ -91,7 +91,7 @@ object Application extends IOApp.Simple {
 
   def backendRes(pool: Resource[IO, Session[IO]]) = Backend
     .builder(CounterService)
-    .fromF(SkunkDriver("counter", pool))
+    .use(SkunkDriver("counter", pool))
     // .persistedSnapshot(???, maxInMem = 200)
     .inMemSnapshot(200)
     .withRetryConfig(retryInitialDelay = 2.seconds)
