@@ -50,7 +50,7 @@ object SkunkBackend {
     ): DomainBuilder[F, C, S, E, R, N] =
       val ns = PGNamespace(namespace)
       DomainBuilder(
-        Backend.builder(domain).fromF(SkunkDriver.from(ns, pool)),
+        Backend.builder(domain).use(SkunkDriver.from(ns, pool)),
         ns
       )
 
@@ -62,7 +62,7 @@ object SkunkBackend {
     ): DomainBuilder[F, C, S, E, R, N] =
       val ns = PGNamespace(namespace)
       DomainBuilder(
-        Backend.builder(service.domain).fromF(SkunkDriver.from(ns, pool)),
+        Backend.builder(service.domain).use(SkunkDriver.from(ns, pool)),
         ns
       )
   }

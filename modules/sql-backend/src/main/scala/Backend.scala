@@ -21,6 +21,7 @@ import cats.effect.kernel.Resource
 import edomata.core.*
 
 import scala.concurrent.duration.*
+import fs2.compat.NotGiven
 
 trait Backend[F[_], S, E, R, N] {
   def compile: CommandHandler[F, S, E, R, N]
@@ -113,12 +114,12 @@ object Backend {
   final class PartialBuilder[C, S, E, R, N](
       domain: Domain[C, S, E, R, N]
   )(using model: ModelTC[S, E, R]) {
-    def from[F[_]: Async, Codec[_]](
+    def use[F[_]: Async, Codec[_]](
         driver: StorageDriver[F, Codec]
     ): Builder[F, Codec, C, S, E, R, N] =
       from(Resource.pure(driver))
 
-    def fromF[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
+    def use[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
         driver: F[D]
     ): Builder[F, Codec, C, S, E, R, N] =
       from(Resource.eval(driver))

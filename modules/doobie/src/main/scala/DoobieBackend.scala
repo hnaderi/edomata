@@ -53,7 +53,7 @@ object DoobieBackend {
     ): DomainBuilder[F, C, S, E, R, N] =
       val ns = PGNamespace(namespace)
       DomainBuilder(
-        Backend.builder(domain).fromF(DoobieDriver.from(ns, trx)),
+        Backend.builder(domain).use(DoobieDriver.from(ns, trx)),
         ns
       )
 
@@ -65,7 +65,7 @@ object DoobieBackend {
     ): DomainBuilder[F, C, S, E, R, N] =
       val ns = PGNamespace(namespace)
       DomainBuilder(
-        Backend.builder(service.domain).fromF(DoobieDriver.from(ns, trx)),
+        Backend.builder(service.domain).use(DoobieDriver.from(ns, trx)),
         ns
       )
 

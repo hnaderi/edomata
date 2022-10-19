@@ -85,7 +85,7 @@ object SkunkCompatibilitySuite {
       .flatMap(pool =>
         Backend
           .builder(TestDomainModel)
-          .fromF(SkunkDriver(name, pool))
+          .use(SkunkDriver(name, pool))
           // Zero for no buffering in tests
           .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
           .build
