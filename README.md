@@ -19,18 +19,18 @@ visit [Project site](https://edomata.ir/) to see tutorials and docs.
 ## Add to your build
 Use latest version from badge above
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-core" % "0.5.2"
+libraryDependencies += "dev.hnaderi" %% "edomata-core" % "<last version from badge>"
 
 ```  
 or other modules  
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "0.5.2"
+libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "<last version from badge>"
 ```  
 See [modules](https://edomata.ir/other/modules.html) for more info.
 
 or for scala.js
 ```scala
-libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "0.5.2"
+libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from badge>"
 ```
 
 ## Adopters
