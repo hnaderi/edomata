@@ -50,10 +50,10 @@ object DoobieBackend {
         inline namespace: String
     )(using
         model: ModelTC[S, E, R]
-    ) =
+    ): DomainBuilder[F, C, S, E, R, N] =
       val ns = PGNamespace(namespace)
       DomainBuilder(
-        Backend.builder(domain).using(DoobieDriver(ns, trx)),
+        Backend.builder(domain).fromF(DoobieDriver.from(ns, trx)),
         ns
       )
 
@@ -62,10 +62,10 @@ object DoobieBackend {
         inline namespace: String
     )(using
         model: ModelTC[S, E, R]
-    ) =
+    ): DomainBuilder[F, C, S, E, R, N] =
       val ns = PGNamespace(namespace)
       DomainBuilder(
-        Backend.builder(service.domain).using(DoobieDriver(ns, trx)),
+        Backend.builder(service.domain).fromF(DoobieDriver.from(ns, trx)),
         ns
       )
 

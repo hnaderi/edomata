@@ -40,9 +40,12 @@ object Backend {
       R,
       N
   ] private[backend] (
-      private val driver: StorageDriver[F, Codec, S, E, R, N],
+      private val driver: Resource[F, StorageDriver[F, Codec]],
       private val domain: Domain[C, S, E, R, N],
-      private val snapshot: Resource[F, SnapshotStore[F, S]],
+      private val snapshot: StorageDriver[F, Codec] => Resource[
+        F,
+        SnapshotStore[F, S]
+      ],
       val maxRetry: Int = 5,
       val retryInitialDelay: FiniteDuration = 2.seconds,
       val cached: Boolean = true
@@ -54,7 +57,7 @@ object Backend {
         maxWait: FiniteDuration = 1.minute
     )(using codec: Codec[S]): Builder[F, Codec, C, S, E, R, N] =
       copy(snapshot =
-        driver.snapshot
+        _.snapshot
           .flatMap(store =>
             SnapshotStore
               .persisted(
@@ -71,11 +74,11 @@ object Backend {
     def inMemSnapshot(
         maxInMem: Int = 1000
     ): Builder[F, Codec, C, S, E, R, N] =
-      copy(snapshot = Resource.eval(SnapshotStore.inMem(maxInMem)))
+      copy(snapshot = _ => Resource.eval(SnapshotStore.inMem(maxInMem)))
 
     def withSnapshot(
         s: Resource[F, SnapshotStore[F, S]]
-    ): Builder[F, Codec, C, S, E, R, N] = copy(snapshot = s)
+    ): Builder[F, Codec, C, S, E, R, N] = copy(snapshot = _ => s)
 
     def withRetryConfig(
         maxRetry: Int = maxRetry,
@@ -87,8 +90,9 @@ object Backend {
         event: Codec[E],
         notifs: Codec[N]
     ): Resource[F, Backend[F, S, E, R, N]] = for {
-      s <- snapshot
-      storage <- driver.build(s)
+      dr <- driver
+      s <- snapshot(dr)
+      storage <- dr.build[S, E, R, N](s)
       compiler <-
         if cached then
           Resource
@@ -109,10 +113,20 @@ object Backend {
   final class PartialBuilder[C, S, E, R, N](
       domain: Domain[C, S, E, R, N]
   )(using model: ModelTC[S, E, R]) {
-    def using[F[_]: Async, Codec[_]](
-        driver: StorageDriver[F, Codec, S, E, R, N]
+    def from[F[_]: Async, Codec[_]](
+        driver: StorageDriver[F, Codec]
     ): Builder[F, Codec, C, S, E, R, N] =
-      Builder(driver, domain, Resource.eval(SnapshotStore.inMem(1000)))
+      from(Resource.pure(driver))
+
+    def fromF[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
+        driver: F[D]
+    ): Builder[F, Codec, C, S, E, R, N] =
+      from(Resource.eval(driver))
+
+    def from[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
+        driver: Resource[F, D]
+    ): Builder[F, Codec, C, S, E, R, N] =
+      Builder(driver, domain, _ => Resource.eval(SnapshotStore.inMem(1000)))
   }
 
   def builder[C, S, E, R, N](
@@ -143,11 +157,11 @@ final case class Storage[F[_], S, E, R, N](
     updates: NotificationsConsumer[F]
 )
 
-trait StorageDriver[F[_], Codec[_], S, E, R, N] {
-  def build(snapshot: SnapshotStore[F, S])(using
+trait StorageDriver[F[_], Codec[_]] {
+  def build[S, E, R, N](snapshot: SnapshotStore[F, S])(using
       ModelTC[S, E, R],
       Codec[E],
       Codec[N]
   ): Resource[F, Storage[F, S, E, R, N]]
-  def snapshot(using Codec[S]): Resource[F, SnapshotPersistence[F, S]]
+  def snapshot[S](using Codec[S]): Resource[F, SnapshotPersistence[F, S]]
 }

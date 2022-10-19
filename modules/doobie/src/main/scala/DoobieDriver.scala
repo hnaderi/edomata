@@ -24,12 +24,12 @@ import doobie.util.transactor.Transactor
 import edomata.backend.*
 import edomata.core.*
 
-final class DoobieDriver[F[_]: Async, S, E, R, N](
+final class DoobieDriver[F[_]: Async](
     namespace: PGNamespace,
     pool: Transactor[F]
-) extends StorageDriver[F, BackendCodec, S, E, R, N] {
+) extends StorageDriver[F, BackendCodec] {
 
-  def build(
+  def build[S, E, R, N](
       snapshot: SnapshotStore[F, S]
   )(using
       model: ModelTC[S, E, R],
@@ -45,30 +45,35 @@ final class DoobieDriver[F[_]: Async, S, E, R, N](
         .as((jQ, nQ, cQ))
         .transact(pool)
 
-    for {
-      updates <- Resource.eval(Notifications[F])
-      _outbox = DoobieOutboxReader(pool, nQ)
-      _journal = DoobieJournalReader(pool, jQ)
-      _repo = RepositoryReader(_journal, snapshot)
-      skRepo = DoobieRepository(pool, jQ, nQ, cQ, _repo, updates)
-    } yield Storage(skRepo, _repo, _journal, _outbox, updates)
+    Resource.eval(
+      for {
+        _ <- setup
+        updates <- Notifications[F]
+        _outbox = DoobieOutboxReader(pool, nQ)
+        _journal = DoobieJournalReader(pool, jQ)
+        _repo = RepositoryReader(_journal, snapshot)
+        skRepo = DoobieRepository(pool, jQ, nQ, cQ, _repo, updates)
+      } yield Storage(skRepo, _repo, _journal, _outbox, updates)
+    )
   }
 
-  def snapshot(using BackendCodec[S]): Resource[F, SnapshotPersistence[F, S]] =
+  def snapshot[S](using
+      BackendCodec[S]
+  ): Resource[F, SnapshotPersistence[F, S]] =
     Resource.eval(DoobieSnapshotPersistence(pool, namespace))
 }
 
 object DoobieDriver {
-  inline def apply[F[_]: Async, S, E, R, N](
+  inline def apply[F[_]: Async](
       inline namespace: String,
       pool: Transactor[F]
-  ): F[DoobieDriver[F, S, E, R, N]] =
+  ): F[DoobieDriver[F]] =
     from(PGNamespace(namespace), pool)
 
-  def from[F[_]: Async, S, E, R, N](
+  def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Transactor[F]
-  ): F[DoobieDriver[F, S, E, R, N]] =
+  ): F[DoobieDriver[F]] =
     Queries
       .setupSchema(namespace)
       .run

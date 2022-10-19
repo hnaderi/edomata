@@ -89,17 +89,13 @@ object Application extends IOApp.Simple {
   given BackendCodec[Event] = CirceCodec.jsonb
   given BackendCodec[Updates] = CirceCodec.jsonb
 
-  def backendRes(pool: Resource[IO, Session[IO]]) = Resource
-    .eval(SkunkDriver("counter", pool))
-    .flatMap(
-      Backend
-        .builder(CounterService)
-        .using(_)
-        // .persistedSnapshot(???, maxInMem = 200)
-        .inMemSnapshot(200)
-        .withRetryConfig(retryInitialDelay = 2.seconds)
-        .build
-    )
+  def backendRes(pool: Resource[IO, Session[IO]]) = Backend
+    .builder(CounterService)
+    .fromF(SkunkDriver("counter", pool))
+    // .persistedSnapshot(???, maxInMem = 200)
+    .inMemSnapshot(200)
+    .withRetryConfig(retryInitialDelay = 2.seconds)
+    .build
 
   val database = Session
     .pooled[IO]("localhost", 5432, "postgres", "postgres", Some("postgres"), 10)
