@@ -41,8 +41,7 @@ final class DoobieDriver[F[_]: Async, S, E, R, N](
     val cQ = Queries.Commands(namespace)
 
     def setup =
-      (Queries.setupSchema(namespace).run >>
-        jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
+      (jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
         .as((jQ, nQ, cQ))
         .transact(pool)
 
@@ -63,11 +62,16 @@ object DoobieDriver {
   inline def apply[F[_]: Async, S, E, R, N](
       inline namespace: String,
       pool: Transactor[F]
-  ): DoobieDriver[F, S, E, R, N] =
+  ): F[DoobieDriver[F, S, E, R, N]] =
     from(PGNamespace(namespace), pool)
 
   def from[F[_]: Async, S, E, R, N](
       namespace: PGNamespace,
       pool: Transactor[F]
-  ): DoobieDriver[F, S, E, R, N] = new DoobieDriver(namespace, pool)
+  ): F[DoobieDriver[F, S, E, R, N]] =
+    Queries
+      .setupSchema(namespace)
+      .run
+      .transact(pool)
+      .as(new DoobieDriver(namespace, pool))
 }
