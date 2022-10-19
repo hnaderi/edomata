@@ -21,7 +21,6 @@ import cats.effect.kernel.Resource
 import edomata.core.*
 
 import scala.concurrent.duration.*
-import fs2.compat.NotGiven
 
 trait Backend[F[_], S, E, R, N] {
   def compile: CommandHandler[F, S, E, R, N]
@@ -32,25 +31,33 @@ trait Backend[F[_], S, E, R, N] {
 }
 
 object Backend {
-  final case class Builder[
-      F[_]: Async,
-      Codec[_],
-      C,
-      S,
-      E,
-      R,
-      N
-  ] private[backend] (
-      private val driver: Resource[F, StorageDriver[F, Codec]],
-      private val domain: Domain[C, S, E, R, N],
-      private val snapshot: StorageDriver[F, Codec] => Resource[
-        F,
-        SnapshotStore[F, S]
-      ],
+  final class Builder[F[_]: Async, Codec[_], C, S, E, R, N](
+      driver: Resource[F, StorageDriver[F, Codec]],
+      domain: Domain[C, S, E, R, N],
+      snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]],
       val maxRetry: Int = 5,
       val retryInitialDelay: FiniteDuration = 2.seconds,
-      val cached: Boolean = true
+      val cached: Boolean = true,
+      val commandCacheSize: Int = 100
   )(using ModelTC[S, E, R]) {
+    private def copy(
+        driver: Resource[F, StorageDriver[F, Codec]] = driver,
+        domain: Domain[C, S, E, R, N] = domain,
+        snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]] =
+          snapshot,
+        maxRetry: Int = maxRetry,
+        retryInitialDelay: FiniteDuration = retryInitialDelay,
+        cached: Boolean = cached,
+        commandCacheSize: Int = commandCacheSize
+    ) = new Builder(
+      driver = driver,
+      domain = domain,
+      snapshot = snapshot,
+      maxRetry = maxRetry,
+      retryInitialDelay = retryInitialDelay,
+      cached = cached,
+      commandCacheSize = commandCacheSize
+    )
 
     def persistedSnapshot(
         maxInMem: Int = 1000,
@@ -87,6 +94,11 @@ object Backend {
     ): Builder[F, Codec, C, S, E, R, N] =
       copy(maxRetry = maxRetry, retryInitialDelay = retryInitialDelay)
 
+    def withCommandCacheSize(
+        maxCommandsToCache: Int
+    ): Builder[F, Codec, C, S, E, R, N] =
+      copy(commandCacheSize = maxCommandsToCache)
+
     def build(using
         event: Codec[E],
         notifs: Codec[N]
@@ -97,7 +109,7 @@ object Backend {
       compiler <-
         if cached then
           Resource
-            .eval(CommandStore.inMem(100))
+            .eval(CommandStore.inMem(commandCacheSize))
             .map(CachedRepository(storage.repository, _, s))
         else Resource.pure(storage.repository)
       h = CommandHandler.withRetry(compiler, maxRetry, retryInitialDelay)
@@ -127,7 +139,7 @@ object Backend {
     def from[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
         driver: Resource[F, D]
     ): Builder[F, Codec, C, S, E, R, N] =
-      Builder(driver, domain, _ => Resource.eval(SnapshotStore.inMem(1000)))
+      new Builder(driver, domain, _ => Resource.eval(SnapshotStore.inMem(1000)))
   }
 
   def builder[C, S, E, R, N](
