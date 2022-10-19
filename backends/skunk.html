@@ -138,9 +138,10 @@
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">app</span><span>  = ??? </span><span class="comment">// your application from previous chapter
 </span><span class="keyword">val</span><span> </span><span class="identifier">pool</span><span> : </span><span class="type-name">Resource</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">Session</span><span>[</span><span class="type-name">IO</span><span>]] = ??? </span><span class="comment">// create your own session pool
 </span><span>
-</span><span class="keyword">val</span><span> </span><span class="identifier">buildBackend</span><span> = </span><span class="type-name">SkunkBackend</span><span>(</span><span class="identifier">pool</span><span>)
-  .</span><span class="identifier">builder</span><span>(</span><span class="type-name">YourDomain</span><span>, </span><span class="string-literal">&quot;domainname&quot;</span><span>)          </span><span class="comment">// 1
-</span><span>  </span><span class="comment">// .persistedSnapshot(maxInMem = 200)  // 2
+</span><span class="keyword">val</span><span> </span><span class="identifier">buildBackend</span><span> = </span><span class="type-name">Backend</span><span>
+  .</span><span class="identifier">builder</span><span>(</span><span class="type-name">AccountService</span><span>)               </span><span class="comment">// 1
+</span><span>  .</span><span class="identifier">use</span><span>(</span><span class="type-name">SkunkDriver</span><span>(</span><span class="string-literal">&quot;domainname&quot;</span><span>, </span><span class="identifier">pool</span><span>))  </span><span class="comment">// 2
+</span><span>  </span><span class="comment">// .persistedSnapshot(maxInMem = 200)  // 3
 </span><span>  .</span><span class="identifier">inMemSnapshot</span><span>(</span><span class="number-literal">200</span><span>)
   .</span><span class="identifier">withRetryConfig</span><span>(</span><span class="identifier">retryInitialDelay</span><span> = </span><span class="number-literal">2</span><span>.</span><span class="identifier">seconds</span><span>)
   .</span><span class="identifier">build</span><span>
@@ -156,7 +157,8 @@
   ).</span><span class="identifier">flatMap</span><span>(</span><span class="type-name">IO</span><span>.</span><span class="identifier">println</span><span>)
 }</span></code></pre>
         <ol class="arabic">
-          <li>use your domain as described in previous chapter. <code>domainname</code> is used as schema name in postgres.</li>
+          <li>use your domain as described in previous chapter. </li>
+          <li><code>domainname</code> is used as schema name in postgres.</li>
           <li>feel free to navigate available options in backend builder.</li>
         </ol>
 
