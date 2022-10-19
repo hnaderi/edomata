@@ -30,6 +30,7 @@ import skunk.Session
 
 import java.time.Instant
 import scala.concurrent.duration.*
+import edomata.backend.Backend
 
 enum Event {
   case Opened
@@ -88,8 +89,9 @@ object Application extends IOApp.Simple {
   given BackendCodec[Event] = CirceCodec.jsonb
   given BackendCodec[Updates] = CirceCodec.jsonb
 
-  def backendRes(pool: Resource[IO, Session[IO]]) = SkunkBackend(pool)
-    .builder(CounterService, "counter")
+  def backendRes(pool: Resource[IO, Session[IO]]) = Backend
+    .builder(CounterService)
+    .using(SkunkDriver("counter", pool))
     // .persistedSnapshot(???, maxInMem = 200)
     .inMemSnapshot(200)
     .withRetryConfig(retryInitialDelay = 2.seconds)

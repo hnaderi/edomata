@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package edomata.skunk
+package edomata.doobie
 
-import _root_.skunk.Session
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
+import doobie.implicits.*
+import doobie.util.transactor.Transactor
 import edomata.backend.*
 import edomata.core.*
 
-final class SkunkDriver[F[_]: Async, S, E, R, N](
+final class DoobieDriver[F[_]: Async, S, E, R, N](
     namespace: PGNamespace,
-    pool: Resource[F, Session[F]]
+    pool: Transactor[F]
 ) extends StorageDriver[F, BackendCodec, S, E, R, N] {
 
   def build(
@@ -35,44 +36,38 @@ final class SkunkDriver[F[_]: Async, S, E, R, N](
       event: BackendCodec[E],
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, E, R, N]] = {
-    def setup = {
-      val jQ = Queries.Journal(namespace, event)
-      val nQ = Queries.Outbox(namespace, notifs)
-      val cQ = Queries.Commands(namespace)
+    val jQ = Queries.Journal(namespace, event)
+    val nQ = Queries.Outbox(namespace, notifs)
+    val cQ = Queries.Commands(namespace)
 
-      pool
-        .use(s =>
-          s.execute(Queries.setupSchema(namespace)) >>
-            s.execute(jQ.setup) >> s.execute(nQ.setup) >> s.execute(cQ.setup)
-        )
+    def setup =
+      (Queries.setupSchema(namespace).run >>
+        jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
         .as((jQ, nQ, cQ))
-    }
+        .transact(pool)
 
-    Resource
-      .eval(setup)
-      .flatMap((jQ, nQ, cQ) =>
-        for {
-          updates <- Resource.eval(Notifications[F])
-          _outbox = SkunkOutboxReader(pool, nQ)
-          _journal = SkunkJournalReader(pool, jQ)
-          _repo = RepositoryReader(_journal, snapshot)
-          skRepo = SkunkRepository(pool, jQ, nQ, cQ, _repo, updates)
-        } yield Storage(skRepo, _repo, _journal, _outbox, updates)
-      )
+    for {
+      updates <- Resource.eval(Notifications[F])
+      _outbox = DoobieOutboxReader(pool, nQ)
+      _journal = DoobieJournalReader(pool, jQ)
+      _repo = RepositoryReader(_journal, snapshot)
+      skRepo = DoobieRepository(pool, jQ, nQ, cQ, _repo, updates)
+    } yield Storage(skRepo, _repo, _journal, _outbox, updates)
   }
 
   def snapshot(using BackendCodec[S]): Resource[F, SnapshotPersistence[F, S]] =
-    Resource.eval(SkunkSnapshotPersistence(pool, namespace))
+    Resource.eval(DoobieSnapshotPersistence(pool, namespace))
 }
 
-object SkunkDriver {
+object DoobieDriver {
   inline def apply[F[_]: Async, S, E, R, N](
       inline namespace: String,
-      pool: Resource[F, Session[F]]
-  ): SkunkDriver[F, S, E, R, N] = from(PGNamespace(namespace), pool)
+      pool: Transactor[F]
+  ): DoobieDriver[F, S, E, R, N] =
+    from(PGNamespace(namespace), pool)
 
   def from[F[_]: Async, S, E, R, N](
       namespace: PGNamespace,
-      pool: Resource[F, Session[F]]
-  ): SkunkDriver[F, S, E, R, N] = new SkunkDriver(namespace, pool)
+      pool: Transactor[F]
+  ): DoobieDriver[F, S, E, R, N] = new DoobieDriver(namespace, pool)
 }

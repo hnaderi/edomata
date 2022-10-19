@@ -37,6 +37,7 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import scala.concurrent.duration.*
 
+@deprecated("Use edomata.Backend instead", "0.6.0")
 object DoobieBackend {
 
   def apply[F[_]: Async](trx: Transactor[F]): PartialBuilder[F] =
@@ -50,12 +51,10 @@ object DoobieBackend {
     )(using
         model: ModelTC[S, E, R]
     ) =
+      val ns = PGNamespace(namespace)
       DomainBuilder(
-        trx,
-        domain,
-        model,
-        PGNamespace(namespace),
-        Resource.eval(SnapshotStore.inMem(1000))
+        Backend.builder(domain).using(DoobieDriver(ns, trx)),
+        ns
       )
 
     inline def builder[C, S, E, R, N](
@@ -64,12 +63,10 @@ object DoobieBackend {
     )(using
         model: ModelTC[S, E, R]
     ) =
+      val ns = PGNamespace(namespace)
       DomainBuilder(
-        trx,
-        service.domain,
-        model,
-        PGNamespace(namespace),
-        Resource.eval(SnapshotStore.inMem(1000))
+        Backend.builder(service.domain).using(DoobieDriver(ns, trx)),
+        ns
       )
 
   }
@@ -82,92 +79,39 @@ object DoobieBackend {
       R,
       N
   ] private[doobie] (
-      private val pool: Transactor[F],
-      private val domain: Domain[C, S, E, R, N],
-      private val model: ModelTC[S, E, R],
-      val namespace: PGNamespace,
-      private val snapshot: Resource[F, SnapshotStore[F, S]],
-      val maxRetry: Int = 5,
-      val retryInitialDelay: FiniteDuration = 2.seconds,
-      val cached: Boolean = true
+      private val builder: Backend.Builder[F, BackendCodec, C, S, E, R, N],
+      val namespace: PGNamespace
   ) {
+    export builder.{maxRetry, retryInitialDelay, cached}
 
     def persistedSnapshot(
         maxInMem: Int = 1000,
         maxBuffer: Int = 100,
         maxWait: FiniteDuration = 1.minute
     )(using codec: BackendCodec[S]): DomainBuilder[F, C, S, E, R, N] =
-      copy(snapshot =
-        Resource
-          .eval(DoobieSnapshotPersistence(pool, namespace))
-          .flatMap(store =>
-            SnapshotStore
-              .persisted(
-                store,
-                size = maxInMem,
-                maxBuffer = maxBuffer,
-                maxWait
-              )
-          )
-      )
+      copy(builder = builder.persistedSnapshot(maxInMem, maxBuffer, maxWait))
 
-    def disableCache: DomainBuilder[F, C, S, E, R, N] = copy(cached = false)
+    def disableCache: DomainBuilder[F, C, S, E, R, N] =
+      copy(builder = builder.disableCache)
 
     def inMemSnapshot(
         maxInMem: Int = 1000
     ): DomainBuilder[F, C, S, E, R, N] =
-      copy(snapshot = Resource.eval(SnapshotStore.inMem(maxInMem)))
+      copy(builder = builder.inMemSnapshot(maxInMem))
 
     def withSnapshot(
         s: Resource[F, SnapshotStore[F, S]]
-    ): DomainBuilder[F, C, S, E, R, N] = copy(snapshot = s)
+    ): DomainBuilder[F, C, S, E, R, N] = copy(builder = builder.withSnapshot(s))
 
     def withRetryConfig(
         maxRetry: Int = maxRetry,
         retryInitialDelay: FiniteDuration = retryInitialDelay
     ): DomainBuilder[F, C, S, E, R, N] =
-      copy(maxRetry = maxRetry, retryInitialDelay = retryInitialDelay)
-
-    private def _setup(using
-        event: BackendCodec[E],
-        notifs: BackendCodec[N]
-    ) = {
-      val jQ = Queries.Journal(namespace, event)
-      val nQ = Queries.Outbox(namespace, notifs)
-      val cQ = Queries.Commands(namespace)
-
-      (Queries.setupSchema(namespace).run >>
-        jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
-        .as((jQ, nQ, cQ))
-        .transact(pool)
-    }
-
-    def setup(using
-        event: BackendCodec[E],
-        notifs: BackendCodec[N]
-    ): F[Unit] = _setup.void
+      copy(builder = builder.withRetryConfig(maxRetry, retryInitialDelay))
 
     def build(using
         event: BackendCodec[E],
         notifs: BackendCodec[N]
-    ): Resource[F, Backend[F, S, E, R, N]] = for {
-      qs <- Resource.eval(_setup)
-      (jQ, nQ, cQ) = qs
-      given ModelTC[S, E, R] = model
-      s <- snapshot
-      updates <- Resource.eval(Notifications[F])
-      _outbox = DoobieOutboxReader(pool, nQ)
-      _journal = DoobieJournalReader(pool, jQ)
-      _repo = RepositoryReader(_journal, s)
-      skRepo = DoobieRepository(pool, jQ, nQ, cQ, _repo, updates)
-      compiler <-
-        if cached then
-          Resource
-            .eval(CommandStore.inMem(100))
-            .map(CachedRepository(skRepo, _, s))
-        else Resource.pure(skRepo)
-      h = CommandHandler.withRetry(compiler, maxRetry, retryInitialDelay)
-
-    } yield BackendImpl(h, _outbox, _journal, _repo, updates)
+    ): Resource[F, Backend[F, S, E, R, N]] = builder.build
   }
 }
