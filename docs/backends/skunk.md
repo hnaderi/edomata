@@ -40,9 +40,10 @@ given BackendCodec[State] = CirceCodec.jsonb
 val app  = ??? // your application from previous chapter
 val pool : Resource[IO, Session[IO]] = ??? // create your own session pool
 
-val buildBackend = SkunkBackend(pool)
-  .builder(YourDomain, "domainname")          // 1
-  // .persistedSnapshot(maxInMem = 200)  // 2
+val buildBackend = Backend
+  .builder(AccountService)               // 1
+  .use(SkunkDriver("domainname", pool))  // 2
+  // .persistedSnapshot(maxInMem = 200)  // 3
   .inMemSnapshot(200)
   .withRetryConfig(retryInitialDelay = 2.seconds)
   .build
@@ -59,5 +60,6 @@ val application = buildBackend.use { backend =>
 }
 ```
 
-1. use your domain as described in previous chapter. `domainname` is used as schema name in postgres.
-2. feel free to navigate available options in backend builder.
+1. use your domain as described in previous chapter. 
+2. `domainname` is used as schema name in postgres.
+3. feel free to navigate available options in backend builder.
