@@ -42,8 +42,7 @@ final class SkunkDriver[F[_]: Async, S, E, R, N](
 
       pool
         .use(s =>
-          s.execute(Queries.setupSchema(namespace)) >>
-            s.execute(jQ.setup) >> s.execute(nQ.setup) >> s.execute(cQ.setup)
+          s.execute(jQ.setup) >> s.execute(nQ.setup) >> s.execute(cQ.setup)
         )
         .as((jQ, nQ, cQ))
     }
@@ -69,10 +68,13 @@ object SkunkDriver {
   inline def apply[F[_]: Async, S, E, R, N](
       inline namespace: String,
       pool: Resource[F, Session[F]]
-  ): SkunkDriver[F, S, E, R, N] = from(PGNamespace(namespace), pool)
+  ): F[SkunkDriver[F, S, E, R, N]] = from(PGNamespace(namespace), pool)
 
   def from[F[_]: Async, S, E, R, N](
       namespace: PGNamespace,
       pool: Resource[F, Session[F]]
-  ): SkunkDriver[F, S, E, R, N] = new SkunkDriver(namespace, pool)
+  ): F[SkunkDriver[F, S, E, R, N]] =
+    pool
+      .use(_.execute(Queries.setupSchema(namespace)))
+      .as(new SkunkDriver(namespace, pool))
 }

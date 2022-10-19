@@ -73,8 +73,8 @@ object SkunkCompatibilitySuite {
   ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
     given BackendCodec[Int] = codec
     import TestDomain.given_ModelTC_State_Event_Rejection
-    Session
-      .pooled[IO](
+    for {
+      pool <- Session.pooled[IO](
         "localhost",
         5432,
         "postgres",
@@ -82,12 +82,12 @@ object SkunkCompatibilitySuite {
         Some("postgres"),
         4
       )
-      .flatMap(pool =>
-        Backend
-          .builder(TestDomainModel)
-          .using(SkunkDriver.from(PGNamespace(name), pool))
-          // Zero for no buffering in tests
-          .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
-          .build
-      )
+      driver <- Resource.eval(SkunkDriver.from(PGNamespace(name), pool))
+      backend <- Backend
+        .builder(TestDomainModel)
+        .using(driver)
+        // Zero for no buffering in tests
+        .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+        .build
+    } yield driver
 }

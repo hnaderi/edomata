@@ -78,10 +78,14 @@ object DoobieCompatibilitySuite {
         pass = "postgres"
       )
 
-    Backend
-      .builder(TestDomainModel)
-      .using(DoobieDriver.from(PGNamespace(name), trx))
-      // Zero for no buffering in tests
-      .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
-      .build
+    Resource
+      .eval(DoobieDriver.from(PGNamespace(name), trx))
+      .flatMap(
+        Backend
+          .builder(TestDomainModel)
+          .using(_)
+          // Zero for no buffering in tests
+          .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+          .build
+      )
 }
