@@ -23,12 +23,12 @@ import cats.implicits.*
 import edomata.backend.*
 import edomata.core.*
 
-final class SkunkDriver[F[_]: Async, S, E, R, N](
+final class SkunkDriver[F[_]: Async](
     namespace: PGNamespace,
     pool: Resource[F, Session[F]]
-) extends StorageDriver[F, BackendCodec, S, E, R, N] {
+) extends StorageDriver[F, BackendCodec] {
 
-  def build(
+  def build[S, E, R, N](
       snapshot: SnapshotStore[F, S]
   )(using
       model: ModelTC[S, E, R],
@@ -60,20 +60,22 @@ final class SkunkDriver[F[_]: Async, S, E, R, N](
       )
   }
 
-  def snapshot(using BackendCodec[S]): Resource[F, SnapshotPersistence[F, S]] =
+  def snapshot[S](using
+      BackendCodec[S]
+  ): Resource[F, SnapshotPersistence[F, S]] =
     Resource.eval(SkunkSnapshotPersistence(pool, namespace))
 }
 
 object SkunkDriver {
-  inline def apply[F[_]: Async, S, E, R, N](
+  inline def apply[F[_]: Async](
       inline namespace: String,
       pool: Resource[F, Session[F]]
-  ): F[SkunkDriver[F, S, E, R, N]] = from(PGNamespace(namespace), pool)
+  ): F[SkunkDriver[F]] = from(PGNamespace(namespace), pool)
 
-  def from[F[_]: Async, S, E, R, N](
+  def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Resource[F, Session[F]]
-  ): F[SkunkDriver[F, S, E, R, N]] =
+  ): F[SkunkDriver[F]] =
     pool
       .use(_.execute(Queries.setupSchema(namespace)))
       .as(new SkunkDriver(namespace, pool))
