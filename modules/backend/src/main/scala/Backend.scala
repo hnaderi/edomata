@@ -31,7 +31,7 @@ trait Backend[F[_], S, E, R, N] {
 }
 
 object Backend {
-  final class Builder[F[_]: Async, Codec[_], C, S, E, R, N](
+  final class Builder[F[_]: Async, Codec[_], C, S, E, R, N] private[Backend] (
       driver: Resource[F, StorageDriver[F, Codec]],
       domain: Domain[C, S, E, R, N],
       snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]],
