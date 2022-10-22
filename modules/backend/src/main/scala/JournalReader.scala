@@ -38,13 +38,3 @@ trait JournalReader[F[_], E] {
   def readAllAfter(seqNr: SeqNr): Stream[F, EventMessage[E]]
   def readAllBefore(seqNr: SeqNr): Stream[F, EventMessage[E]]
 }
-
-final case class EventMessage[+T](metadata: EventMetadata, payload: T)
-
-final case class EventMetadata(
-    id: UUID,
-    time: OffsetDateTime,
-    seqNr: SeqNr,
-    version: EventVersion,
-    stream: String
-)

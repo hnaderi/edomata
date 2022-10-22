@@ -16,10 +16,14 @@
 
 package edomata.backend
 
-final case class Storage[F[_], S, E, R, N](
-    repository: Repository[F, S, E, R, N],
-    reader: RepositoryReader[F, S, E, R],
-    journal: JournalReader[F, E],
-    outbox: OutboxReader[F, N],
-    updates: NotificationsConsumer[F]
-)
+import cats.effect.kernel.Resource
+import edomata.core.ModelTC
+
+trait StorageDriver[F[_], Codec[_]] {
+  def build[S, E, R, N](snapshot: SnapshotStore[F, S])(using
+      ModelTC[S, E, R],
+      Codec[E],
+      Codec[N]
+  ): Resource[F, Storage[F, S, E, R, N]]
+  def snapshot[S](using Codec[S]): Resource[F, SnapshotPersistence[F, S]]
+}
