@@ -154,7 +154,7 @@ object Backend {
   ): PartialBuilder[C, S, E, R, N] = new PartialBuilder(service.domain)
 }
 
-private[edomata] final case class BackendImpl[F[_], S, E, R, N](
+private final case class BackendImpl[F[_], S, E, R, N](
     compile: CommandHandler[F, S, E, R, N],
     outbox: OutboxReader[F, N],
     journal: JournalReader[F, E],
