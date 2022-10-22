@@ -16,6 +16,19 @@
 
 package edomata.backend
 
+import java.time.OffsetDateTime
+import java.util.UUID
+
 type SeqNr = Long
 type EventVersion = Long
 type StreamId = String
+
+final case class EventMetadata(
+    id: UUID,
+    time: OffsetDateTime,
+    seqNr: SeqNr,
+    version: EventVersion,
+    stream: String
+)
+
+final case class EventMessage[+T](metadata: EventMetadata, payload: T)

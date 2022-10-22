@@ -65,19 +65,19 @@ object RepositoryReader {
           .readStream(streamId)
           .through(scanState(AggregateState.Valid(m.initial, 0L)))
     }
-}
 
-private[backend] def scanState[F[_], S, E, R](
-    last: AggregateState[S, E, R]
-)(using
-    m: ModelTC[S, E, R]
-): Pipe[F, EventMessage[E], AggregateState[S, E, R]] =
-  _.scan(last) {
-    case (AggregateState.Valid(s, version), ev) =>
-      m.transition(ev.payload)(s)
-        .fold(
-          AggregateState.Conflicted(s, ev, _),
-          AggregateState.Valid(_, version + 1)
-        )
-    case (other, ev) => other
-  }.takeWhile(_.isValid, true)
+  private def scanState[F[_], S, E, R](
+      last: AggregateState[S, E, R]
+  )(using
+      m: ModelTC[S, E, R]
+  ): Pipe[F, EventMessage[E], AggregateState[S, E, R]] =
+    _.scan(last) {
+      case (AggregateState.Valid(s, version), ev) =>
+        m.transition(ev.payload)(s)
+          .fold(
+            AggregateState.Conflicted(s, ev, _),
+            AggregateState.Valid(_, version + 1)
+          )
+      case (other, ev) => other
+    }.takeWhile(_.isValid, true)
+}
