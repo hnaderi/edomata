@@ -57,14 +57,15 @@ def module(mname: String): CrossProject => CrossProject =
 
 lazy val modules = List(
   core,
-  sqlBackend,
+  backend,
+  postgres,
   skunkBackend,
   skunkCirceCodecs,
   skunkUpickleCodecs,
   doobieBackend,
   doobieCirceCodecs,
   doobieUpickleCodecs,
-  backendTests,
+  driverTests,
   munitTestkit,
   docs,
   unidocs,
@@ -114,7 +115,7 @@ lazy val docs = project
   )
   .dependsOn(
     core.jvm,
-    sqlBackend.jvm,
+    postgres.jvm,
     mdocPlantuml
   )
 
@@ -128,8 +129,8 @@ lazy val unidocs = project
       mdocPlantuml,
       examples.jvm,
       examples.js,
-      backendTests.jvm,
-      backendTests.js
+      driverTests.jvm,
+      driverTests.js
     )
   )
 
@@ -153,7 +154,7 @@ lazy val core = module("core") {
     )
 }
 
-lazy val sqlBackend = module("sql-backend") {
+lazy val backend = module("backend") {
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(core)
@@ -169,11 +170,20 @@ lazy val sqlBackend = module("sql-backend") {
     )
 }
 
+lazy val postgres = module("postgres") {
+  crossProject(JVMPlatform, JSPlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(core, backend)
+    .settings(
+      description := "Postgres common components"
+    )
+}
+
 lazy val skunkBackend = module("skunk") {
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
-    .dependsOn(sqlBackend)
-    .dependsOn(backendTests % Test)
+    .dependsOn(postgres)
+    .dependsOn(driverTests % Test)
     .settings(
       description := "Skunk based backend for edomata",
       libraryDependencies ++= Seq(
@@ -191,8 +201,8 @@ lazy val skunkBackend = module("skunk") {
 lazy val doobieBackend = module("doobie") {
   crossProject(JVMPlatform)
     .crossType(CrossType.Pure)
-    .dependsOn(sqlBackend)
-    .dependsOn(backendTests % Test)
+    .dependsOn(postgres)
+    .dependsOn(driverTests % Test)
     .settings(
       description := "Doobie based backend for edomata",
       libraryDependencies ++= Seq(
@@ -250,11 +260,11 @@ lazy val doobieUpickleCodecs = module("doobie-upickle") {
     )
 }
 
-lazy val backendTests = module("backend-tests") {
+lazy val driverTests = module("backend-tests") {
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Full)
     .enablePlugins(NoPublishPlugin)
-    .dependsOn(sqlBackend)
+    .dependsOn(postgres)
     .settings(
       description := "Integration tests for postgres backends",
       libraryDependencies ++= Seq(
