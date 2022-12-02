@@ -102,9 +102,9 @@ final case class Stomaton[F[_], Env, S, R, E, A](
   )
 }
 
-object Stomaton extends Stomaton2Instances, Stomaton2Constructors
+object Stomaton extends StomatonInstances, StomatonConstructors
 
-sealed transparent trait Stomaton2Instances {
+sealed transparent trait StomatonInstances {
   given [F[_]: Monad, Env, S, R, E]
       : MonadError[[t] =>> Stomaton[F, Env, S, R, E, t], NonEmptyChain[R]] =
     new MonadError {
@@ -167,7 +167,7 @@ sealed transparent trait Stomaton2Instances {
 
 }
 
-sealed transparent trait Stomaton2Constructors {
+sealed transparent trait StomatonConstructors {
 
   /** constructs an stomaton that outputs a pure value */
   def pure[F[_]: Applicative, Env, S, R, E, T](
