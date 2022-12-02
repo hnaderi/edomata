@@ -37,6 +37,10 @@ private[core] def necOf[T](g: Gen[T]): Gen[NonEmptyChain[T]] =
         }
     )
 
+private[core] given [T: Arbitrary]: Gen[NonEmptyChain[T]] = necOf(
+  Arbitrary.arbitrary[T]
+)
+
 private[core] given [F[_]: Functor]: Arbitrary[F[Long] => F[Long]] = Arbitrary(
   Arbitrary.arbitrary[Long].map(i => (a: F[Long]) => a.map(_ + i))
 )
