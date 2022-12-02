@@ -30,9 +30,9 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
-class Stomaton2Suite extends DisciplineSuite {
+class StomatonSuite extends DisciplineSuite {
   type State = Int
-  type AppS[Env, T] = Stomaton2[Option, Env, State, Rejection, Event, T]
+  type AppS[Env, T] = Stomaton[Option, Env, State, Rejection, Event, T]
   type App[T] = AppS[Int, T]
   type AppContra[T] = AppS[T, Unit]
 
@@ -42,7 +42,7 @@ class Stomaton2Suite extends DisciplineSuite {
         Arbitrary.arbitrary[NonEmptyChain[Rejection]],
         Arbitrary.arbitrary[T]
       )
-    } yield Stomaton2.decide(d)
+    } yield Stomaton.decide(d)
   )
 
   private given ExhaustiveCheck[Int] = ExhaustiveCheck.instance(List(1, 2, 3))

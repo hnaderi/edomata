@@ -49,7 +49,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
   }
 
   test("Saves accepted results") {
-    val app: APP = SUT.dsl.decide(Decision.accept(1, 2, 3)).set("123")
+    val app: APP = SUT.dsl.publish(1, 2, 3).set("123")
     val ctx = cmd.buildContext("")
     val version = 100
 
@@ -88,17 +88,18 @@ class CommandHandlerSuite extends CatsEffectSuite {
     } yield ()
   }
 
-  // test("Rejections with no notifications have no effect") {
-  //   val app: APP = SUT.dsl.reject("oops!")
-  //   val version = 100
+  test("Does not save results when its rejected") {
+    val app: APP = Stomaton.reject("a", "b", "c")
+    val ctx = cmd.buildContext("")
+    val version = 100
 
-  //   for {
-  //     r <- repo(AggregateState.Valid("", version))
-  //     s = CommandHandler(r).apply(app)
-  //     _ <- s.apply(cmd).assertEquals("oops!".leftNec)
-  //     _ <- r.listActions.assertEquals(Nil)
-  //   } yield ()
-  // }
+    for {
+      r <- repo(AggregateS("", version))
+      s = CommandHandler(r).apply(app)
+      _ <- s.apply(cmd).assertEquals(Left(NonEmptyChain("a", "b", "c")))
+      _ <- r.saved.assertEquals(Nil)
+    } yield ()
+  }
 
   // test("Must not change raised errors") {
   //   val exception = new Exception("Some error!")
@@ -161,7 +162,7 @@ object CommandHandlerSuite {
   ): IO[FakeRepository[State, Event]] =
     FakeRepository(state)
 
-  object SUT extends CQRSModel[State, Event, Rejection] {
+  object SUT extends CQRSModel[State, Rejection] {
     def initial = ""
   }
 

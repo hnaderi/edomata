@@ -27,23 +27,23 @@ final class CQRSDomain[C, S, E, R](
 }
 
 private[edomata] transparent trait CQRSDomainSyntax {
-  extension [S, E, R](self: CQRSModel[S, E, R]) {
-    def dsl[C]: CQRSDomainDSL[C, S, E, R] = CQRSDomainDSL()
-    def domain[C]: CQRSDomain[C, S, E, R] = CQRSDomain()
+  extension [S, E, R](self: CQRSModel[S, R]) {
+    def dsl[C, N]: CQRSDomainDSL[C, S, N, R] = CQRSDomainDSL()
+    def domain[C, N]: CQRSDomain[C, S, N, R] = CQRSDomain()
   }
 }
 
-trait CQRSModel[State, Event, Rejection] { self =>
+trait CQRSModel[State, Rejection] { self =>
   def initial: State
 
   given StateModelTC[State] = new {
     def initial: State = self.initial
   }
 
-  trait Service[Command] {
+  trait Service[Command, Notification] {
     final type App[F[_], T] =
-      Stomaton[F, CommandMessage[Command], State, Rejection, Event, T]
+      Stomaton[F, CommandMessage[Command], State, Rejection, Notification, T]
     final type PureApp[T] = App[cats.Id, T]
-    val dsl = CQRSDomainDSL[Command, State, Event, Rejection]()
+    val dsl = CQRSDomainDSL[Command, State, Notification, Rejection]()
   }
 }

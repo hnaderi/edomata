@@ -21,8 +21,9 @@ import cats.effect.IO
 import cats.effect.IOApp
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.skunk.*
+import edomata.backend.Backend
 import edomata.core.*
+import edomata.skunk.*
 import edomata.syntax.all.*
 import io.circe.generic.auto.*
 import natchez.Trace.Implicits.noop
@@ -30,7 +31,6 @@ import skunk.Session
 
 import java.time.Instant
 import scala.concurrent.duration.*
-import edomata.backend.Backend
 
 enum Event {
   case Opened

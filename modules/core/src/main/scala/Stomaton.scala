@@ -22,41 +22,29 @@ import cats.data.*
 import cats.implicits.*
 import cats.kernel.Eq
 
-import Stomaton.*
-
-/** Represents programs that are event driven state machines (a Mealy machine)
-  *
-  * these programs can use input to decide to emit events and change states.
-  * these programs are not event sourced and change state directly.
-  *
-  * @tparam F
-  *   effect type
-  * @tparam Env
-  *   input type
-  * @tparam S
-  *   state type used for making decisions
-  * @tparam R
-  *   rejection type
-  * @tparam E
-  *   event type
-  * @tparam A
-  *   output type
-  */
 final case class Stomaton[F[_], Env, S, R, E, A](
-    run: (Env, S) => DecisionT[F, R, E, (S, A)]
+    run: (Env, S) => F[Response2[R, E, (S, A)]]
 ) extends AnyVal {
 
   /** maps output result */
   def map[B](f: A => B)(using Functor[F]): Stomaton[F, Env, S, R, E, B] =
-    Stomaton((env, state) => run(env, state).map((s, a) => (s, f(a))))
+    Stomaton((env, state) => run(env, state).map(_.map((s, a) => (s, f(a)))))
 
   /** binds another stomaton to this one. */
   def flatMap[Env2 <: Env, B](
       f: A => Stomaton[F, Env2, S, R, E, B]
   )(using Monad[F]): Stomaton[F, Env2, S, R, E, B] =
     Stomaton((env, state) =>
-      run(env, state).flatMap { (newState, a) =>
-        f(a).run(env, newState)
+      run(env, state).flatMap { out =>
+        out.result match {
+          case Right((newState, a)) =>
+            f(a)
+              .run(env, newState)
+              .map(o =>
+                o.copy(notifications = out.notifications ++ o.notifications)
+              )
+          case Left(errs) => out.copy(result = Left(errs)).pure
+        }
       }
     )
 
@@ -79,42 +67,44 @@ final case class Stomaton[F[_], Env, S, R, E, A](
     Stomaton((env, state) => run(f(env), state))
 
   def modify(f: S => S)(using Functor[F]): Stomaton[F, Env, S, R, E, A] =
-    Stomaton((env, s0) => run(env, s0).map((s1, t) => (f(s1), t)))
+    Stomaton((env, s0) => run(env, s0).map(_.map((s1, t) => (f(s1), t))))
 
   def decideS(
-      f: S => Decision[R, E, S]
+      f: S => EitherNec[R, S]
   )(using Monad[F]): Stomaton[F, Env, S, R, E, S] =
     Stomaton((env, s0) =>
-      run(env, s0).flatMapD((s1, t) => f(s1).map(ns => (ns, ns)))
+      run(env, s0).map(res =>
+        res.flatMap((ns, _) => Response2(f(ns).map(s => (s, s))))
+      )
     )
 
   def decide[B](
-      f: A => Decision[R, E, B]
+      f: A => EitherNec[R, B]
   )(using Monad[F]): Stomaton[F, Env, S, R, E, B] =
     Stomaton((env, s0) =>
-      run(env, s0).flatMapD((s1, t) => f(t).map(b => (s1, b)))
+      run(env, s0).map(res =>
+        res.flatMap((ns, a) => Response2(f(a).map(b => (ns, b))))
+      )
     )
 
   def set(s: S)(using Functor[F]): Stomaton[F, Env, S, R, E, A] =
-    Stomaton((env, s0) => run(env, s0).map((_, t) => (s, t)))
+    Stomaton((env, s0) => run(env, s0).map(_.map((_, a) => (s, a))))
 
   def handleErrorWith(
       f: NonEmptyChain[R] => Stomaton[F, Env, S, R, E, A]
   )(using Monad[F]): Stomaton[F, Env, S, R, E, A] = Stomaton((env, state) =>
-    DecisionT(
-      runF(env, state).flatMap {
-        case Decision.Rejected(err) => f(err).runF(env, state)
-        case other                  => other.pure
-      }
-    )
+    run(env, state).flatMap { out =>
+      out.result.fold(
+        f(_).run(env, state),
+        _ => out.pure[F]
+      )
+    }
   )
-
-  inline def runF: (Env, S) => F[Decision[R, E, (S, A)]] = run(_, _).run
 }
 
-object Stomaton extends StomatonInstances, StomatonConstructors
+object Stomaton extends Stomaton2Instances, Stomaton2Constructors
 
-sealed transparent trait StomatonInstances {
+sealed transparent trait Stomaton2Instances {
   given [F[_]: Monad, Env, S, R, E]
       : MonadError[[t] =>> Stomaton[F, Env, S, R, E, t], NonEmptyChain[R]] =
     new MonadError {
@@ -122,7 +112,7 @@ sealed transparent trait StomatonInstances {
       override def raiseError[A](
           e: NonEmptyChain[R]
       ): Stomaton[F, Env, S, R, E, A] =
-        Stomaton.decide(Decision.Rejected(e))
+        Stomaton.decide(Left(e))
 
       override def handleErrorWith[A](fa: Stomaton[F, Env, S, R, E, A])(
           f: NonEmptyChain[R] => Stomaton[F, Env, S, R, E, A]
@@ -131,7 +121,7 @@ sealed transparent trait StomatonInstances {
       type G[T] = Stomaton[F, Env, S, R, E, T]
       type D[T] = DecisionT[F, R, E, T]
       override def pure[A](x: A): G[A] =
-        Stomaton((_, s) => DecisionT.pure((s, x)))
+        Stomaton.pure(x)
 
       override def map[A, B](fa: G[A])(f: A => B): G[B] = fa.map(f)
 
@@ -141,17 +131,29 @@ sealed transparent trait StomatonInstances {
           f: A => G[Either[A, B]]
       ): G[B] =
         Stomaton((env, s0) =>
-          (s0, a).tailRecM((state, value) =>
-            f(value).run(env, state).map {
-              case (newState, Right(b)) => Right((newState, b))
-              case (newState, Left(a))  => Left(newState, a)
-            }
-          )
+          Monad[F].tailRecM(Response2.pure[R, E, (S, A)]((s0, a))) { res =>
+            res.result.fold(
+              _ => ???,
+              (s, a) =>
+                f(a)
+                  .run(env, s)
+                  .map(res >> _)
+                  .map(o =>
+                    o.result match {
+                      case Right((newState, Left(a))) =>
+                        o.as((newState, a)).asLeft
+                      case Right((newState, Right(b))) =>
+                        o.as((newState, b)).asRight
+                      case Left(errs) => o.copy(result = Left(errs)).asRight
+                    }
+                  )
+            )
+          }
         )
     }
 
   given [F[_], Env, S, R, E, T](using
-      Eq[(Env, S) => DecisionT[F, R, E, (S, T)]]
+      Eq[(Env, S) => F[Response2[R, E, (S, T)]]]
   ): Eq[Stomaton[F, Env, S, R, E, T]] =
     Eq.by(_.run)
 
@@ -165,40 +167,30 @@ sealed transparent trait StomatonInstances {
 
 }
 
-sealed transparent trait StomatonConstructors {
+sealed transparent trait Stomaton2Constructors {
 
   /** constructs an stomaton that outputs a pure value */
   def pure[F[_]: Applicative, Env, S, R, E, T](
       t: T
   ): Stomaton[F, Env, S, R, E, T] =
-    Stomaton((_, s) => DecisionT.pure((s, t)))
+    Stomaton((_, s) => Response2.pure((s, t)).pure)
 
   /** an stomaton with trivial output */
   def unit[F[_]: Applicative, Env, R, E, N, T]
       : Stomaton[F, Env, R, E, N, Unit] =
     pure(())
 
-  /** constructs an stomaton with given response */
-  def lift[F[_]: Applicative, Env, S, R, E, T](
-      f: DecisionT[F, R, E, T]
-  ): Stomaton[F, Env, S, R, E, T] = Stomaton((_, s) => f.map((s, _)))
-
-  /** constructs an stomaton that decides the given decision */
-  def decide[F[_]: Applicative, Env, S, R, E, T](
-      f: Decision[R, E, T]
-  ): Stomaton[F, Env, S, R, E, T] = lift(DecisionT.lift(f))
-
   /** constructs an stomaton that evaluates an effect */
   def eval[F[_]: Applicative, Env, S, R, E, T](
       f: F[T]
   ): Stomaton[F, Env, S, R, E, T] =
-    Stomaton((_, s) => DecisionT.liftF(f).map((s, _)))
+    Stomaton((_, s) => f.map((s, _).pure))
 
   /** constructs an stomaton that runs an effect using its input */
   def run[F[_]: Applicative, Env, S, R, E, T](
       f: Env => F[T]
   ): Stomaton[F, Env, S, R, E, T] =
-    Stomaton((env, state) => DecisionT.liftF(f(env)).map((state, _)))
+    Stomaton((env, state) => f(env).map((state, _).pure))
 
   /** constructs an stomaton that outputs the context */
   def context[F[_]: Applicative, Env, S, R, E, T]
@@ -207,13 +199,13 @@ sealed transparent trait StomatonConstructors {
 
   /** constructs an stomaton that outputs the current state */
   def state[F[_]: Applicative, Env, S, R, E]: Stomaton[F, Env, S, R, E, S] =
-    Stomaton((_, s) => DecisionT.pure((s, s)))
+    Stomaton((_, s) => Response2.pure((s, s)).pure)
 
   /** constructs an stomaton that sets the current state */
   def set[F[_]: Applicative, Env, S, R, E](
       s: S
   ): Stomaton[F, Env, S, R, E, Unit] =
-    Stomaton((_, _) => DecisionT.pure((s, ())))
+    Stomaton((_, _) => Response2.pure((s, ())).pure)
 
   /** constructs an stomaton that modifies current state */
   def modify[F[_]: Applicative, Env, S, R, E](
@@ -221,25 +213,40 @@ sealed transparent trait StomatonConstructors {
   ): Stomaton[F, Env, S, R, E, S] =
     Stomaton((_, s) =>
       val ns = f(s)
-      DecisionT.pure((ns, ns))
+      Response2.pure((ns, ns)).pure
     )
+
+  def decideS[F[_]: Applicative, Env, S, R, E](
+      f: S => EitherNec[R, S]
+  ): Stomaton[F, Env, S, R, E, S] =
+    Stomaton((env, s0) => Response2(f(s0).map(s => (s, s))).pure)
+
+  def decide[F[_]: Applicative, Env, S, R, E, T](
+      f: => EitherNec[R, T]
+  ): Stomaton[F, Env, S, R, E, T] =
+    Stomaton((_, s) => Response2(f.map(t => (s, t))).pure)
 
   /** constructs an stomaton that decides to modify state based on current state
     */
   def modifyS[F[_]: Applicative, Env, S, R, E](
-      f: S => Decision[R, E, S]
+      f: S => EitherNec[R, S]
   ): Stomaton[F, Env, S, R, E, S] =
-    Stomaton((_, s) => DecisionT.lift(f(s).map(ns => (ns, ns))))
+    Stomaton((_, s) => Response2.lift(f(s).map(ns => (ns, ns))).pure)
 
   /** constructs an stomaton that rejects with given rejections */
   def reject[F[_]: Applicative, Env, S, R, E, T](
       r: R,
       rs: R*
-  ): Stomaton[F, Env, S, R, E, T] = decide(Decision.reject(r, rs: _*))
+  ): Stomaton[F, Env, S, R, E, T] = decide(NonEmptyChain(r, rs: _*).asLeft)
+
+  def publish[F[_]: Applicative, Env, S, R, E](
+      ns: E*
+  ): Stomaton[F, Env, S, R, E, Unit] =
+    Stomaton((_, s) => Response2(Right((s, ())), Chain(ns: _*)).pure)
 
   def validate[F[_]: Applicative, Env, S, R, E, T](
       v: ValidatedNec[R, T]
-  ): Stomaton[F, Env, S, R, E, T] = decide(Decision.validate(v))
+  ): Stomaton[F, Env, S, R, E, T] = decide(v.toEither)
 
   /** Constructs a program from an optional value, that outputs value if exists
     * or rejects otherwise
@@ -265,6 +272,6 @@ sealed transparent trait StomatonConstructors {
     */
   def fromEitherNec[F[_]: Applicative, Env, S, R, E, T](
       eit: EitherNec[R, T]
-  ): Stomaton[F, Env, S, R, E, T] =
-    eit.fold(errs => decide(Decision.Rejected(errs)), pure(_))
+  ): Stomaton[F, Env, S, R, E, T] = decide(eit)
+
 }
