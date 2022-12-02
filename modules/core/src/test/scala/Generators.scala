@@ -33,5 +33,16 @@ object Generators {
     Arbitrary.arbitrary[Long].map(Decision.InDecisive(_))
 
   val anySut: Gen[SUT] = Gen.oneOf(accepted, rejected, indecisive)
+
+  private def ind[T: Arbitrary] = Arbitrary.arbitrary[T].map(Decision.pure(_))
+  def decision[T: Arbitrary]: Gen[Dec[T]] = Gen.oneOf(
+    for {
+      a <- accepted
+      d <- ind[T]
+    } yield a >> d,
+    ind[T],
+    rejected
+  )
+
   val notRejected: Gen[SUT] = Gen.oneOf(accepted, indecisive)
 }

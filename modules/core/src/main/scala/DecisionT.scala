@@ -61,6 +61,11 @@ final case class DecisionT[F[_], R, E, A](run: F[Decision[R, E, A]]) {
       }
     }
 
+  def flatMapD[R2 >: R, E2 >: E, B](
+      f: A => Decision[R2, E2, B]
+  )(using M: Monad[F]): DecisionT[F, R2, E2, B] =
+    flatMap(f.andThen(DecisionT.lift))
+
   def as[B](b: B)(using F: Functor[F]): DecisionT[F, R, E, B] = map(_ => b)
 }
 

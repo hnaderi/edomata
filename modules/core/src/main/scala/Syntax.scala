@@ -23,8 +23,10 @@ trait AllSyntax
     extends core.ModelSyntax,
       core.DecisionSyntax,
       core.EdomatonSyntax,
-      core.DomainSyntax
+      core.DomainSyntax,
+      core.CQRSDomainSyntax
 
 object decision extends core.DecisionSyntax
 object edomaton extends core.EdomatonSyntax
 object domain extends core.DomainSyntax
+object cqrs extends core.CQRSDomainSyntax
