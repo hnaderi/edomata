@@ -16,53 +16,45 @@
 
 package edomata.core
 
-import cats.Eval
-import cats.Monad
-import cats.Monoid
-import cats.data.NonEmptyChain
+import cats.*
+import cats.data.*
 import cats.implicits.*
 import cats.kernel.Eq
 import cats.kernel.laws.discipline.EqTests
-import cats.laws.discipline.*
-import cats.laws.discipline.arbitrary.*
-import cats.laws.discipline.eq.*
-import munit.*
-import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 
 object StomatonExample {
   enum Foo {
     case Empty
     case Started(value: Int)
 
-    def start(initial: Int) = this match {
-      case Empty      => Decision.pure(Started(initial))
-      case Started(_) => Decision.reject("Cannot start started foo!")
+    def start(initial: Int): EitherNec[String, Foo] = this match {
+      case Empty      => Right(Started(initial))
+      case Started(_) => "Cannot start started foo!".leftNec
     }
   }
 
-  object Foo extends CQRSModel[Foo, Int, String] {
+  object Foo extends CQRSModel[Foo, String] {
     override def initial: Foo = Empty
   }
 
-  object FooService extends Foo.Service[Int] {
+  object FooService extends Foo.Service[Int, Int] {
     def apply(): PureApp[Unit] = Stomaton.unit
 
     import dsl.*
     def apply2(): PureApp[Foo] = for {
       _ <- pure(1)
-      ns <- modifyS(_.start(1))
+      ns <- decideS(_.start(1))
       _ <- Stomaton.unit
     } yield ns
+    //
     // def apply3(): PureApp[Foo] =
     //   pure(1).flatMap(modifyS(_.start(1)))
   }
 
-  val res = FooService().runF(???, Foo.Empty)
+  val res = FooService().run(???, Foo.Empty)
 
-  val out = res.visit(
-    ???,
-    (s, _) => s
-  )
+  val out = res.result match {
+    case Right((newState, _)) => ???
+    case Left(errs)           => ???
+  }
 }

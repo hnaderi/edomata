@@ -30,9 +30,9 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
-class StomatonSuite extends DisciplineSuite {
+class Stomaton0Suite extends DisciplineSuite {
   type State = Int
-  type AppS[Env, T] = Stomaton[Option, Env, State, Rejection, Event, T]
+  type AppS[Env, T] = Stomaton0[Option, Env, State, Rejection, Event, T]
   type App[T] = AppS[Int, T]
   type AppContra[T] = AppS[T, Unit]
 
@@ -40,7 +40,7 @@ class StomatonSuite extends DisciplineSuite {
     for {
       t <- Arbitrary.arbitrary[T]
       d <- Generators.decision[(State, T)]
-    } yield Stomaton((_, _) => DecisionT.lift(d))
+    } yield Stomaton0((_, _) => DecisionT.lift(d))
   )
 
   private given ExhaustiveCheck[Int] = ExhaustiveCheck.instance(List(1, 2, 3))
@@ -56,16 +56,16 @@ class StomatonSuite extends DisciplineSuite {
   checkAll("laws", EqTests[App[Long]].eqv)
 
   test("Sanity") {
-    val a: App[String] = Stomaton.pure("Hello")
-    val ss: App[Int] = Stomaton.modify(_ * 2)
+    val a: App[String] = Stomaton0.pure("Hello")
+    val ss: App[Int] = Stomaton0.modify(_ * 2)
 
     val b: App[Int] = for {
       s <- a.set(24)
-      st <- Stomaton.state
+      st <- Stomaton0.state
       // _ <- Stomaton.set(10)
       // _ <- Stomaton.reject("error")
       // s2 <- Stomaton.modify(_ * 2)
-      ctx <- Stomaton.context
+      ctx <- Stomaton0.context
       _ <- ss
     } yield ctx
 

@@ -43,22 +43,26 @@ final class CQRSDomainDSL[C, S, E, R](
   ): App[F, S] =
     Stomaton.modify(f)
 
-  /** constructs an stomaton that outputs what's read */
-  inline def modifyS[F[_]: Applicative](
-      f: S => Decision[R, E, S]
+  inline def decideS[F[_]: Applicative](
+      f: S => EitherNec[R, S]
   ): App[F, S] =
-    Stomaton.modifyS(f)
+    Stomaton.decideS(f)
+
+  inline def decide[F[_]: Applicative, T](
+      f: => EitherNec[R, T]
+  ): App[F, T] = Stomaton.decide(f)
+
+  /** constructs an stomaton that decides to modify state based on current state
+    */
+  inline def modifyS[F[_]: Applicative](
+      f: S => EitherNec[R, S]
+  ): App[F, S] = Stomaton.modifyS(f)
 
   inline def reject[F[_]: Applicative, T](
       r: R,
       rs: R*
   ): App[F, T] =
     Stomaton.reject(r, rs: _*)
-
-  inline def decide[F[_]: Applicative, T](
-      d: Decision[R, E, T]
-  ): App[F, T] =
-    Stomaton.decide(d)
 
   inline def validate[F[_]: Applicative, T](
       v: ValidatedNec[R, T]
@@ -78,6 +82,11 @@ final class CQRSDomainDSL[C, S, E, R](
   inline def fromEitherNec[F[_]: Applicative, T](
       eit: EitherNec[R, T]
   ): App[F, T] = Stomaton.fromEitherNec(eit)
+
+  inline def publish[F[_]: Applicative](
+      ns: E*
+  ): App[F, Unit] =
+    Stomaton.publish(ns: _*)
 
   def state[F[_]: Monad]: App[F, S] =
     Stomaton.state

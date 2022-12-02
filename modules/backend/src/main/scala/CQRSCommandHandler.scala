@@ -25,9 +25,6 @@ import cats.implicits.*
 import edomata.core.*
 
 import scala.concurrent.duration.*
-import edomata.core.Decision.InDecisive
-import edomata.core.Decision.Accepted
-import edomata.core.Decision.Rejected
 
 trait CommandHandler[F[_], S, E] {
   def apply[C, R](
@@ -46,13 +43,15 @@ object CommandHandler {
     cmd =>
       repository.load(cmd).flatMap {
         case AggregateS(state, version) =>
-          app.runF(cmd, state).flatMap {
-            case InDecisive((newState, _)) =>
-              repository.save(cmd, version, newState, Chain.empty) >> voidF
-            case Accepted(events, (newState, _)) =>
-              repository.save(cmd, version, newState, events.toChain) >> voidF
-            case Rejected(reasons) =>
-              reasons.asLeft.pure
+          app.run(cmd, state).flatMap { out =>
+            out.result match {
+              case Right((newState, _)) =>
+                repository
+                  .save(cmd, version, newState, out.notifications) >> voidF
+              case Left(reasons) =>
+                reasons.asLeft.pure
+            }
+
           }
         case CommandState.Redundant => voidF
       }
