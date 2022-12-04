@@ -16,27 +16,22 @@
 
 package edomata.core
 
-import cats.*
-import cats.data.*
+import cats.Applicative
+import cats.Eval
+import cats.Functor
+import cats.Monad
+import cats.MonadError
+import cats.Traverse
+import cats.data.Chain
+import cats.data.NonEmptyChain
+import cats.data.ValidatedNec
 import cats.implicits.*
 import cats.kernel.Eq
-
 import scala.annotation.tailrec
 
-/** Representation of programs that decide and emit notifications
-  *
-  * This adds capability of emiting notifications/integration events to
-  * [[Decision]] programs
-  *
-  * @tparam R
-  *   rejection type
-  * @tparam E
-  *   domain event type
-  * @tparam N
-  *   notification type
-  * @tparam A
-  *   output type
-  */
-type ResponseE[+R, +N, +A] = ResponseT[EitherNec, R, N, A]
-
-object ResponseE extends ResponseTConstructorsO[EitherNec, ResponseE]
+type ResponseD[R, E, N, A] = ResponseT[Decision[*, E, *], R, N, A]
+object ResponseD
+    extends ResponseTConstructorsO[
+      Decision[*, Nothing, *],
+      ResponseD[*, Nothing, *, *]
+    ]

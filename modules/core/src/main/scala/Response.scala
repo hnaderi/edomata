@@ -30,8 +30,6 @@ import cats.kernel.Eq
 
 import scala.annotation.tailrec
 
-type ResponseD[R, E, N, A] = ResponseT[Decision[*, E, *], R, N, A]
-
 /** Representation of programs that decide and emit notifications
   *
   * This adds capability of emiting notifications/integration events to
