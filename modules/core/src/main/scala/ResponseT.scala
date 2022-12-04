@@ -220,3 +220,48 @@ sealed trait ResponseTCatsInstances1 {
       fa.result.foldRight(lb)(f)
   }
 }
+
+private[core] transparent trait ResponseTConstructorsO[Res[+_, +_]](using
+    M: RaiseError[Res]
+) {
+  private type App[R, N, A] = ResponseT[Res, R, N, A]
+
+  def apply[R, E, A](
+      result: Res[R, A],
+      notifications: Chain[E] = Chain.nil
+  ): App[R, E, A] = ResponseT(result, notifications)
+
+  /** constructs a program that outputs a pure value */
+  def pure[T](t: T): App[Nothing, Nothing, T] = ResponseT(M.pure(t))
+
+  /** a program with trivial output */
+  val unit: App[Nothing, Nothing, Unit] = pure(())
+
+  /** constructs a program that publishes given notifications */
+  def publish[N](n: N*): App[Nothing, N, Unit] =
+    ResponseT(M.unit, Chain.fromSeq(n))
+
+  /** constructs a program that rejects with given rejections */
+  def reject[R](
+      reason: R,
+      otherReasons: R*
+  ): App[R, Nothing, Nothing] =
+    reject(NonEmptyChain.of(reason, otherReasons: _*))
+
+  def reject[R](
+      reasons: NonEmptyChain[R]
+  ): App[R, Nothing, Nothing] =
+    ResponseT(M.raise(reasons))
+
+  /** Constructs a program that uses a validation to decide whether to output a
+    * value or reject with error(s)
+    */
+  def validate[R, N, T](
+      validation: ValidatedNec[R, T]
+  ): App[R, N, T] =
+    validation.fold(reject(_), pure(_))
+
+  /** constructs a program with given decision */
+  def validate[R, T](d: EitherNec[R, T]): App[R, Nothing, T] =
+    d.fold(reject(_), pure(_))
+}
