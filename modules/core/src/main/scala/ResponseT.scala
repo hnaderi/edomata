@@ -221,11 +221,13 @@ sealed trait ResponseTCatsInstances1 {
   }
 }
 
-private[core] transparent trait ResponseTConstructorsO[Res[+_, +_]](using
+private[core] transparent trait ResponseTConstructorsO[Res[+_, +_], App[
+    +R,
+    +N,
+    +A
+] >: ResponseT[Res, R, N, A]](using
     M: RaiseError[Res]
 ) {
-  private type App[R, N, A] = ResponseT[Res, R, N, A]
-
   def apply[R, E, A](
       result: Res[R, A],
       notifications: Chain[E] = Chain.nil
