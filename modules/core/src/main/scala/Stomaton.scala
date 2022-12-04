@@ -131,24 +131,25 @@ sealed transparent trait StomatonInstances {
           f: A => G[Either[A, B]]
       ): G[B] =
         Stomaton((env, s0) =>
-          Monad[F].tailRecM(ResponseE.pure[R, E, (S, A)]((s0, a))) { res =>
-            res.result.fold(
-              _ => ???,
-              (s, a) =>
-                f(a)
-                  .run(env, s)
-                  .map(res >> _)
-                  .map(o =>
-                    o.result match {
-                      case Right((newState, Left(a))) =>
-                        o.as((newState, a)).asLeft
-                      case Right((newState, Right(b))) =>
-                        o.as((newState, b)).asRight
-                      case Left(errs) =>
-                        ResponseE(Left(errs), o.notifications).asRight
-                    }
-                  )
-            )
+          Monad[F].tailRecM(ResponseE.pure((s0, a)): ResponseE[R, E, (S, A)]) {
+            res =>
+              res.result.fold(
+                _ => ???,
+                (s, a) =>
+                  f(a)
+                    .run(env, s)
+                    .map(res >> _)
+                    .map(o =>
+                      o.result match {
+                        case Right((newState, Left(a))) =>
+                          o.as((newState, a)).asLeft
+                        case Right((newState, Right(b))) =>
+                          o.as((newState, b)).asRight
+                        case Left(errs) =>
+                          ResponseE(Left(errs), o.notifications).asRight
+                      }
+                    )
+              )
           }
         )
     }
@@ -232,7 +233,7 @@ sealed transparent trait StomatonConstructors {
   def modifyS[F[_]: Applicative, Env, S, R, E](
       f: S => EitherNec[R, S]
   ): Stomaton[F, Env, S, R, E, S] =
-    Stomaton((_, s) => ResponseE.lift(f(s).map(ns => (ns, ns))).pure)
+    Stomaton((_, s) => ResponseE(f(s).map(ns => (ns, ns))).pure)
 
   /** constructs an stomaton that rejects with given rejections */
   def reject[F[_]: Applicative, Env, S, R, E, T](

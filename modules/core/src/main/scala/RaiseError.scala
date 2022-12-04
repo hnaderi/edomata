@@ -17,15 +17,25 @@
 package edomata.core
 
 import cats.data.*
+import cats.implicits.*
 
-trait RaiseError[F[_, _]] {
+trait RaiseError[F[+_, +_]] {
   def fold[E, O, A](v: F[E, O])(err: NonEmptyChain[E] => A, value: O => A): A
   def toEither[E, O](v: F[E, O]): EitherNec[E, O]
   def isError[E, O](v: F[E, O]): Boolean
+  def raise[R](errs: NonEmptyChain[R]): F[R, Nothing]
+  def pure[T](t: T): F[Nothing, T]
+  val unit = pure(())
 }
 
 object RaiseError {
   given RaiseError[EitherNec] = new {
+
+    override def pure[T](t: T): EitherNec[Nothing, T] = Right(t)
+
+    override def raise[R](errs: NonEmptyChain[R]): EitherNec[R, Nothing] = Left(
+      errs
+    )
 
     override def isError[E, O](v: EitherNec[E, O]): Boolean = v.isLeft
 
@@ -36,6 +46,11 @@ object RaiseError {
     )(err: NonEmptyChain[E] => A, value: O => A): A = v.fold(err, value)
   }
   given RaiseError[ValidatedNec] = new {
+
+    override def pure[T](t: T): ValidatedNec[Nothing, T] = Validated.Valid(t)
+
+    override def raise[R](errs: NonEmptyChain[R]): ValidatedNec[R, Nothing] =
+      Validated.Invalid(errs)
 
     override def isError[E, O](v: ValidatedNec[E, O]): Boolean = v.isInvalid
 
@@ -48,6 +63,12 @@ object RaiseError {
 
   }
   given [Ev]: RaiseError[Decision[*, Ev, *]] = new {
+
+    override def pure[T](t: T): Decision[Nothing, Ev, T] =
+      Decision.InDecisive(t)
+
+    override def raise[R](errs: NonEmptyChain[R]): Decision[R, Ev, Nothing] =
+      Decision.Rejected(errs)
 
     override def isError[E, O](v: Decision[E, Ev, O]): Boolean = v.isRejected
 
