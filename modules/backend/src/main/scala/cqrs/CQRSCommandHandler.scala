@@ -75,7 +75,9 @@ object CommandHandler {
 
     override def apply[C, R](
         app: Stomaton[F, CommandMessage[C], S, R, E, Unit]
-    )(using StateModelTC[S]): DomainService[F, CommandMessage[C], R] = ???
+    )(using StateModelTC[S]): DomainService[F, CommandMessage[C], R] =
+      val handler = CommandHandler(repository).apply(app)
+      cmd => retry(maxRetry, retryInitialDelay)(handler(cmd))
 
   }
 
@@ -88,18 +90,6 @@ object CommandHandler {
     }.adaptErr { case BackendError.VersionConflict =>
       BackendError.MaxRetryExceeded
     }
-}
-
-import cats.data.*
-trait Repository[F[_], S, E] {
-  def load(cmd: CommandMessage[?]): F[AggregateState[S]]
-
-  def save(
-      ctx: CommandMessage[?],
-      version: SeqNr,
-      newState: S,
-      events: Chain[E]
-  ): F[Unit]
 }
 
 final case class AggregateS[S](state: S, version: SeqNr)

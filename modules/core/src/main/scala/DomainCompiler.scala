@@ -94,3 +94,14 @@ private[edomata] transparent trait EdomatonSyntax {
     def liftTo[F[_]](using F: Applicative[F]) = app.mapK(fk[F])
   }
 }
+
+private[edomata] transparent trait StomatonSyntax {
+
+  private def fk[F[_]: Applicative]: cats.arrow.FunctionK[cats.Id, F] = new {
+    def apply[A](a: A): F[A] = Applicative[F].pure(a)
+  }
+
+  extension (app: Stomaton[cats.Id, ?, ?, ?, ?, ?]) {
+    def liftTo[F[_]](using F: Applicative[F]) = app.mapK(fk[F])
+  }
+}

@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package edomata
-package syntax
+package edomata.backend
+package cqrs
 
-object all extends AllSyntax
+import cats.data.*
+import edomata.core.*
 
-trait AllSyntax
-    extends core.ModelSyntax,
-      core.DecisionSyntax,
-      core.EdomatonSyntax,
-      core.StomatonSyntax,
-      core.DomainSyntax,
-      core.CQRSDomainSyntax
+trait Repository[F[_], S, E] {
+  def load(cmd: CommandMessage[?]): F[AggregateState[S]]
 
-object decision extends core.DecisionSyntax
-object edomaton extends core.EdomatonSyntax
-object stomaton extends core.StomatonSyntax
-object domain extends core.DomainSyntax
-object cqrs extends core.CQRSDomainSyntax
+  def get(id: StreamId): F[AggregateS[S]]
+
+  def save(
+      ctx: CommandMessage[?],
+      version: SeqNr,
+      newState: S,
+      events: Chain[E]
+  ): F[Unit]
+}

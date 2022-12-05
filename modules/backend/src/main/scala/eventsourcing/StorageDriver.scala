@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package edomata
-package syntax
+package edomata.backend
+package eventsourcing
 
-object all extends AllSyntax
+import cats.effect.kernel.Resource
+import edomata.core.ModelTC
 
-trait AllSyntax
-    extends core.ModelSyntax,
-      core.DecisionSyntax,
-      core.EdomatonSyntax,
-      core.StomatonSyntax,
-      core.DomainSyntax,
-      core.CQRSDomainSyntax
-
-object decision extends core.DecisionSyntax
-object edomaton extends core.EdomatonSyntax
-object stomaton extends core.StomatonSyntax
-object domain extends core.DomainSyntax
-object cqrs extends core.CQRSDomainSyntax
+trait StorageDriver[F[_], Codec[_]] {
+  def build[S, E, R, N](snapshot: SnapshotStore[F, S])(using
+      ModelTC[S, E, R],
+      Codec[E],
+      Codec[N]
+  ): Resource[F, Storage[F, S, E, R, N]]
+  def snapshot[S](using Codec[S]): Resource[F, SnapshotPersistence[F, S]]
+}

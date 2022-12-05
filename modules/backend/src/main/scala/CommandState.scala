@@ -16,8 +16,6 @@
 
 package edomata.backend
 
-type CommandState[S, E, R] =
-  AggregateState[S, E, R] | CommandState.Redundant.type
 object CommandState {
   case object Redundant
 }

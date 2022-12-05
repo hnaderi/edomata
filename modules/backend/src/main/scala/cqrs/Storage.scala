@@ -15,11 +15,18 @@
  */
 
 package edomata.backend
+package cqrs
 
-final case class Storage[F[_], S, E, R, N](
-    repository: Repository[F, S, E, R, N],
-    reader: RepositoryReader[F, S, E, R],
-    journal: JournalReader[F, E],
+import cats.effect.kernel.Resource
+
+final case class Storage[F[_], S, N, R](
+    repository: Repository[F, S, N],
     outbox: OutboxReader[F, N],
     updates: NotificationsConsumer[F]
 )
+
+trait StorageDriver[F[_], Codec[_]] {
+  def build[S: Codec, N: Codec, R](
+      snapshot: SnapshotStore[F, S]
+  ): Resource[F, Storage[F, S, N, R]]
+}

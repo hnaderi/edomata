@@ -100,6 +100,12 @@ final case class Stomaton[F[_], -Env, S, R, E, A](
       )
     }
   )
+
+  /** translates this program in another language mapped by a natural
+    * transformation
+    */
+  def mapK[G[_]](fk: FunctionK[F, G]): Stomaton[G, Env, S, R, E, A] =
+    Stomaton((env, s) => fk(run(env, s)))
 }
 
 object Stomaton extends StomatonInstances, StomatonConstructors
@@ -209,15 +215,6 @@ sealed transparent trait StomatonConstructors {
   ): Stomaton[F, Env, S, R, E, Unit] =
     Stomaton((_, _) => ResponseE.pure((s, ())).pure)
 
-  /** constructs an stomaton that modifies current state */
-  def modify[F[_]: Applicative, Env, S, R, E](
-      f: S => S
-  ): Stomaton[F, Env, S, R, E, S] =
-    Stomaton((_, s) =>
-      val ns = f(s)
-      ResponseE.pure((ns, ns)).pure
-    )
-
   def decideS[F[_]: Applicative, Env, S, R, E](
       f: S => EitherNec[R, S]
   ): Stomaton[F, Env, S, R, E, S] =
@@ -227,6 +224,15 @@ sealed transparent trait StomatonConstructors {
       f: => EitherNec[R, T]
   ): Stomaton[F, Env, S, R, E, T] =
     Stomaton((_, s) => ResponseE(f.map(t => (s, t))).pure)
+
+  /** constructs an stomaton that modifies current state */
+  def modify[F[_]: Applicative, Env, S, R, E](
+      f: S => S
+  ): Stomaton[F, Env, S, R, E, S] =
+    Stomaton((_, s) =>
+      val ns = f(s)
+      ResponseE.pure((ns, ns)).pure
+    )
 
   /** constructs an stomaton that decides to modify state based on current state
     */

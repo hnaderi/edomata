@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package eventsourcing
 
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
@@ -26,6 +27,8 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.util.UUID
 
+type CommandState[S, E, R] = AggregateState[S, E, R] |
+  CommandState.Redundant.type
 enum AggregateState[+S, +E, +R](val isValid: Boolean) {
   case Valid[S](state: S, version: SeqNr)
       extends AggregateState[S, Nothing, Nothing](true)

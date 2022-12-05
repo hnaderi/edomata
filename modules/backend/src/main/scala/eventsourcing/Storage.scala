@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package edomata
-package syntax
+package edomata.backend
+package eventsourcing
 
-object all extends AllSyntax
-
-trait AllSyntax
-    extends core.ModelSyntax,
-      core.DecisionSyntax,
-      core.EdomatonSyntax,
-      core.StomatonSyntax,
-      core.DomainSyntax,
-      core.CQRSDomainSyntax
-
-object decision extends core.DecisionSyntax
-object edomaton extends core.EdomatonSyntax
-object stomaton extends core.StomatonSyntax
-object domain extends core.DomainSyntax
-object cqrs extends core.CQRSDomainSyntax
+final case class Storage[F[_], S, E, R, N](
+    repository: Repository[F, S, E, R, N],
+    reader: RepositoryReader[F, S, E, R],
+    journal: JournalReader[F, E],
+    outbox: OutboxReader[F, N],
+    updates: NotificationsConsumer[F]
+)
