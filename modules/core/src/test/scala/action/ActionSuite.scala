@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package action
 
 import cats.Eval
-import cats.data.Chain
-import cats.data.Kleisli
-import cats.data.NonEmptyChain
+import cats.data.*
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.MonadTests
@@ -27,8 +26,15 @@ import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
+import edomata.core.*
 
 import ActionSuite.*
+type Rejection = String
+type Event = Int
+type Notification = Long
+
+type SUT[T] = Action[Eval, Rejection, Event, Notification, T]
+type SUT2 = SUT[Long]
 
 class ActionSuite extends DisciplineSuite {
   test("Empty action") {
@@ -165,12 +171,7 @@ class ActionSuite extends DisciplineSuite {
 }
 
 object ActionSuite {
-  type Rejection = String
-  type Event = Int
-  type Notification = Long
-
-  type SUT[T] = Action[Eval, Rejection, Event, Notification, T]
-  type SUT2 = SUT[Long]
+  import tests.decision.Generators
 
   private val notification: Gen[Notification] = Arbitrary.arbitrary[Long]
   private val notifications: Gen[Chain[Notification]] =

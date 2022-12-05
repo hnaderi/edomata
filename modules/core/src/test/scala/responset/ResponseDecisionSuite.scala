@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests.responset
 
 import cats.Monad
 import cats.data.*
@@ -28,8 +28,14 @@ import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
+import edomata.core.*
 
-import Generators.*
+import tests.decision.Generators.*
+
+type Dec[T] = Decision[String, Int, T]
+type Rejection = String
+type Event = Int
+final case class Notification(value: String = "")
 
 private given Arbitrary[Notification] = Arbitrary(
   Arbitrary.arbitrary[String].map(Notification(_))
