@@ -26,12 +26,10 @@ import scala.annotation.tailrec
 /** Representation of programs that decide and emit notifications
   *
   * This adds capability of emiting notifications/integration events to
-  * [[Decision]] programs
+  * [[EitherNec]] programs
   *
   * @tparam R
   *   rejection type
-  * @tparam E
-  *   domain event type
   * @tparam N
   *   notification type
   * @tparam A

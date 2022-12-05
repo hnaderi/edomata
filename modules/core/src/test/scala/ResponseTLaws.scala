@@ -19,15 +19,15 @@ package edomata.core
 import cats.*
 import cats.data.*
 import cats.implicits.*
+import cats.kernel.laws.discipline.EqTests
+import cats.laws.discipline.MonadTests
+import cats.laws.discipline.arbitrary.catsLawsArbitraryForNonEmptyChain
+import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.typelevel.discipline.Laws
-import cats.kernel.laws.discipline.EqTests
-import cats.laws.discipline.MonadTests
-import cats.laws.discipline.arbitrary.catsLawsArbitraryForNonEmptyChain
-import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 
 abstract class ResponseTLaws[Res[+_], Rejection, Out, Notification](
     rejected: Gen[Res[Out]],

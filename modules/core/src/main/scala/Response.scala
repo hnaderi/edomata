@@ -16,20 +16,6 @@
 
 package edomata.core
 
-import cats.Applicative
-import cats.Eval
-import cats.Functor
-import cats.Monad
-import cats.MonadError
-import cats.Traverse
-import cats.data.Chain
-import cats.data.NonEmptyChain
-import cats.data.ValidatedNec
-import cats.implicits.*
-import cats.kernel.Eq
-
-import scala.annotation.tailrec
-
 /** Representation of programs that decide and emit notifications
   *
   * This adds capability of emiting notifications/integration events to

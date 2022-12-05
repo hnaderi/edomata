@@ -20,6 +20,20 @@ import cats.*
 import cats.data.*
 import cats.implicits.*
 
+/** Representation of programs that decide and emit notifications
+  *
+  * This adds capability of emiting notifications/integration events to
+  * [[Decision]] programs
+  *
+  * @tparam R
+  *   rejection type
+  * @tparam E
+  *   domain event type
+  * @tparam N
+  *   notification type
+  * @tparam A
+  *   output type
+  */
 type ResponseD[+R, +E, +N, +A] = ResponseT[Decision[R, E, *], R, N, A]
 object ResponseD {
   def apply[R, E, N, A](
