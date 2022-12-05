@@ -24,7 +24,7 @@ import edomata.backend.Backend
 import edomata.backend.BackendError
 import edomata.core.CommandMessage
 import edomata.core.Edomaton
-import edomata.core.Response
+import edomata.core.ResponseD
 import munit.CatsEffectSuite
 import tests.TestDomain.given_ModelTC_State_Event_Rejection
 
@@ -69,7 +69,7 @@ abstract class PersistenceSuite(
     for {
       cmd <- someCmd
       _ <- s
-        .compile(Edomaton.lift(Response.accept(1, 2, 3).publish(4, 5, 6)))
+        .compile(Edomaton.lift(ResponseD.accept(1, 2, 3).publish(4, 5, 6)))
         .apply(cmd)
 
       _ <- assertJournal(s, cmd.address)(1, 2, 3)
@@ -84,7 +84,7 @@ abstract class PersistenceSuite(
     for {
       cmd <- someCmd
       append = s
-        .compile(Edomaton.lift(Response.accept(1, 2, 3).publish(4, 5, 6)))
+        .compile(Edomaton.lift(ResponseD.accept(1, 2, 3).publish(4, 5, 6)))
         .apply(cmd)
         .attempt
 
@@ -111,7 +111,7 @@ abstract class PersistenceSuite(
     for {
       cmd <- someCmd
       _ <- s
-        .compile(Edomaton.lift(Response.publish(4, 5, 6)))
+        .compile(Edomaton.lift(ResponseD.publish(4, 5, 6)))
         .apply(cmd)
 
       _ <- s.journal
@@ -135,7 +135,7 @@ abstract class PersistenceSuite(
     for {
       cmd <- someCmd
       _ <- s
-        .compile(Edomaton.lift(Response.publish(4, 5, 6)))
+        .compile(Edomaton.lift(ResponseD.publish(4, 5, 6)))
         .apply(cmd)
 
       items <- s.outbox.read.compile.toList
@@ -159,7 +159,7 @@ abstract class PersistenceSuite(
     for {
       cmd <- someCmd
       _ <- s
-        .compile(Edomaton.lift(Response.accept(1, 2, 3)))
+        .compile(Edomaton.lift(ResponseD.accept(1, 2, 3)))
         .apply(cmd)
 
       events <- s.journal.readAll.take(10).compile.toList
@@ -194,7 +194,7 @@ abstract class PersistenceSuite(
     for {
       cmd <- someCmd
       _ <- s
-        .compile(Edomaton.lift(Response.accept(1, 2, 3)))
+        .compile(Edomaton.lift(ResponseD.accept(1, 2, 3)))
         .apply(cmd)
 
       events <- s.journal.readStream(cmd.address).take(10).compile.toList

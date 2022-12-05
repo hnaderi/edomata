@@ -35,7 +35,12 @@ private given Arbitrary[Notification] = Arbitrary(
   Arbitrary.arbitrary[String].map(Notification(_))
 )
 class ResponseDecisionSuite
-    extends ResponseTLaws[Decision[*, Event, *], Rejection, Long, Notification](
+    extends ResponseTLaws[
+      Decision[Rejection, Event, *],
+      Rejection,
+      Long,
+      Notification
+    ](
       rejected,
       notRejected
     ) {
@@ -45,7 +50,12 @@ class ResponseDecisionSuite
 }
 
 class ResponseEitherNecSuite
-    extends ResponseTLaws[EitherNec, Rejection, Long, Notification](
+    extends ResponseTLaws[
+      EitherNec[Rejection, *],
+      Rejection,
+      Long,
+      Notification
+    ](
       Arbitrary.arbitrary[NonEmptyChain[Rejection]].map(Left(_)),
       Arbitrary.arbitrary[Long].map(Right(_))
     ) {

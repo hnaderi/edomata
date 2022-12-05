@@ -41,11 +41,11 @@ final class DomainDSL[C, S, E, R, N](
     Edomaton.unit
 
   inline def liftF[F[_], T](
-      f: F[Response[R, E, N, T]]
+      f: F[ResponseD[R, E, N, T]]
   ): App[F, T] = Edomaton.liftF(f)
 
   inline def lift[F[_]: Applicative, T](
-      f: Response[R, E, N, T]
+      f: ResponseD[R, E, N, T]
   ): App[F, T] = Edomaton.lift(f)
 
   inline def eval[F[_]: Applicative, T](

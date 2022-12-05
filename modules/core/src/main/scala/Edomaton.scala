@@ -43,7 +43,7 @@ import Edomaton.*
   *   output type
   */
 final case class Edomaton[F[_], -Env, R, E, N, A](
-    run: Env => F[Response[R, E, N, A]]
+    run: Env => F[ResponseD[R, E, N, A]]
 ) extends AnyVal {
 
   /** maps output result */
@@ -99,7 +99,7 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   /** transforms underlying response
     */
   def transform[R2, E2, N2, B](
-      f: Response[R, E, N, A] => Response[R2, E2, N2, B]
+      f: ResponseD[R, E, N, A] => ResponseD[R2, E2, N2, B]
   )(using
       Functor[F]
   ): Edomaton[F, Env, R2, E2, N2, B] =
@@ -117,14 +117,14 @@ final case class Edomaton[F[_], -Env, R, E, N, A](
   def evalMap[B](f: A => F[B])(using
       Monad[F]
   ): Edomaton[F, Env, R, E, N, B] =
-    flatMap(a => liftF(f(a).map(Response.pure)))
+    flatMap(a => liftF(f(a).map(ResponseD.pure)))
 
   /** like evalMap but ignores evaluation result
     */
   def evalTap[B](f: A => F[B])(using
       Monad[F]
   ): Edomaton[F, Env, R, E, N, A] =
-    flatMap(a => liftF(f(a).map(Response.pure)).as(a))
+    flatMap(a => liftF(f(a).map(ResponseD.pure)).as(a))
 
   /** evaluates an effect and uses its result as new output */
   def eval[B](f: => F[B])(using Monad[F]): Edomaton[F, Env, R, E, N, A] =
@@ -175,7 +175,7 @@ sealed transparent trait EdomatonInstances {
     new Monad {
       type G[T] = Edomaton[F, Env, R, E, N, T]
       override def pure[A](x: A): G[A] =
-        Edomaton(_ => Response.pure(x).pure[F])
+        Edomaton(_ => ResponseD.pure(x).pure[F])
 
       override def map[A, B](fa: G[A])(f: A => B): G[B] = fa.map(f)
 
@@ -184,7 +184,7 @@ sealed transparent trait EdomatonInstances {
       override def tailRecM[A, B](a: A)(
           f: A => G[Either[A, B]]
       ): G[B] = Edomaton(env =>
-        Monad[F].tailRecM(Response.pure[R, E, N, A](a))(rma =>
+        Monad[F].tailRecM(ResponseD.pure(a): ResponseD[R, E, N, A])(rma =>
           rma.result.visit(
             _ => ???, // This cannot happen
             a =>
@@ -207,7 +207,7 @@ sealed transparent trait EdomatonInstances {
     }
 
   given [F[_], Env, R, E, N, T](using
-      Eq[Env => F[Response[R, E, N, T]]]
+      Eq[Env => F[ResponseD[R, E, N, T]]]
   ): Eq[Edomaton[F, Env, R, E, N, T]] =
     Eq.by(_.run)
 
@@ -227,7 +227,7 @@ sealed transparent trait EdomatonConstructors {
   def pure[F[_]: Applicative, Env, R, E, N, T](
       t: T
   ): Edomaton[F, Env, R, E, N, T] =
-    Edomaton(_ => Response.pure(t).pure)
+    Edomaton(_ => ResponseD.pure(t).pure)
 
   /** an edomaton with trivial output */
   def unit[F[_]: Applicative, Env, R, E, N, T]
@@ -236,24 +236,24 @@ sealed transparent trait EdomatonConstructors {
 
   /** constructs an edomaton from an effect that results in a response */
   def liftF[F[_], Env, R, E, N, T](
-      f: F[Response[R, E, N, T]]
+      f: F[ResponseD[R, E, N, T]]
   ): Edomaton[F, Env, R, E, N, T] = Edomaton(_ => f)
 
   /** constructs an edomaton with given response */
   def lift[F[_]: Applicative, Env, R, E, N, T](
-      f: Response[R, E, N, T]
+      f: ResponseD[R, E, N, T]
   ): Edomaton[F, Env, R, E, N, T] = liftF(f.pure)
 
   /** constructs an edomaton that evaluates an effect */
   def eval[F[_]: Applicative, Env, R, E, N, T](
       f: F[T]
-  ): Edomaton[F, Env, R, E, N, T] = liftF(f.map(Response.pure))
+  ): Edomaton[F, Env, R, E, N, T] = liftF(f.map(ResponseD.pure))
 
   /** constructs an edomaton that runs an effect using its input */
   def run[F[_]: Applicative, Env, R, E, N, T](
       f: Env => F[T]
   ): Edomaton[F, Env, R, E, N, T] = Edomaton(
-    f.andThen(_.map(Response.pure))
+    f.andThen(_.map(ResponseD.pure))
   )
 
   /** constructs an edomaton that outputs what's read */
@@ -263,22 +263,22 @@ sealed transparent trait EdomatonConstructors {
   /** constructs an edomaton that publishes given notifications */
   def publish[F[_]: Applicative, Env, R, E, N](
       ns: N*
-  ): Edomaton[F, Env, R, E, N, Unit] = lift(Response.publish(ns: _*))
+  ): Edomaton[F, Env, R, E, N, Unit] = lift(ResponseD.publish(ns: _*))
 
   /** constructs an edomaton that rejects with given rejections */
   def reject[F[_]: Applicative, Env, R, E, N, T](
       r: R,
       rs: R*
-  ): Edomaton[F, Env, R, E, N, T] = lift(Response.reject(r, rs: _*))
+  ): Edomaton[F, Env, R, E, N, T] = lift(ResponseD.reject(r, rs: _*))
 
   /** constructs an edomaton that decides the given decision */
   def decide[F[_]: Applicative, Env, R, E, N, T](
       d: Decision[R, E, T]
-  ): Edomaton[F, Env, R, E, N, T] = lift(Response.lift(d))
+  ): Edomaton[F, Env, R, E, N, T] = lift(ResponseD(d))
 
   def validate[F[_]: Applicative, Env, R, E, N, T](
       v: ValidatedNec[R, T]
-  ): Edomaton[F, Env, R, E, N, T] = lift(Response.validate(v))
+  ): Edomaton[F, Env, R, E, N, T] = lift(ResponseD.validate(v))
 
   /** Constructs a program from an optional value, that outputs value if exists
     * or rejects otherwise
@@ -304,5 +304,5 @@ sealed transparent trait EdomatonConstructors {
   def fromEitherNec[F[_]: Applicative, Env, R, E, N, T](
       eit: EitherNec[R, T]
   ): Edomaton[F, Env, R, E, N, T] =
-    eit.fold(errs => lift(Response(Decision.Rejected(errs))), pure(_))
+    eit.fold(errs => lift(ResponseD(Decision.Rejected(errs))), pure(_))
 }

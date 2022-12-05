@@ -34,7 +34,7 @@ object DomainCompiler {
       app: Edomaton[F, RequestContext[C, S], R, E, N, Unit],
       ctx: RequestContext[C, S]
   )(using m: ModelTC[S, E, R]): F[EdomatonResult[S, E, R, N]] =
-    app.run(ctx).map { case Response(decision, notifs) =>
+    app.run(ctx).map { case ResponseD(decision, notifs) =>
       m.perform(ctx.state, decision) match {
         case Decision.Accepted(evs, newState) =>
           EdomatonResult.Accepted(newState, evs, notifs)
