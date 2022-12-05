@@ -37,6 +37,45 @@ import scala.annotation.tailrec
   * @tparam A
   *   output type
   */
-type ResponseE[+R, +N, +A] = ResponseT[EitherNec, R, N, A]
+type ResponseE[+R, +N, +A] = ResponseT[EitherNec[R, *], R, N, A]
 
-object ResponseE extends ResponseTConstructorsO[EitherNec, ResponseE]
+object ResponseE {
+  def apply[R, N, A](
+      result: EitherNec[R, A],
+      notifications: Chain[N] = Chain.nil
+  ): ResponseE[R, N, A] = ResponseT(result, notifications)
+
+  /** constructs a program that outputs a pure value */
+  def pure[R, N, T](t: T): ResponseE[R, N, T] = ResponseT(Right(t))
+
+  /** a program with trivial output */
+  def unit[R, N]: ResponseE[R, N, Unit] = pure(())
+
+  /** constructs a program that publishes given notifications */
+  def publish[R, N](n: N*): ResponseE[R, N, Unit] =
+    ResponseT(Either.unit, Chain.fromSeq(n))
+
+  /** constructs a program that rejects with given rejections */
+  def reject[R, N, T](
+      reason: R,
+      otherReasons: R*
+  ): ResponseE[R, N, T] =
+    reject(NonEmptyChain.of(reason, otherReasons: _*))
+
+  def reject[R, N, T](
+      reasons: NonEmptyChain[R]
+  ): ResponseE[R, N, T] =
+    ResponseT(Left(reasons))
+
+  /** Constructs a program that uses a validation to decide whether to output a
+    * value or reject with error(s)
+    */
+  def validate[R, N, T](
+      validation: ValidatedNec[R, T]
+  ): ResponseE[R, N, T] =
+    validation.fold(reject(_), pure(_))
+
+  /** constructs a program with given decision */
+  def validate[R, N, T](d: EitherNec[R, T]): ResponseE[R, N, T] =
+    d.fold(reject(_), pure(_))
+}

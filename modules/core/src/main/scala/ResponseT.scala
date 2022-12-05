@@ -37,21 +37,21 @@ import scala.annotation.tailrec
   * @tparam A
   *   output type
   */
-final case class ResponseT[RES[+_, +_], +R, +N, +A](
-    result: RES[R, A],
+final case class ResponseT[+RES[+_], +R, +N, +A](
+    result: RES[A],
     notifications: Chain[N] = Chain.nil
 ) {
-  def map[R2 >: R, B](f: A => B)(using
-      F: Functor[RES[R2, *]]
-  ): ResponseT[RES, R2, N, B] =
+  def map[RES2[+x] >: RES[x], B](f: A => B)(using
+      F: Functor[RES2]
+  ): ResponseT[RES2, R, N, B] =
     copy(result = F.map(result)(f))
 
-  def flatMap[R2 >: R, N2 >: N, B](
-      f: A => ResponseT[RES, R2, N2, B]
+  def flatMap[RES2[+x] >: RES[x], R2 >: R, N2 >: N, B](
+      f: A => ResponseT[RES2, R2, N2, B]
   )(using
-      F: MonadError[RES[R2, *], NonEmptyChain[R2]],
-      E: RaiseError[RES]
-  ): ResponseT[RES, R2, N2, B] =
+      F: MonadError[RES2, NonEmptyChain[R2]],
+      E: RaiseError[RES2, R2]
+  ): ResponseT[RES2, R2, N2, B] =
     E.toEither(result) match {
       case Right(a) =>
         val out = f(a)
@@ -61,17 +61,17 @@ final case class ResponseT[RES[+_, +_], +R, +N, +A](
       case Left(err) => ResponseT(F.raiseError(err), notifications)
     }
 
-  inline def as[R2 >: R, B](b: B)(using
-      Functor[RES[R2, *]]
-  ): ResponseT[RES, R2, N, B] =
+  inline def as[RES2[+x] >: RES[x], B](b: B)(using
+      Functor[RES2]
+  ): ResponseT[RES2, R, N, B] =
     map(_ => b)
 
-  inline def >>[R2 >: R, N2 >: N, B](
-      f: A => ResponseT[RES, R2, N2, B]
+  inline def >>[RES2[+x] >: RES[x], R2 >: R, N2 >: N, B](
+      f: A => ResponseT[RES2, R2, N2, B]
   )(using
-      MonadError[RES[R2, *], NonEmptyChain[R2]],
-      RaiseError[RES]
-  ): ResponseT[RES, R2, N2, B] = flatMap(f)
+      MonadError[RES2, NonEmptyChain[R2]],
+      RaiseError[RES2, R2]
+  ): ResponseT[RES2, R2, N2, B] = flatMap(f)
 
   /** Clears all notifications so far */
   def reset: ResponseT[RES, R, N, A] =
@@ -83,76 +83,78 @@ final case class ResponseT[RES[+_, +_], +R, +N, +A](
 
   /** If it is rejected, uses given function to decide what to publish
     */
-  def publishOnRejectionWith[N2 >: N](
-      f: NonEmptyChain[R] => Seq[N2]
-  )(using E: RaiseError[RES]): ResponseT[RES, R, N2, A] = publish(
+  def publishOnRejectionWith[RES2[+x] >: RES[x], R2 >: R, N2 >: N](
+      f: NonEmptyChain[R2] => Seq[N2]
+  )(using E: RaiseError[RES2, R2]): ResponseT[RES2, R, N2, A] = publish(
     E.fold(result)(f, _ => Nil): _*
   )
 
   /** publishes these notifications if this program result is rejected */
-  def publishOnRejection[N2 >: N](ns: N2*)(using
-      E: RaiseError[RES]
-  ): ResponseT[RES, R, N2, A] =
-    publishOnRejectionWith(_ => ns)
+  def publishOnRejection[RES2[+x] >: RES[x], R2 >: R, N2 >: N](ns: N2*)(using
+      E: RaiseError[RES2, R2]
+  ): ResponseT[RES2, R2, N2, A] =
+    publishOnRejectionWith[RES2, R2, N2](_ => ns)
 
-  def handleErrorWith[R2 >: R, N2 >: N, A2 >: A](
-      f: NonEmptyChain[R] => ResponseT[RES, R2, N2, A2]
-  )(using E: RaiseError[RES]): ResponseT[RES, R2, N2, A2] =
+  def handleErrorWith[RES2[+x] >: RES[x], R2 >: R, N2 >: N, A2 >: A](
+      f: NonEmptyChain[R2] => ResponseT[RES2, R2, N2, A2]
+  )(using E: RaiseError[RES2, R2]): ResponseT[RES2, R2, N2, A2] =
     E.fold(result)(f, _ => this)
 }
 
-object ResponseT extends ResponseTConstructors with ResponseTCatsInstances0
+object ResponseT extends ResponseT2Constructors with ResponseT2CatsInstances0
 
-sealed trait ResponseTConstructors {
+sealed trait ResponseT2Constructors {
 
   /** constructs a program that outputs a pure value */
-  def pure[RES[+_, +_], T](t: T)(using
-      F: Monad[RES[Nothing, *]]
+  def pure[RES[+_], T](t: T)(using
+      F: Monad[RES]
   ): ResponseT[RES, Nothing, Nothing, T] = ResponseT(F.pure(t))
 
   /** a program with trivial output */
-  def unit[RES[+_, +_], R](using
-      Monad[RES[Nothing, *]]
+  def unit[RES[+_], R](using
+      Monad[RES]
   ): ResponseT[RES, Nothing, Nothing, Unit] = pure(())
 
   /** constructs a program with given decision */
-  def lift[RES[+_, +_], R, T](d: RES[R, T]): ResponseT[RES, R, Nothing, T] =
+  def lift[RES[+_], R, T](d: RES[T]): ResponseT[RES, R, Nothing, T] =
     ResponseT(d)
 
   /** constructs a program that publishes given notifications */
-  def publish[RES[+_, +_], R, N](n: N*)(using
-      F: Monad[RES[R, *]]
+  def publish[RES[+_], R, N](n: N*)(using
+      F: Monad[RES]
   ): ResponseT[RES, R, N, Unit] =
     ResponseT(F.unit, Chain.fromSeq(n))
 
   /** constructs a program that rejects with given rejections */
-  def reject[RES[+_, +_], R, N](
+  def reject[RES[+_], R, N](
       reason: R,
       otherReasons: R*
   )(using
-      F: MonadError[RES[R, *], NonEmptyChain[R]]
+      F: MonadError[RES, NonEmptyChain[R]]
   ): ResponseT[RES, R, N, Nothing] =
     ResponseT(F.raiseError(NonEmptyChain.of(reason, otherReasons: _*)))
 
   /** Constructs a program that uses a validation to decide whether to output a
     * value or reject with error(s)
     */
-  def validate[RES[+_, +_], R, T](
+  def validate[RES[+_], R, T](
       validation: ValidatedNec[R, T]
   )(using
-      F: MonadError[RES[R, *], NonEmptyChain[R]]
+      F: MonadError[RES, NonEmptyChain[R]]
   ): ResponseT[RES, R, Nothing, T] =
     ResponseT(validation.fold(F.raiseError[T](_), F.pure(_)))
 }
 
-sealed trait ResponseTCatsInstances0 extends ResponseTCatsInstances1 {
-  given [RES[+_, +_], R, N](using
-      F: MonadError[RES[R, *], NonEmptyChain[R]],
-      E: RaiseError[RES]
+sealed trait ResponseT2CatsInstances0 extends ResponseT2CatsInstances1 {
+  given [RES[+_], R, N](using
+      F: MonadError[RES, NonEmptyChain[R]],
+      E: RaiseError[RES, R]
   ): MonadError[[t] =>> ResponseT[RES, R, N, t], NonEmptyChain[R]] =
     new MonadError {
 
-      override def raiseError[A](e: NonEmptyChain[R]): ResponseT[RES, R, N, A] =
+      override def raiseError[A](
+          e: NonEmptyChain[R]
+      ): ResponseT[RES, R, N, A] =
         ResponseT(F.raiseError(e))
 
       override def handleErrorWith[A](fa: ResponseT[RES, R, N, A])(
@@ -198,13 +200,13 @@ sealed trait ResponseTCatsInstances0 extends ResponseTCatsInstances1 {
         ResponseT(F.pure(x))
     }
 
-  given [RES[+_, +_], R, N, T]: Eq[ResponseT[RES, R, N, T]] =
+  given [RES[+_], R, N, T]: Eq[ResponseT[RES, R, N, T]] =
     Eq.instance(_ == _)
 }
 
-sealed trait ResponseTCatsInstances1 {
-  given [RES[+_, +_], R, N](using
-      Traverse[RES[R, *]]
+sealed trait ResponseT2CatsInstances1 {
+  given [RES[+_], R, N](using
+      Traverse[RES]
   ): Traverse[[t] =>> ResponseT[RES, R, N, t]] = new Traverse {
     def traverse[G[_]: Applicative, A, B](fa: ResponseT[RES, R, N, A])(
         f: A => G[B]
@@ -219,51 +221,4 @@ sealed trait ResponseTCatsInstances1 {
     ): Eval[B] =
       fa.result.foldRight(lb)(f)
   }
-}
-
-private[core] transparent trait ResponseTConstructorsO[Res[+_, +_], App[
-    +R,
-    +N,
-    +A
-] >: ResponseT[Res, R, N, A]](using
-    M: RaiseError[Res]
-) {
-  def apply[R, E, A](
-      result: Res[R, A],
-      notifications: Chain[E] = Chain.nil
-  ): App[R, E, A] = ResponseT(result, notifications)
-
-  /** constructs a program that outputs a pure value */
-  def pure[T](t: T): App[Nothing, Nothing, T] = ResponseT(M.pure(t))
-
-  /** a program with trivial output */
-  val unit: App[Nothing, Nothing, Unit] = pure(())
-
-  /** constructs a program that publishes given notifications */
-  def publish[N](n: N*): App[Nothing, N, Unit] =
-    ResponseT(M.unit, Chain.fromSeq(n))
-
-  /** constructs a program that rejects with given rejections */
-  def reject[R](
-      reason: R,
-      otherReasons: R*
-  ): App[R, Nothing, Nothing] =
-    reject(NonEmptyChain.of(reason, otherReasons: _*))
-
-  def reject[R](
-      reasons: NonEmptyChain[R]
-  ): App[R, Nothing, Nothing] =
-    ResponseT(M.raise(reasons))
-
-  /** Constructs a program that uses a validation to decide whether to output a
-    * value or reject with error(s)
-    */
-  def validate[R, N, T](
-      validation: ValidatedNec[R, T]
-  ): App[R, N, T] =
-    validation.fold(reject(_), pure(_))
-
-  /** constructs a program with given decision */
-  def validate[R, T](d: EitherNec[R, T]): App[R, Nothing, T] =
-    d.fold(reject(_), pure(_))
 }

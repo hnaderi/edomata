@@ -26,18 +26,16 @@ import org.scalacheck.Prop.forAll
 import org.typelevel.discipline.Laws
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.MonadTests
-import cats.laws.discipline.TraverseTests
 import cats.laws.discipline.arbitrary.catsLawsArbitraryForNonEmptyChain
 import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 
-abstract class ResponseTLaws[Res[+_, +_], Rejection, Out, Notification](
-    rejected: Gen[Res[Rejection, Out]],
-    notRejected: Gen[Res[Rejection, Out]]
+abstract class ResponseTLaws[Res[+_], Rejection, Out, Notification](
+    rejected: Gen[Res[Out]],
+    notRejected: Gen[Res[Out]]
 )(using
-    E: RaiseError[Res]
+    E: RaiseError[Res, Rejection]
 )(using
-    MonadError[Res[Rejection, *], NonEmptyChain[Rejection]],
-    // Traverse[Res[Rejection, *]],
+    MonadError[Res, NonEmptyChain[Rejection]],
     Arbitrary[Notification]
 ) extends DisciplineSuite {
   private val anySut = Gen.oneOf(rejected, notRejected)
@@ -48,7 +46,7 @@ abstract class ResponseTLaws[Res[+_, +_], Rejection, Out, Notification](
   type App[T] = ResponseT[Res, Rejection, Notification, T]
 
   def response[T](
-      d: Res[Rejection, T],
+      d: Res[T],
       ns: Chain[Notification]
   ): App[T] = ResponseT(d, ns)
 

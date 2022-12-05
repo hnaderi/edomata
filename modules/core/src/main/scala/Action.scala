@@ -25,7 +25,7 @@ import cats.data.ValidatedNec
 import cats.implicits._
 import cats.kernel.Eq
 
-/** A monad transformer for [[Response]]
+/** A monad transformer for [[ResponseD]]
   *
   * @tparam F
   *   effect type
@@ -38,7 +38,7 @@ import cats.kernel.Eq
   * @tparam A
   *   output type
   */
-final case class Action[F[_], R, E, N, A](run: F[Response[R, E, N, A]]) {
+final case class Action[F[_], R, E, N, A](run: F[ResponseD[R, E, N, A]]) {
   def map[B](f: A => B)(using F: Functor[F]): Action[F, R, E, N, B] =
     Action(F.map(run)(_.map(f)))
 
@@ -71,26 +71,26 @@ object Action extends ActionConstructors with ActionCatsInstances
 
 sealed transparent trait ActionConstructors {
   def lift[F[_], R, E, N, T](
-      t: Response[R, E, N, T]
+      t: ResponseD[R, E, N, T]
   )(using F: Applicative[F]): Action[F, R, E, N, T] =
     Action(F.pure(t))
 
   def liftD[F[_], R, E, N, T](
       t: Decision[R, E, T]
   )(using F: Applicative[F]): Action[F, R, E, N, T] =
-    lift(Response(t))
+    lift(ResponseD(t))
 
   def pure[F[_], R, E, N, T](
       t: T
   )(using F: Applicative[F]): Action[F, R, E, N, T] =
-    lift(Response(Decision.pure(t)))
+    lift(ResponseD(Decision.pure(t)))
 
   def void[F[_]: Applicative, R, E, N]: Action[F, R, E, N, Unit] = pure(())
 
   def liftF[F[_], R, E, N, T](
       f: F[T]
   )(using F: Functor[F]): Action[F, R, E, N, T] =
-    Action(F.map(f)(d => Response(Decision.pure(d))))
+    Action(F.map(f)(d => ResponseD(Decision.pure(d))))
 
   def validate[F[_]: Applicative, R, E, N, T](
       validation: ValidatedNec[R, T]
@@ -112,7 +112,7 @@ sealed transparent trait ActionConstructors {
   def publish[F[_]: Applicative, R, E, N](
       ns: N*
   ): Action[F, R, E, N, Unit] =
-    lift(Response(Decision.unit, Chain.fromSeq(ns)))
+    lift(ResponseD(Decision.unit, Chain.fromSeq(ns)))
 }
 
 sealed transparent trait ActionCatsInstances {
@@ -144,7 +144,7 @@ sealed transparent trait ActionCatsInstances {
                   a =>
                     (a, ns0 ++ res.notifications, evs0 ++ evs.toChain).asLeft,
                   b =>
-                    Response(
+                    ResponseD(
                       Decision.Accepted(evs.prependChain(evs0), b),
                       ns0 ++ res.notifications
                     ).asRight
@@ -156,12 +156,12 @@ sealed transparent trait ActionCatsInstances {
                     NonEmptyChain
                       .fromChain(evs0)
                       .fold(
-                        Response(
+                        ResponseD(
                           Decision.InDecisive(b),
                           ns0 ++ res.notifications
                         )
                       )(evs =>
-                        Response(
+                        ResponseD(
                           Decision.Accepted(evs, b),
                           ns0 ++ res.notifications
                         )
@@ -180,6 +180,6 @@ sealed transparent trait ActionCatsInstances {
       Action.pure(x)
 
   given [F[_], R, E, N, A](using
-      Eq[F[Response[R, E, N, A]]]
+      Eq[F[ResponseD[R, E, N, A]]]
   ): Eq[Action[F, R, E, N, A]] = Eq.by(_.run)
 }

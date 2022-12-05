@@ -16,9 +16,8 @@
 
 package edomata.core
 
-import cats.Eval
-import cats.Monad
-import cats.data.NonEmptyChain
+import cats.*
+import cats.data.*
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.*
@@ -30,13 +29,19 @@ import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
 class EdomatonSuite extends DisciplineSuite {
+  private val notifications: Gen[Chain[Notification]] =
+    Gen
+      .containerOf[Seq, Notification](
+        Arbitrary.arbitrary[String].map(Notification(_))
+      )
+      .map(Chain.fromSeq)
 
   private given [Env, T: Arbitrary]: Arbitrary[AppG[Env, T]] = Arbitrary(
     for {
-      n <- ResponseSuite.notifications
+      n <- notifications
       t <- Arbitrary.arbitrary[T]
       d <- Generators.anySut
-    } yield Edomaton(_ => Some(Response(d.as(t), n)))
+    } yield Edomaton(_ => Some(ResponseD(d.as(t), n)))
   )
 
   private given ExhaustiveCheck[Int] = ExhaustiveCheck.instance(List(1, 2, 3))
