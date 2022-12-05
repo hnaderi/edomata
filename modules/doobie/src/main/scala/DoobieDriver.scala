@@ -22,6 +22,7 @@ import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
 import edomata.backend.*
+import edomata.backend.eventsourcing.*
 import edomata.core.*
 
 final class DoobieDriver[F[_]: Async](

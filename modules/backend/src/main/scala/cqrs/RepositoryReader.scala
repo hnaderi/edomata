@@ -15,15 +15,8 @@
  */
 
 package edomata.backend
+package cqrs
 
-import cats.effect.kernel.Resource
-import edomata.core.ModelTC
-
-trait StorageDriver[F[_], Codec[_]] {
-  def build[S, E, R, N](snapshot: SnapshotStore[F, S])(using
-      ModelTC[S, E, R],
-      Codec[E],
-      Codec[N]
-  ): Resource[F, Storage[F, S, E, R, N]]
-  def snapshot[S](using Codec[S]): Resource[F, SnapshotPersistence[F, S]]
+trait RepositoryReader[F[_], S] {
+  def get(id: StreamId): F[AggregateS[S]]
 }

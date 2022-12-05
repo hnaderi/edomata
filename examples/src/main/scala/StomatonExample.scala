@@ -18,9 +18,11 @@ package edomata.core
 
 import cats.*
 import cats.data.*
+import cats.effect.IO
 import cats.implicits.*
-import cats.kernel.Eq
-import cats.kernel.laws.discipline.EqTests
+import edomata.backend.Backend
+import edomata.syntax.all.*
+import io.circe.Codec
 
 object StomatonExample {
   enum Foo {
@@ -56,5 +58,16 @@ object StomatonExample {
   val out = res.result match {
     case Right((newState, _)) => ???
     case Left(errs)           => ???
+  }
+
+  given Codec[Foo] = ???
+  given Codec[Int] = ???
+  val driver: edomata.backend.cqrs.StorageDriver[IO, Codec] = ???
+  val backend = Backend.builder(FooService).use(driver).build
+
+  backend.use { b =>
+    val srv = b.compile(FooService().liftTo[IO])
+
+    srv(???)
   }
 }

@@ -14,21 +14,11 @@
  * limitations under the License.
  */
 
-package edomata
-package syntax
+package edomata.backend.cqrs
 
-object all extends AllSyntax
+import fs2.Stream
 
-trait AllSyntax
-    extends core.ModelSyntax,
-      core.DecisionSyntax,
-      core.EdomatonSyntax,
-      core.StomatonSyntax,
-      core.DomainSyntax,
-      core.CQRSDomainSyntax
-
-object decision extends core.DecisionSyntax
-object edomaton extends core.EdomatonSyntax
-object stomaton extends core.StomatonSyntax
-object domain extends core.DomainSyntax
-object cqrs extends core.CQRSDomainSyntax
+trait NotificationsConsumer[F[_]] {
+  def outbox: Stream[F, Unit]
+  def state: Stream[F, Unit]
+}

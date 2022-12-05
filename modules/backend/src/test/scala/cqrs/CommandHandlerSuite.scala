@@ -101,51 +101,52 @@ class CommandHandlerSuite extends CatsEffectSuite {
     } yield ()
   }
 
-  // test("Must not change raised errors") {
-  //   val exception = new Exception("Some error!")
-  //   val app: APP = SUT.dsl.eval(IO.raiseError(exception))
-  //   val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
+  test("Must not change raised errors") {
+    val exception = new Exception("Some error!")
+    val app: APP = Stomaton.eval(IO.raiseError(exception))
+    val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
 
-  //   for {
-  //     r <- repo(AggregateState.Valid("", 0))
-  //     s = CommandHandler(r).apply(app)
-  //     _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
-  //     _ <- r.listActions.assertEquals(Nil)
-  //   } yield ()
-  // }
+    for {
+      r <- repo(AggregateS("", 0))
+      s = CommandHandler(r).apply(app)
+      _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
+      _ <- r.saved.assertEquals(Nil)
+    } yield ()
+  }
 
-  // test("Must retry on version conflict") {
-  //   for {
-  //     c <- IO.ref(3)
-  //     app: APP = SUT.dsl.eval(
-  //       c.updateAndGet(_ - 1)
-  //         .map(_ == 0)
-  //         .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
-  //     )
-  //     r <- repo(AggregateState.Valid("", 0))
-  //     s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
-  //     _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
-  //     _ <- r.listActions.assertEquals(Nil)
-  //   } yield ()
-  // }
+  test("Must retry on version conflict".ignore) {
+    for {
+      c <- IO.ref(3)
+      z = SUT.dsl.context[IO]
+      app: APP = Stomaton.eval(
+        c.updateAndGet(_ - 1)
+          .map(_ == 0)
+          .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
+      )
+      r <- repo(AggregateS("", 0))
+      s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
+      _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
+      _ <- r.saved.assertEquals(Nil)
+    } yield ()
+  }
 
-  // test("Must fail with max retry on too many version conflicts") {
-  //   for {
-  //     c <- IO.ref(4)
-  //     app: APP = SUT.dsl.eval(
-  //       c.updateAndGet(_ - 1)
-  //         .map(_ == 0)
-  //         .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
-  //     )
-  //     r <- repo(AggregateState.Valid("", 0))
-  //     s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
-  //     _ <- TestControl
-  //       .executeEmbed(s.apply(cmd))
-  //       .attempt
-  //       .assertEquals(BackendError.MaxRetryExceeded.asLeft)
-  //     _ <- r.listActions.assertEquals(Nil)
-  //   } yield ()
-  // }
+  test("Must fail with max retry on too many version conflicts") {
+    for {
+      c <- IO.ref(4)
+      app: APP = Stomaton.eval(
+        c.updateAndGet(_ - 1)
+          .map(_ == 0)
+          .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
+      )
+      r <- repo(AggregateS("", 0))
+      s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
+      _ <- TestControl
+        .executeEmbed(s.apply(cmd))
+        .attempt
+        .assertEquals(BackendError.MaxRetryExceeded.asLeft)
+      _ <- r.saved.assertEquals(Nil)
+    } yield ()
+  }
 }
 
 object CommandHandlerSuite {

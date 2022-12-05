@@ -15,31 +15,14 @@
  */
 
 package edomata.backend
+package eventsourcing
 
 import cats.data.Chain
 import cats.data.NonEmptyChain
-import cats.effect.Concurrent
-import cats.implicits.*
 import edomata.core.*
 
-final class CachedRepository[F[_]: Concurrent, S, E, R, N](
-    underlying: Repository[F, S, E, R, N],
-    cmds: CommandStore[F],
-    snapshot: SnapshotStore[F, S]
-) extends Repository[F, S, E, R, N] {
-
-  private val redundant: F[CommandState[S, E, R]] =
-    CommandState.Redundant.pure[F]
-
-  def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] = cmds
-    .contains(cmd.id)
-    .ifM(
-      redundant,
-      snapshot.getFast(cmd.address).flatMap {
-        case Some(s) => s.pure
-        case None    => underlying.load(cmd)
-      }
-    )
+trait Repository[F[_], S, E, R, N] {
+  def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]]
 
   def append(
       ctx: RequestContext[?, ?],
@@ -47,16 +30,10 @@ final class CachedRepository[F[_]: Concurrent, S, E, R, N](
       newState: S,
       events: NonEmptyChain[E],
       notifications: Chain[N]
-  ): F[Unit] =
-    underlying.append(ctx, version, newState, events, notifications) >>
-      cmds.append(ctx.command) >>
-      snapshot.put(
-        ctx.command.address,
-        AggregateState.Valid(newState, version + events.size)
-      )
+  ): F[Unit]
 
   def notify(
       ctx: RequestContext[?, ?],
       notifications: NonEmptyChain[N]
-  ): F[Unit] = underlying.notify(ctx, notifications)
+  ): F[Unit]
 }

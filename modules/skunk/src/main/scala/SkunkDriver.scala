@@ -21,6 +21,7 @@ import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.*
+import edomata.backend.eventsourcing.*
 import edomata.core.*
 
 final class SkunkDriver[F[_]: Async](

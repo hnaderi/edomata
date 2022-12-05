@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package eventsourcing
 
 import cats.Monad
 import cats.data.EitherNec

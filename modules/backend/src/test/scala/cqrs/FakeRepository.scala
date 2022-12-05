@@ -31,6 +31,11 @@ final class FakeRepository[State, Event](
     _saved: Ref[IO, List[Saved[State, Event]]]
 ) extends Repository[IO, State, Event] {
 
+  override def get(id: StreamId): IO[AggregateS[State]] = state match {
+    case a @ AggregateS(_, _) => IO(a)
+    case _ => IO.raiseError(new Exception("don't know any state!"))
+  }
+
   override def load(
       cmd: CommandMessage[?]
   ): IO[AggregateState[State]] = IO(state)

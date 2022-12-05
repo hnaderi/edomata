@@ -22,152 +22,29 @@ import edomata.core.*
 
 import scala.concurrent.duration.*
 
-trait Backend[F[_], S, E, R, N] {
-  def compile: CommandHandler[F, S, E, R, N]
-  def outbox: OutboxReader[F, N]
-  def journal: JournalReader[F, E]
-  def repository: RepositoryReader[F, S, E, R]
-  def updates: NotificationsConsumer[F]
-}
-
 object Backend {
-  final class Builder[F[_]: Async, Codec[_], C, S, E, R, N] private[Backend] (
-      driver: Resource[F, StorageDriver[F, Codec]],
-      domain: Domain[C, S, E, R, N],
-      snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]],
-      commandCache: Option[Resource[F, CommandStore[F]]],
-      val maxRetry: Int = 5,
-      val retryInitialDelay: FiniteDuration = 2.seconds
-  )(using ModelTC[S, E, R]) {
-    private def copy(
-        driver: Resource[F, StorageDriver[F, Codec]] = driver,
-        domain: Domain[C, S, E, R, N] = domain,
-        snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]] =
-          snapshot,
-        commandCache: Option[Resource[F, CommandStore[F]]] = commandCache,
-        maxRetry: Int = maxRetry,
-        retryInitialDelay: FiniteDuration = retryInitialDelay
-    ) = new Builder(
-      driver = driver,
-      domain = domain,
-      snapshot = snapshot,
-      maxRetry = maxRetry,
-      commandCache = commandCache,
-      retryInitialDelay = retryInitialDelay
-    )
-
-    def persistedSnapshot(
-        maxInMem: Int = 1000,
-        maxBuffer: Int = 100,
-        maxWait: FiniteDuration = 1.minute
-    )(using codec: Codec[S]): Builder[F, Codec, C, S, E, R, N] =
-      copy(snapshot =
-        _.snapshot
-          .flatMap(store =>
-            SnapshotStore
-              .persisted(
-                store,
-                size = maxInMem,
-                maxBuffer = maxBuffer,
-                maxWait
-              )
-          )
-      )
-
-    def disableCache: Builder[F, Codec, C, S, E, R, N] =
-      copy(commandCache = None)
-    def withCommandCache(
-        cache: Resource[F, CommandStore[F]]
-    ): Builder[F, Codec, C, S, E, R, N] = copy(commandCache = Some(cache))
-    def withCommandCache(
-        cache: CommandStore[F]
-    ): Builder[F, Codec, C, S, E, R, N] = withCommandCache(Resource.pure(cache))
-    def withCommandCache(
-        cache: F[CommandStore[F]]
-    ): Builder[F, Codec, C, S, E, R, N] = withCommandCache(Resource.eval(cache))
-    def withCommandCacheSize(
-        maxCommandsToCache: Int
-    ): Builder[F, Codec, C, S, E, R, N] =
-      copy(commandCache =
-        Some(Resource.eval(CommandStore.inMem(maxCommandsToCache)))
-      )
-
-    def inMemSnapshot(
-        maxInMem: Int = 1000
-    ): Builder[F, Codec, C, S, E, R, N] =
-      copy(snapshot = _ => Resource.eval(SnapshotStore.inMem(maxInMem)))
-
-    def withSnapshot(
-        s: Resource[F, SnapshotStore[F, S]]
-    ): Builder[F, Codec, C, S, E, R, N] = copy(snapshot = _ => s)
-
-    def withRetryConfig(
-        maxRetry: Int = maxRetry,
-        retryInitialDelay: FiniteDuration = retryInitialDelay
-    ): Builder[F, Codec, C, S, E, R, N] =
-      copy(maxRetry = maxRetry, retryInitialDelay = retryInitialDelay)
-
-    def build(using
-        event: Codec[E],
-        notifs: Codec[N]
-    ): Resource[F, Backend[F, S, E, R, N]] = for {
-      dr <- driver
-      s <- snapshot(dr)
-      storage <- dr.build[S, E, R, N](s)
-      compiler <- commandCache.fold(Resource.pure(storage.repository))(
-        _.map(CachedRepository(storage.repository, _, s))
-      )
-      h = CommandHandler.withRetry(compiler, maxRetry, retryInitialDelay)
-
-    } yield BackendImpl(
-      h,
-      storage.outbox,
-      storage.journal,
-      storage.reader,
-      storage.updates
-    )
-  }
-
-  final class PartialBuilder[C, S, E, R, N](
-      domain: Domain[C, S, E, R, N]
-  )(using model: ModelTC[S, E, R]) {
-    def use[F[_]: Async, Codec[_]](
-        driver: StorageDriver[F, Codec]
-    ): Builder[F, Codec, C, S, E, R, N] =
-      from(Resource.pure(driver))
-
-    def use[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
-        driver: F[D]
-    ): Builder[F, Codec, C, S, E, R, N] =
-      from(Resource.eval(driver))
-
-    def from[F[_]: Async, Codec[_], D <: StorageDriver[F, Codec]](
-        driver: Resource[F, D]
-    ): Builder[F, Codec, C, S, E, R, N] =
-      new Builder(
-        driver,
-        domain,
-        snapshot = _ => Resource.eval(SnapshotStore.inMem(1000)),
-        commandCache = Some(Resource.eval(CommandStore.inMem(1000)))
-      )
-  }
-
   def builder[C, S, E, R, N](
       domain: Domain[C, S, E, R, N]
   )(using
       model: ModelTC[S, E, R]
-  ): PartialBuilder[C, S, E, R, N] = new PartialBuilder(domain)
+  ): eventsourcing.PartialBackendBuilder[C, S, E, R, N] =
+    new eventsourcing.PartialBackendBuilder(domain)
   def builder[C, S, E, R, N](
       service: edomata.core.DomainModel[S, E, R]#Service[C, N]
   )(using
       model: ModelTC[S, E, R]
-  ): PartialBuilder[C, S, E, R, N] = new PartialBuilder(service.domain)
-}
+  ): eventsourcing.PartialBackendBuilder[C, S, E, R, N] =
+    new eventsourcing.PartialBackendBuilder(service.domain)
 
-private final case class BackendImpl[F[_], S, E, R, N](
-    compile: CommandHandler[F, S, E, R, N],
-    outbox: OutboxReader[F, N],
-    journal: JournalReader[F, E],
-    repository: RepositoryReader[F, S, E, R],
-    updates: NotificationsConsumer[F]
-) extends Backend[F, S, E, R, N]
+  def builder[C, S, R, N](
+      domain: CQRSDomain[C, S, R, N]
+  )(using
+      model: StateModelTC[S]
+  ): cqrs.PartialBackendBuilder[C, S, R, N] =
+    new cqrs.PartialBackendBuilder(domain)
+
+  def builder[C, S, R, N](
+      service: CQRSModel[S, R]#Service[C, N]
+  )(using StateModelTC[S]): cqrs.PartialBackendBuilder[C, S, R, N] =
+    new cqrs.PartialBackendBuilder(service.domain)
+}

@@ -16,14 +16,14 @@
 
 package edomata.core
 
-import cats.implicits.*
 import cats.*
 import cats.data.*
+import cats.implicits.*
 
-final class CQRSDomainDSL[C, S, E, R](
+final class CQRSDomainDSL[C, S, R, N](
     private val dummy: Boolean = true
 ) extends AnyVal {
-  type App[F[_], T] = Stomaton[F, CommandMessage[C], S, R, E, T]
+  type App[F[_], T] = Stomaton[F, CommandMessage[C], S, R, N, T]
 
   inline def pure[F[_]: Monad, T](
       t: T
@@ -36,6 +36,11 @@ final class CQRSDomainDSL[C, S, E, R](
   inline def eval[F[_]: Applicative, T](
       f: F[T]
   ): App[F, T] = Stomaton.eval(f)
+
+  inline def set[F[_]: Applicative](
+      s: S
+  ): App[F, Unit] =
+    Stomaton.set(s)
 
   /** constructs an stomaton that outputs what's read */
   inline def modify[F[_]: Applicative](
@@ -84,26 +89,29 @@ final class CQRSDomainDSL[C, S, E, R](
   ): App[F, T] = Stomaton.fromEitherNec(eit)
 
   inline def publish[F[_]: Applicative](
-      ns: E*
+      ns: N*
   ): App[F, Unit] =
     Stomaton.publish(ns: _*)
 
-  def state[F[_]: Monad]: App[F, S] =
+  inline def state[F[_]: Monad]: App[F, S] =
     Stomaton.state
 
-  def aggregateId[F[_]: Monad]: App[F, String] =
+  inline def context[F[_]: Monad]: App[F, CommandMessage[C]] =
+    Stomaton.context
+
+  inline def aggregateId[F[_]: Monad]: App[F, String] =
     Stomaton.context.map(_.address)
 
-  def metadata[F[_]: Monad]: App[F, MessageMetadata] =
+  inline def metadata[F[_]: Monad]: App[F, MessageMetadata] =
     Stomaton.context.map(_.metadata)
 
-  def messageId[F[_]: Monad]: App[F, String] =
+  inline def messageId[F[_]: Monad]: App[F, String] =
     Stomaton.context.map(_.id)
 
-  def command[F[_]: Monad]: App[F, C] =
+  inline def command[F[_]: Monad]: App[F, C] =
     Stomaton.context.map(_.payload)
 
-  def router[F[_]: Monad, T](
+  inline def router[F[_]: Monad, T](
       f: C => App[F, T]
   ): App[F, T] =
     command.flatMap(f)

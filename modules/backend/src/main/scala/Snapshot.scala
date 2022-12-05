@@ -28,6 +28,8 @@ import fs2.Stream
 
 import scala.concurrent.duration.*
 
+import eventsourcing.* //FIXME
+
 trait SnapshotReader[F[_], S] {
 
   /** Reads snapshot
