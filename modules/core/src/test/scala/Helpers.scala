@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
 
 import cats.Functor
 import cats.Monad
@@ -24,7 +24,7 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
-private[core] def necOf[T](g: Gen[T]): Gen[NonEmptyChain[T]] =
+private[tests] def necOf[T](g: Gen[T]): Gen[NonEmptyChain[T]] =
   Gen
     .chooseNum(1, 10)
     .flatMap(n =>
@@ -37,10 +37,10 @@ private[core] def necOf[T](g: Gen[T]): Gen[NonEmptyChain[T]] =
         }
     )
 
-private[core] given [T: Arbitrary]: Gen[NonEmptyChain[T]] = necOf(
+private[tests] given [T: Arbitrary]: Gen[NonEmptyChain[T]] = necOf(
   Arbitrary.arbitrary[T]
 )
 
-private[core] given [F[_]: Functor]: Arbitrary[F[Long] => F[Long]] = Arbitrary(
+private[tests] given [F[_]: Functor]: Arbitrary[F[Long] => F[Long]] = Arbitrary(
   Arbitrary.arbitrary[Long].map(i => (a: F[Long]) => a.map(_ + i))
 )

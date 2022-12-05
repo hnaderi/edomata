@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package decision
 
 import cats.Monad
 import cats.data.*
@@ -29,8 +30,14 @@ import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
+import edomata.core.Decision
 
 import Generators.*
+
+type Dec[T] = Decision[String, Int, T]
+type Rejection = String
+type Event = Int
+type SUT = Dec[Long]
 
 class DecisionSuite extends DisciplineSuite {
   private given [T: Arbitrary]: Arbitrary[Dec[T]] = Arbitrary(

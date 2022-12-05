@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests.decision
 
 import cats.data.NonEmptyChain
 import cats.implicits.*
-import edomata.core.Decision.Accepted
-import edomata.core.Decision.InDecisive
-import edomata.core.Decision.Rejected
+import edomata.core.Decision.*
+import edomata.core.*
 import edomata.syntax.all.*
 import munit.FunSuite
 

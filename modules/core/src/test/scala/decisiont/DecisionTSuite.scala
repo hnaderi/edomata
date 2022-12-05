@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package decisiont
 
 import cats.Applicative
 import cats.Eval
@@ -27,7 +28,17 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 
+import edomata.core.Decision
+import edomata.core.DecisionT
+
 import DecisionTSuite.*
+
+type Dec[T] = Decision[String, Int, T]
+type Rejection = String
+type Event = Int
+type SUT = Dec[Long]
+type SUTT = DecisionT[Eval, Rejection, Event, Long]
+type DTT[T] = DecisionT[Eval, Rejection, Event, T]
 
 class DecisionTSuite extends DisciplineSuite {
   property("Accepted accumulates") {
@@ -62,10 +73,7 @@ class DecisionTSuite extends DisciplineSuite {
 }
 
 object DecisionTSuite {
-
-  type SUTT = DecisionT[Eval, Rejection, Event, Long]
-
-  type DTT[T] = DecisionT[Eval, Rejection, Event, T]
+  import tests.decision.Generators
 
   private def lift[T <: SUT](t: Gen[T]): Gen[(T, SUTT)] =
     t.map(d => (d, DecisionT.lift(d)(using Applicative[Eval])))

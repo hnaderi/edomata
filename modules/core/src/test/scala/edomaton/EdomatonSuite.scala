@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package edomaton
 
 import cats.*
 import cats.data.*
@@ -27,6 +28,18 @@ import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
+import edomata.core.*
+import tests.decision.Generators
+
+type Dec[T] = Decision[String, Int, T]
+type AppG[Env, T] =
+  Edomaton[Option, Env, Rejection, Event, Notification, T]
+type App[T] = AppG[Int, T]
+type AppContra[T] = AppG[T, Unit]
+
+type Rejection = String
+type Event = Int
+final case class Notification(value: String = "")
 
 class EdomatonSuite extends DisciplineSuite {
   private val notifications: Gen[Chain[Notification]] =

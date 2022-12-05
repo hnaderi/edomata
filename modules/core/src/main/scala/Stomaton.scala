@@ -22,7 +22,7 @@ import cats.data.*
 import cats.implicits.*
 import cats.kernel.Eq
 
-final case class Stomaton[F[_], Env, S, R, E, A](
+final case class Stomaton[F[_], -Env, S, R, E, A](
     run: (Env, S) => F[ResponseE[R, E, (S, A)]]
 ) extends AnyVal {
 
@@ -90,9 +90,9 @@ final case class Stomaton[F[_], Env, S, R, E, A](
   def set(s: S)(using Functor[F]): Stomaton[F, Env, S, R, E, A] =
     Stomaton((env, s0) => run(env, s0).map(_.map((_, a) => (s, a))))
 
-  def handleErrorWith(
-      f: NonEmptyChain[R] => Stomaton[F, Env, S, R, E, A]
-  )(using Monad[F]): Stomaton[F, Env, S, R, E, A] = Stomaton((env, state) =>
+  def handleErrorWith[Env2 <: Env](
+      f: NonEmptyChain[R] => Stomaton[F, Env2, S, R, E, A]
+  )(using Monad[F]): Stomaton[F, Env2, S, R, E, A] = Stomaton((env, state) =>
     run(env, state).flatMap { out =>
       out.result.fold(
         f(_).run(env, state),

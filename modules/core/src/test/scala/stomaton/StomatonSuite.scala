@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package stomaton
 
 import cats.Eval
 import cats.Monad
@@ -29,12 +30,18 @@ import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
+import edomata.core.*
+
+type Rejection = String
+type Event = Int
+type State = Int
+type AppS[Env, T] = Stomaton[Option, Env, State, Rejection, Event, T]
+type App[T] = AppS[Int, T]
+type AppContra[T] = AppS[T, Unit]
+
+final case class Notification(value: String = "")
 
 class StomatonSuite extends DisciplineSuite {
-  type State = Int
-  type AppS[Env, T] = Stomaton[Option, Env, State, Rejection, Event, T]
-  type App[T] = AppS[Int, T]
-  type AppContra[T] = AppS[T, Unit]
 
   private given [Env, T: Arbitrary]: Arbitrary[AppS[Env, T]] = Arbitrary(
     for {
@@ -56,21 +63,4 @@ class StomatonSuite extends DisciplineSuite {
     ContravariantTests[AppContra].contravariant[Int, Long, Boolean]
   )
   checkAll("laws", EqTests[App[Long]].eqv)
-
-  // test("Sanity") {
-  //   val a: App[String] = Stomaton.pure("Hello")
-  //   val ss: App[Int] = Stomaton.modify(_ * 2)
-
-  //   val b: App[Int] = for {
-  //     s <- a.set(24)
-  //     st <- Stomaton.state
-  //     // _ <- Stomaton.set(10)
-  //     // _ <- Stomaton.reject("error")
-  //     // s2 <- Stomaton.modify(_ * 2)
-  //     ctx <- Stomaton.context
-  //     _ <- ss
-  //   } yield ctx
-
-  //   println(b.runF(1, 100))
-  // }
 }

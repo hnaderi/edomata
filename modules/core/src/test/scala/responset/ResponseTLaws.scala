@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package responset
 
 import cats.*
 import cats.data.*
@@ -28,6 +29,8 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import org.scalacheck.Prop.forAll
 import org.typelevel.discipline.Laws
+
+import edomata.core.*
 
 abstract class ResponseTLaws[Res[+_], Rejection, Out, Notification](
     rejected: Gen[Res[Out]],

@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package edomata.core
+package tests
+package decision
 
 import cats.data.NonEmptyChain
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
+import edomata.core.Decision
 
 object Generators {
   val accepted: Gen[Decision.Accepted[Event, Long]] = for {
