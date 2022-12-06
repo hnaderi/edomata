@@ -21,6 +21,7 @@ import cats.Monad
 import cats.data.*
 import cats.effect.Temporal
 import cats.effect.implicits.*
+import cats.effect.std.Random
 import cats.implicits.*
 import edomata.core.*
 
@@ -72,7 +73,7 @@ object CommandHandler {
 
   }
 
-  def withRetry[F[_]: Temporal, S, E, R](
+  def withRetry[F[_]: Temporal: Random, S, E, R](
       repository: Repository[F, S, E],
       maxRetry: Int = 5,
       retryInitialDelay: FiniteDuration = 2.seconds
@@ -86,12 +87,15 @@ object CommandHandler {
 
   }
 
-  private def retry[F[_]: Temporal, T](max: Int, wait: FiniteDuration)(
+  private def retry[F[_]: Temporal: Random, T](max: Int, wait: FiniteDuration)(
       f: F[T]
   ): F[T] =
     f.recoverWith {
       case BackendError.VersionConflict if max > 1 =>
-        retry(max - 1, wait * 2)(f).delayBy(wait)
+        Random[F]
+          .nextIntBounded(500)
+          .map(_.millis)
+          .flatMap(jitter => retry(max - 1, wait * 2)(f).delayBy(wait + jitter))
     }.adaptErr { case BackendError.VersionConflict =>
       BackendError.MaxRetryExceeded
     }

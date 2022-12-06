@@ -20,6 +20,7 @@ import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.effect.std.UUIDGen
 import cats.implicits.*
+import edomata.backend.BackendError
 import edomata.backend.cqrs.*
 import edomata.core.*
 import edomata.syntax.all.*
@@ -32,8 +33,11 @@ abstract class CqrsSuite[S, R, N](
 ) extends StorageSuite(backend, name) {
   import TestCQRSModel.given_StateModelTC_State
 
+  type SUT = Backend[IO, Int, String, Int]
   private val dsl = TestCQRSDomain.dsl
-  private val rndString = UUIDGen.randomString[IO]
+  private val someCmd = (randomString, randomString).mapN(
+    CommandMessage(_, Instant.EPOCH, _, 0)
+  )
 
   check("inserts state") { b =>
     val srv = b.compile(dsl.set(2))
@@ -44,7 +48,9 @@ abstract class CqrsSuite[S, R, N](
         .assertEquals(Right(()))
       _ <- b.repository
         .get(aggId)
-        .assertEquals(AggregateS(version = 0, state = 2))
+        .assertEquals(AggregateS(version = 1, state = 2))
+
+      _ <- assertNotifiedState(b)
     } yield ()
   }
 
@@ -62,7 +68,9 @@ abstract class CqrsSuite[S, R, N](
 
       _ <- b.repository
         .get(aggId)
-        .assertEquals(AggregateS(version = 1, state = 5))
+        .assertEquals(AggregateS(version = 2, state = 5))
+
+      _ <- assertNotifiedState(b)
     } yield ()
   }
 
@@ -73,16 +81,88 @@ abstract class CqrsSuite[S, R, N](
       cmdId <- randomString
       _ <- srv(CommandMessage(cmdId, Instant.EPOCH, aggId, 0))
         .assertEquals(Right(()))
-      _ <- b.repository.get(aggId).assertEquals(AggregateS(0, 0))
+      _ <- b.repository
+        .get(aggId)
+        .assertEquals(AggregateS(version = 1, state = 0))
       _ <- b.outbox.read
         .filter(_.streamId == aggId)
         .map(_.data)
         .compile
         .toList
         .assertEquals(List(1, 2, 3))
+
+      _ <- assertNotifiedOutbox(b)
     } yield ()
   }
 
+  check("save must be idempotent") { s =>
+    for {
+      cmd <- someCmd
+      append = s
+        .compile(dsl.modify[IO](_ + 10).publish(4, 5, 6).void)
+        .apply(cmd)
+        .attempt
+
+      _ <- List
+        .fill(20)(append)
+        .parSequence
+        .map(ats =>
+          ats.foreach {
+            case Right(_)                           => ()
+            case Left(BackendError.VersionConflict) => ()
+            case Left(other) => fail("Invalid implementation", other)
+          }
+        )
+
+      _ <- s.repository
+        .get(cmd.address)
+        .assertEquals(
+          AggregateS(
+            state = 10,
+            version = 1
+          )
+        )
+      _ <- assertNotifiedState(s)
+      _ <- assertNotifiedOutbox(s)
+    } yield ()
+  }
+
+  check("save must be correct") { s =>
+    for {
+      aggId <- randomString
+      append = someCmd
+        .map(_.copy(address = aggId))
+        .flatMap(s.compile(dsl.modify[IO](_ + 10).publish(4, 5, 6).void))
+        .attempt
+
+      _ <- List
+        .fill(20)(append)
+        .parSequence
+        .map(ats =>
+          ats.foreach {
+            case Right(_)                           => ()
+            case Left(BackendError.VersionConflict) => fail("bad luck!")
+            case Left(other) => fail("Invalid implementation", other)
+          }
+        )
+
+      _ <- s.repository
+        .get(aggId)
+        .assertEquals(
+          AggregateS(
+            state = 200,
+            version = 20
+          )
+        )
+      _ <- assertNotifiedState(s)
+      _ <- assertNotifiedOutbox(s)
+    } yield ()
+  }
+
+  private def assertNotifiedState(s: SUT) =
+    s.updates.state.head.compile.lastOrError.assertEquals(())
+  private def assertNotifiedOutbox(s: SUT) =
+    s.updates.outbox.head.compile.lastOrError.assertEquals(())
 }
 
 object TestCQRSModel extends CQRSModel[Int, String] {

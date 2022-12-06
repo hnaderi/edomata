@@ -26,6 +26,7 @@ import edomata.skunk.*
 import edomata.syntax.all.*
 import natchez.Trace.Implicits.noop
 import scodec.bits.ByteVector
+import scala.concurrent.duration.*
 
 import SkunkCompatibilitySuite.*
 
@@ -72,6 +73,15 @@ object SkunkCompatibilitySuite {
     i => ByteVector.fromHex(i.toString).get.toArray,
     a => Either.catchNonFatal(ByteVector(a).toHex.toInt).leftMap(_.getMessage)
   )
+  private val database = Session
+    .pooled[IO](
+      "localhost",
+      5432,
+      "postgres",
+      "postgres",
+      Some("postgres"),
+      4
+    )
 
   inline def backend(
       inline name: String,
@@ -79,15 +89,7 @@ object SkunkCompatibilitySuite {
   ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
     given BackendCodec[Int] = codec
     import TestDomain.given_ModelTC_State_Event_Rejection
-    Session
-      .pooled[IO](
-        "localhost",
-        5432,
-        "postgres",
-        "postgres",
-        Some("postgres"),
-        4
-      )
+    database
       .flatMap(pool =>
         Backend
           .builder(TestDomainModel)
@@ -103,19 +105,12 @@ object SkunkCompatibilitySuite {
   ): Resource[IO, cqrs.Backend[IO, Int, String, Int]] =
     given BackendCodec[Int] = codec
     import TestCQRSModel.given_StateModelTC_State
-    Session
-      .pooled[IO](
-        "localhost",
-        5432,
-        "postgres",
-        "postgres",
-        Some("postgres"),
-        4
-      )
+    database
       .flatMap(pool =>
         Backend
           .builder(TestCQRSDomain)
-          .use(SkunkDriver2(name, pool))
+          .use(SkunkDriverCQRS(name, pool))
+          .withRetryConfig(retryInitialDelay = 100.millis)
           .build
       )
 }

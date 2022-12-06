@@ -22,6 +22,7 @@ import cats.effect.kernel.Resource
 import edomata.core.*
 
 import scala.concurrent.duration.*
+import cats.effect.std.Random
 
 trait Backend[F[_], S, R, N] {
   def compile: CommandHandler[F, S, N]
@@ -88,6 +89,7 @@ final class BackendBuilder[F[_]: Async, Codec[_], C, S, R, N] private[cqrs] (
   ): Resource[F, Backend[F, S, R, N]] = for {
     d <- driver
     storage <- d.build[S, N, R]
+    given Random[F] <- Resource.eval(Random.scalaUtilRandom[F])
   } yield new Backend[F, S, R, N] {
 
     override def compile: CommandHandler[F, S, N] =

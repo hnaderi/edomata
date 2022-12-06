@@ -31,6 +31,7 @@ import edomata.backend.cqrs.*
 import edomata.core.*
 import fs2.Stream
 import skunk.*
+import skunk.data.Completion
 import skunk.implicits.*
 
 import java.time.OffsetDateTime
@@ -80,7 +81,17 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
         _ <- s
           .prepare(state.put)
           .use(_.execute(ctx.address ~ newState ~ version))
-          .assertInserted
+          .flatMap {
+            case Completion.Insert(1) | Completion.Update(1) => F.unit
+            case Completion.Insert(0) | Completion.Update(0) =>
+              F.raiseError(BackendError.VersionConflict)
+            case other =>
+              F.raiseError(
+                BackendError.PersistenceError(
+                  s"expected to upsert state, but got invalid response from database! response: $other"
+                )
+              )
+          }
         _ <- NonEmptyChain.fromChain(events).fold(F.unit) { n =>
           val ns = events.toList
             .map((_, ctx.address, now, ctx.metadata))

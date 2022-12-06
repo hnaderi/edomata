@@ -235,10 +235,11 @@ CREATE TABLE IF NOT EXISTS $table (
 
     def put: Command[String ~ S ~ Long] =
       sql"""
-insert into $table (id, state, "version") values ($text, $state, 0)
-on conflict (id) where "version" = $int8 do update
+insert into $table (id, state, "version") values ($text, $state, 1)
+on conflict (id) do update
 set version = $table.version + 1,
     state   = excluded.state
+where $table.version = $int8
          """.command
 
     def get: Query[String, AggregateS[S]] =
