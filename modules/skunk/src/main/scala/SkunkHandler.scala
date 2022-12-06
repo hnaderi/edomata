@@ -14,29 +14,16 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package cqrs
+package edomata.skunk
 
+import _root_.skunk.Session
 import cats.data.NonEmptyChain
-import cats.effect.kernel.Resource
-import edomata.core.StateModelTC
+import cats.implicits.*
+import cats.Applicative
 
-final case class Storage[F[_], S, N, R](
-    repository: Repository[F, S, N],
-    outbox: OutboxReader[F, N],
-    updates: NotificationsConsumer[F]
-)
-
-trait StorageDriver[F[_], Codec[_], Handler[_]] {
-  def build[S, N, R](using
-      StateModelTC[S],
-      Codec[S],
-      Codec[N]
-  ): Resource[F, Storage[F, S, N, R]]
-
-  def build[S, N, R](handler: Handler[N])(using
-      StateModelTC[S],
-      Codec[S],
-      Codec[N]
-  ): Resource[F, Storage[F, S, N, R]]
+type SkunkHandler[F[_]] = [N] =>> NonEmptyChain[N] => Session[F] => F[Unit]
+object SkunkHandler {
+  def apply[F[_]: Applicative, N](
+      f: N => Session[F] => F[Unit]
+  ): SkunkHandler[F][N] = ns => ses => ns.traverse(f(_)(ses)).void
 }

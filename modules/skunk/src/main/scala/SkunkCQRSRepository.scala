@@ -43,7 +43,8 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
     state: Queries.State[S],
     outbox: Queries.Outbox[N],
     cmds: Queries.Commands,
-    updates: NotificationsPublisher[F]
+    updates: NotificationsPublisher[F],
+    handler: SkunkHandler[F][N]
 )(using tc: StateModelTC[S], F: Concurrent[F])
     extends Repository[F, S, N] {
   private val redundant: F[AggregateState[S]] =
@@ -97,7 +98,7 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
             .map((_, ctx.address, now, ctx.metadata))
           s.prepare(outbox.insertAll(ns))
             .use(_.execute(ns))
-            .assertInserted(ns.size)
+            .assertInserted(ns.size) >> handler(n)(s)
         }
         _ <- s
           .prepare(cmds.insert)

@@ -136,7 +136,7 @@ abstract class CqrsSuite[S, R, N](
         .attempt
 
       _ <- List
-        .fill(20)(append)
+        .fill(5)(append)
         .parSequence
         .map(ats =>
           ats.foreach {
@@ -150,8 +150,8 @@ abstract class CqrsSuite[S, R, N](
         .get(aggId)
         .assertEquals(
           AggregateS(
-            state = 200,
-            version = 20
+            state = 50,
+            version = 5
           )
         )
       _ <- assertNotifiedState(s)

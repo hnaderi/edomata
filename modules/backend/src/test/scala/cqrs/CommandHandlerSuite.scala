@@ -128,7 +128,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     } yield ()
   }
 
-  test("Must retry on version conflict".ignore) {
+  test("Must retry on version conflict") {
     for {
       c <- IO.ref(3)
       z = SUT.dsl.context[IO]
@@ -141,7 +141,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
       given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
-      _ <- r.saved.assertEquals(Nil)
+      _ <- r.assert(Interaction.Saved(cmd, 0, "", Chain.nil))
     } yield ()
   }
 

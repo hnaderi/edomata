@@ -17,23 +17,26 @@
 package edomata.skunk
 
 import _root_.skunk.Session
+import cats.data.NonEmptyChain
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.*
+import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
 final class SkunkDriverCQRS[F[_]: Async] private (
     namespace: PGNamespace,
     pool: Resource[F, Session[F]]
-) extends cqrs.StorageDriver[F, BackendCodec] {
+) extends StorageDriver[F, BackendCodec, SkunkHandler[F]] {
 
-  override def build[S, N, R](using
+  override def build[S, N, R](
+      handler: SkunkHandler[F][N]
+  )(using
       tc: StateModelTC[S],
       state: BackendCodec[S],
       notifs: BackendCodec[N]
-  ): Resource[F, cqrs.Storage[F, S, N, R]] = {
+  ): Resource[F, Storage[F, S, N, R]] = {
     def setup = {
       val nQ = Queries.Outbox(namespace, notifs)
       val cQ = Queries.Commands(namespace)
@@ -50,10 +53,18 @@ final class SkunkDriverCQRS[F[_]: Async] private (
       for {
         updates <- Resource.eval(Notifications[F])
         _outbox = SkunkOutboxReader(pool, oQ)
-        repo = SkunkCQRSRepository(pool, sQ, oQ, cQ, updates)
+        repo = SkunkCQRSRepository(pool, sQ, oQ, cQ, updates, handler)
       } yield Storage(repo, _outbox, updates)
     }
+
   }
+
+  override def build[S, N, R](using
+      StateModelTC[S],
+      BackendCodec[S],
+      BackendCodec[N]
+  ): Resource[F, Storage[F, S, N, R]] =
+    build(_ => _ => Async[F].unit)
 
 }
 
