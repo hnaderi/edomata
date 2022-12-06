@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package eventsourcing
 
 import cats.effect.Concurrent
 import cats.effect.std.Queue

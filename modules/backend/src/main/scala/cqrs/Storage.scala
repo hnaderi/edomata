@@ -18,6 +18,7 @@ package edomata.backend
 package cqrs
 
 import cats.effect.kernel.Resource
+import edomata.core.StateModelTC
 
 final case class Storage[F[_], S, N, R](
     repository: Repository[F, S, N],
@@ -26,7 +27,9 @@ final case class Storage[F[_], S, N, R](
 )
 
 trait StorageDriver[F[_], Codec[_]] {
-  def build[S: Codec, N: Codec, R](
-      snapshot: SnapshotStore[F, S]
+  def build[S, N, R](using
+      StateModelTC[S],
+      Codec[S],
+      Codec[N]
   ): Resource[F, Storage[F, S, N, R]]
 }

@@ -49,7 +49,12 @@ object CommandHandler {
                 repository
                   .save(cmd, version, newState, out.notifications) >> voidF
               case Left(reasons) =>
-                reasons.asLeft.pure
+                NonEmptyChain
+                  .fromChain(out.notifications)
+                  .fold(Monad[F].unit)(
+                    repository.notify(cmd, _)
+                  )
+                  .as(reasons.asLeft)
             }
 
           }

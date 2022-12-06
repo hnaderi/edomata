@@ -20,15 +20,18 @@ package cqrs
 import cats.data.*
 import edomata.core.*
 
-trait Repository[F[_], S, E] {
+trait Repository[F[_], S, E] extends RepositoryReader[F, S] {
   def load(cmd: CommandMessage[?]): F[AggregateState[S]]
-
-  def get(id: StreamId): F[AggregateS[S]]
 
   def save(
       ctx: CommandMessage[?],
       version: SeqNr,
       newState: S,
       events: Chain[E]
+  ): F[Unit]
+
+  def notify(
+      ctx: CommandMessage[?],
+      notifications: NonEmptyChain[E]
   ): F[Unit]
 }

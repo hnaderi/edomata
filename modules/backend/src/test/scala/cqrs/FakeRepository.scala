@@ -17,19 +17,25 @@
 package edomata.backend
 package cqrs
 
-import cats.data.Chain
+import cats.data.*
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import cats.implicits.*
-import edomata.backend.cqrs.FakeRepository.Saved
+import edomata.backend.cqrs.FakeRepository.*
 import edomata.core.*
 import edomata.syntax.all.*
 import munit.CatsEffectAssertions.*
 
 final class FakeRepository[State, Event](
     state: AggregateState[State],
-    _saved: Ref[IO, List[Saved[State, Event]]]
+    _saved: Ref[IO, List[Interaction[State, Event]]]
 ) extends Repository[IO, State, Event] {
+
+  override def notify(
+      ctx: CommandMessage[?],
+      notifications: NonEmptyChain[Event]
+  ): IO[Unit] =
+    _saved.update(_.prepended(Interaction.Notified(ctx, notifications)))
 
   override def get(id: StreamId): IO[AggregateS[State]] = state match {
     case a @ AggregateS(_, _) => IO(a)
@@ -47,7 +53,7 @@ final class FakeRepository[State, Event](
       events: Chain[Event]
   ): IO[Unit] = _saved.update(
     _.prepended(
-      Saved(
+      Interaction.Saved(
         ctx,
         version,
         newState,
@@ -56,8 +62,8 @@ final class FakeRepository[State, Event](
     )
   )
 
-  def saved: IO[List[Saved[State, Event]]] = _saved.get
-  def assert(item: Saved[State, Event]): IO[Unit] =
+  def saved: IO[List[Interaction[State, Event]]] = _saved.get
+  def assert(item: Interaction[State, Event]): IO[Unit] =
     saved.assertEquals(List(item))
 }
 
@@ -65,14 +71,19 @@ object FakeRepository {
   def apply[S, E](
       state: AggregateState[S]
   ): IO[FakeRepository[S, E]] =
-    IO.ref(List.empty[Saved[S, E]])
+    IO.ref(List.empty[Interaction[S, E]])
       .map(new FakeRepository(state, _))
 
-  final case class Saved[State, Event](
-      ctx: CommandMessage[?],
-      version: SeqNr,
-      newState: State,
-      events: Chain[Event]
-  )
-
+  enum Interaction[S, E] {
+    case Saved(
+        ctx: CommandMessage[?],
+        version: SeqNr,
+        newState: S,
+        events: Chain[E]
+    )
+    case Notified(
+        ctx: CommandMessage[?],
+        events: NonEmptyChain[E]
+    )
+  }
 }

@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package cqrs
 
 import cats.effect.IO
 import cats.effect.testkit.TestControl
@@ -48,24 +49,24 @@ class NotificationsSuite extends CatsEffectSuite {
     )
   }
 
-  test("Must notify journal listeners") {
+  test("Must notify state listeners") {
     TestControl.executeEmbed(
       for {
         ns <- Notifications[IO]
-        _ <- ns.notifyJournal
-        _ <- assertNotified(ns.journal)
+        _ <- ns.notifyState
+        _ <- assertNotified(ns.state)
       } yield ()
     )
   }
 
-  test("Must notify journal listeners once") {
+  test("Must notify state listeners once") {
     TestControl.executeEmbed(
       for {
         ns <- Notifications[IO]
-        _ <- ns.notifyJournal
-        _ <- ns.notifyJournal
-        _ <- ns.notifyJournal
-        _ <- assertNotified(ns.journal)
+        _ <- ns.notifyState
+        _ <- ns.notifyState
+        _ <- ns.notifyState
+        _ <- assertNotified(ns.state)
       } yield ()
     )
   }

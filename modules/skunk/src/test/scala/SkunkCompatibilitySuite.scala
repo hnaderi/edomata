@@ -57,6 +57,12 @@ class SkunkPersistenceKeywordNamespaceSuite
       "skunk"
     )
 
+class SkunkCQRSSuite
+    extends CqrsSuite(
+      backendCqrs("cqrs_test", jsonCodec),
+      "skunk"
+    )
+
 object SkunkCompatibilitySuite {
   val jsonCodec: BackendCodec.Json[Int] =
     BackendCodec.Json(_.toString, _.toIntOption.toRight("Not a number"))
@@ -88,6 +94,28 @@ object SkunkCompatibilitySuite {
           .use(SkunkDriver(name, pool))
           // Zero for no buffering in tests
           .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+          .build
+      )
+
+  inline def backendCqrs(
+      inline name: String,
+      codec: BackendCodec[Int]
+  ): Resource[IO, cqrs.Backend[IO, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestCQRSModel.given_StateModelTC_State
+    Session
+      .pooled[IO](
+        "localhost",
+        5432,
+        "postgres",
+        "postgres",
+        Some("postgres"),
+        4
+      )
+      .flatMap(pool =>
+        Backend
+          .builder(TestCQRSDomain)
+          .use(SkunkDriver2(name, pool))
           .build
       )
 }

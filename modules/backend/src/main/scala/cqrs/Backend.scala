@@ -33,7 +33,6 @@ trait Backend[F[_], S, R, N] {
 final class BackendBuilder[F[_]: Async, Codec[_], C, S, R, N] private[cqrs] (
     driver: Resource[F, StorageDriver[F, Codec]],
     domain: CQRSDomain[C, S, R, N],
-    snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]],
     commandCache: Option[Resource[F, CommandStore[F]]],
     val maxRetry: Int = 5,
     val retryInitialDelay: FiniteDuration = 2.seconds
@@ -41,25 +40,23 @@ final class BackendBuilder[F[_]: Async, Codec[_], C, S, R, N] private[cqrs] (
   private def copy(
       driver: Resource[F, StorageDriver[F, Codec]] = driver,
       domain: CQRSDomain[C, S, R, N] = domain,
-      snapshot: StorageDriver[F, Codec] => Resource[F, SnapshotStore[F, S]] =
-        snapshot,
       commandCache: Option[Resource[F, CommandStore[F]]] = commandCache,
       maxRetry: Int = maxRetry,
       retryInitialDelay: FiniteDuration = retryInitialDelay
   ) = new BackendBuilder(
     driver = driver,
     domain = domain,
-    snapshot = snapshot,
     maxRetry = maxRetry,
     commandCache = commandCache,
     retryInitialDelay = retryInitialDelay
   )
 
-  def disableCache: BackendBuilder[F, Codec, C, S, R, N] = ???
+  def disableCache: BackendBuilder[F, Codec, C, S, R, N] =
+    copy(commandCache = None)
 
   def withCommandCache(
       cache: Resource[F, CommandStore[F]]
-  ): BackendBuilder[F, Codec, C, S, R, N] = ???
+  ): BackendBuilder[F, Codec, C, S, R, N] = copy(commandCache = Some(cache))
 
   def withCommandCache(
       cache: CommandStore[F]
@@ -75,27 +72,34 @@ final class BackendBuilder[F[_]: Async, Codec[_], C, S, R, N] private[cqrs] (
 
   def withCommandCacheSize(
       maxCommandsToCache: Int
-  ): BackendBuilder[F, Codec, C, S, R, N] = ???
-
-  def inMemSnapshot(
-      maxInMem: Int = 1000
-  ): BackendBuilder[F, Codec, C, S, R, N] =
-    ???
-
-  def withSnapshot(
-      s: Resource[F, SnapshotStore[F, S]]
-  ): BackendBuilder[F, Codec, C, S, R, N] = ???
+  ): BackendBuilder[F, Codec, C, S, R, N] = copy(commandCache =
+    Some(Resource.eval(CommandStore.inMem(maxCommandsToCache)))
+  )
 
   def withRetryConfig(
       maxRetry: Int = maxRetry,
       retryInitialDelay: FiniteDuration = retryInitialDelay
   ): BackendBuilder[F, Codec, C, S, R, N] =
-    ???
+    copy(maxRetry = maxRetry, retryInitialDelay = retryInitialDelay)
 
   def build(using
       state: Codec[S],
       notifs: Codec[N]
-  ): Resource[F, Backend[F, S, R, N]] = ???
+  ): Resource[F, Backend[F, S, R, N]] = for {
+    d <- driver
+    storage <- d.build[S, N, R]
+  } yield new Backend[F, S, R, N] {
+
+    override def compile: CommandHandler[F, S, N] =
+      CommandHandler.withRetry(storage.repository, maxRetry, retryInitialDelay)
+
+    override def outbox: OutboxReader[F, N] = storage.outbox
+
+    override def repository: RepositoryReader[F, S] = storage.repository
+
+    override def updates: NotificationsConsumer[F] = storage.updates
+
+  }
 }
 
 final class PartialBackendBuilder[C, S, R, N] private[backend] (
@@ -117,7 +121,6 @@ final class PartialBackendBuilder[C, S, R, N] private[backend] (
     new BackendBuilder(
       driver,
       domain,
-      snapshot = _ => Resource.eval(SnapshotStore.inMem(1000)),
       commandCache = Some(Resource.eval(CommandStore.inMem(1000)))
     )
 }
