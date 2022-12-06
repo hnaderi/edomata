@@ -101,6 +101,32 @@ final case class Stomaton[F[_], -Env, S, R, E, A](
     }
   )
 
+  /** transforms underlying response
+    */
+  def transform[R2 >: R, E2 >: E, B](
+      f: ResponseE[R, E, (S, A)] => ResponseE[R2, E2, (S, B)]
+  )(using Functor[F]): Stomaton[F, Env, S, R2, E2, B] =
+    Stomaton((env, s) => run(env, s).map(f))
+
+  /** Adds notification without considering decision state */
+  def publish(ns: E*)(using Functor[F]): Stomaton[F, Env, S, R, E, A] =
+    transform(_.publish(ns: _*))
+
+  /** If this edomaton is rejected, uses given function to decide what to
+    * publish
+    */
+  def publishOnRejectionWith(
+      f: NonEmptyChain[R] => Seq[E]
+  )(using Functor[F]): Stomaton[F, Env, S, R, E, A] = transform(
+    _.publishOnRejectionWith(f)
+  )
+
+  /** publishes these notifications if this edomaton is rejected */
+  def publishOnRejection(ns: E*)(using
+      Functor[F]
+  ): Stomaton[F, Env, S, R, E, A] =
+    transform(_.publishOnRejection(ns: _*))
+
   /** translates this program in another language mapped by a natural
     * transformation
     */

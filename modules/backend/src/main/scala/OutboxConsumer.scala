@@ -19,14 +19,13 @@ package edomata.backend
 import cats.Monad
 import cats.data.NonEmptyChain
 import cats.implicits.*
-import edomata.backend.Backend
 import edomata.backend.OutboxItem
 import fs2.Stream
 import fs2.Stream.*
 
 object OutboxConsumer {
   def apply[F[_], S, E, R, N](
-      backend: Backend[F, S, E, R, N]
+      backend: eventsourcing.Backend[F, S, E, R, N]
   )(
       run: edomata.backend.OutboxItem[N] => F[Unit]
   )(using F: Monad[F]): Stream[F, Nothing] =

@@ -211,4 +211,39 @@ CREATE TABLE IF NOT EXISTS $table (
 insert into $table (id, address, "time") values ($command);
 """.command
   }
+
+  final class State[S](
+      namespace: PGNamespace,
+      codec: BackendCodec[S]
+  ) {
+    private val table = sql""""#$namespace".states"""
+    private val state = codec.codec
+
+    val setup: Command[Void] = sql"""
+CREATE TABLE IF NOT EXISTS $table (
+  id text NOT NULL,
+  "version" int8 NOT NULL,
+  state #${codec.oid.name} NOT NULL,
+  CONSTRAINT states_pk PRIMARY KEY (id)
+);
+""".command
+
+    import cqrs.AggregateS
+
+    private def aggregateStateCodec: Codec[AggregateS[S]] =
+      (state *: int8).pimap
+
+    def put: Command[String ~ S ~ Long] =
+      sql"""
+insert into $table (id, state, "version") values ($text, $state, 0)
+on conflict (id) where "version" = $int8 do update
+set version = $table.version + 1,
+    state   = excluded.state
+         """.command
+
+    def get: Query[String, AggregateS[S]] =
+      sql"""select state , version from $table where id = $text""".query(
+        aggregateStateCodec
+      )
+  }
 }

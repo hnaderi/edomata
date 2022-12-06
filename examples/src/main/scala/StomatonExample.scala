@@ -21,6 +21,7 @@ import cats.data.*
 import cats.effect.IO
 import cats.implicits.*
 import edomata.backend.Backend
+import edomata.skunk.*
 import edomata.syntax.all.*
 import io.circe.Codec
 
@@ -64,6 +65,11 @@ object StomatonExample {
   given Codec[Int] = ???
   val driver: edomata.backend.cqrs.StorageDriver[IO, Codec] = ???
   val backend = Backend.builder(FooService).use(driver).build
+
+  given BackendCodec[Foo] = ???
+  given BackendCodec[Int] = ???
+  val backend2 =
+    Backend.builder(FooService).use(SkunkDriver2[IO]("example", ???)).build
 
   backend.use { b =>
     val srv = b.compile(FooService().liftTo[IO])

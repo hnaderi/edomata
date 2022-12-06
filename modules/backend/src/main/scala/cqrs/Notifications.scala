@@ -16,9 +16,33 @@
 
 package edomata.backend.cqrs
 
+import cats.effect.Concurrent
+import cats.effect.std.Queue
+import cats.implicits.*
 import fs2.Stream
 
 trait NotificationsConsumer[F[_]] {
   def outbox: Stream[F, Unit]
   def state: Stream[F, Unit]
+}
+
+trait NotificationsPublisher[F[_]] {
+  def notifyOutbox: F[Unit]
+  def notifyState: F[Unit]
+}
+
+trait Notifications[F[_]]
+    extends NotificationsConsumer[F],
+      NotificationsPublisher[F]
+
+object Notifications {
+  def apply[F[_]: Concurrent]: F[Notifications[F]] = for {
+    o <- Queue.circularBuffer[F, Unit](1)
+    s <- Queue.circularBuffer[F, Unit](1)
+  } yield new {
+    def outbox: Stream[F, Unit] = Stream.fromQueueUnterminated(o, 1)
+    def state: Stream[F, Unit] = Stream.fromQueueUnterminated(s, 1)
+    def notifyOutbox: F[Unit] = o.offer(())
+    def notifyState: F[Unit] = s.offer(())
+  }
 }

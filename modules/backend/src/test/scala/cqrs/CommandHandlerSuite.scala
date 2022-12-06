@@ -33,6 +33,7 @@ import scala.concurrent.duration.*
 
 import CommandHandlerSuite.*
 import SUT.given_StateModelTC_State
+import FakeRepository.Interaction
 
 class CommandHandlerSuite extends CatsEffectSuite {
 
@@ -50,7 +51,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Saves accepted results") {
     val app: APP = SUT.dsl.publish(1, 2, 3).set("123")
-    val ctx = cmd.buildContext("")
     val version = 100
 
     for {
@@ -58,7 +58,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.assert(
-        FakeRepository.Saved(
+        Interaction.Saved(
           cmd,
           version,
           "123",
@@ -70,7 +70,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Saves results even if its indecisive") {
     val app: APP = Stomaton.set("123")
-    val ctx = cmd.buildContext("")
     val version = 100
 
     for {
@@ -78,7 +77,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.assert(
-        FakeRepository.Saved(
+        Interaction.Saved(
           cmd,
           version,
           "123",
@@ -90,7 +89,6 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Does not save results when its rejected") {
     val app: APP = Stomaton.reject("a", "b", "c")
-    val ctx = cmd.buildContext("")
     val version = 100
 
     for {
@@ -98,6 +96,20 @@ class CommandHandlerSuite extends CatsEffectSuite {
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Left(NonEmptyChain("a", "b", "c")))
       _ <- r.saved.assertEquals(Nil)
+    } yield ()
+  }
+
+  test("Notifies rejection events") {
+    val app: APP = Stomaton.reject("a", "b", "c").publish(1, 2, 3)
+    val version = 100
+
+    for {
+      r <- repo(AggregateS("", version))
+      s = CommandHandler(r).apply(app)
+      _ <- s.apply(cmd).assertEquals(Left(NonEmptyChain("a", "b", "c")))
+      _ <- r.assert(
+        Interaction.Notified(cmd, NonEmptyChain(1, 2, 3))
+      )
     } yield ()
   }
 

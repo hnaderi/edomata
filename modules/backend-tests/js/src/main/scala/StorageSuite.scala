@@ -22,11 +22,11 @@ import edomata.backend.*
 import munit.CatsEffectSuite
 import munit.Location
 
-abstract class StorageSuite[S, E, R, N](
-    storage: Resource[IO, Backend[IO, S, E, R, N]],
+abstract class StorageSuite[Res](
+    storage: Resource[IO, Res],
     suiteName: String
 ) extends CatsEffectSuite {
-  def check(name: String)(f: Backend[IO, S, E, R, N] => IO[Unit])(using
+  def check(name: String)(f: Res => IO[Unit])(using
       Location
   ) = test(s"${suiteName}: ${name}")(storage.use(f))
 }

@@ -33,3 +33,7 @@ type StorageDriver[F[_], Codec[_]] = eventsourcing.StorageDriver[F, Codec]
 type AggregateState[S, E, R] = eventsourcing.AggregateState[S, E, R]
 val AggregateState = eventsourcing.AggregateState
 type CommandState[S, E, R] = eventsourcing.CommandState[S, E, R]
+
+type NotificationsConsumer[F[_]] = eventsourcing.NotificationsConsumer[F]
+type NotificationsPublisher[F[_]] = eventsourcing.NotificationsPublisher[F]
+type Notifications[F[_]] = eventsourcing.Notifications[F]
