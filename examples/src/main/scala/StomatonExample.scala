@@ -63,13 +63,22 @@ object StomatonExample {
 
   given Codec[Foo] = ???
   given Codec[Int] = ???
-  val driver: edomata.backend.cqrs.StorageDriver[IO, Codec] = ???
+  val driver: edomata.backend.cqrs.StorageDriver[IO, Codec, IO] = ???
   val backend = Backend.builder(FooService).use(driver).build
+
+  val handler: SkunkHandler[IO][Int] = SkunkHandler {
+    case i if i < 5 => _ => IO.println(i)
+    case other      => _ => IO.println(s"$other is higher than 5")
+  }
 
   given BackendCodec[Foo] = ???
   given BackendCodec[Int] = ???
   val backend2 =
-    Backend.builder(FooService).use(SkunkDriverCQRS[IO]("example", ???)).build
+    Backend
+      .builder(FooService)
+      .use(SkunkDriverCQRS[IO]("example", ???))
+      .withEventHandler(handler)
+      .build
 
   backend.use { b =>
     val srv = b.compile(FooService().liftTo[IO])

@@ -110,7 +110,7 @@ object SkunkCompatibilitySuite {
         Backend
           .builder(TestCQRSDomain)
           .use(SkunkDriverCQRS(name, pool))
-          .withRetryConfig(retryInitialDelay = 100.millis)
+          .withRetryConfig(retryInitialDelay = 200.millis)
           .build
       )
 }
