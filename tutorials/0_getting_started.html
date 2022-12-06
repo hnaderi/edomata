@@ -431,7 +431,7 @@
           <li>or you can use <code>.run</code>, which takes input and returns raw <code>Response</code> model, which you can interpret however you like.</li>
         </ul>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)
-</span><span class="comment">// res9: Response[Rejection, Event, Notification, Unit] = Response(
+</span><span class="comment">// res9: ResponseT[[_$1 &gt;: Nothing &lt;: Any] =&gt; Decision[Rejection, Event, _$1], Rejection, Notification, Unit] = ResponseT(
 //   result = Accepted(events = Singleton(a = Opened), result = ()),
 //   notifications = Singleton(a = AccountOpened(accountId = &quot;our account id&quot;))
 // )</span></code></pre>
