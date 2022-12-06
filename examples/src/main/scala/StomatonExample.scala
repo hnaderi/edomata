@@ -69,7 +69,7 @@ object StomatonExample {
   given BackendCodec[Foo] = ???
   given BackendCodec[Int] = ???
   val backend2 =
-    Backend.builder(FooService).use(SkunkDriver2[IO]("example", ???)).build
+    Backend.builder(FooService).use(SkunkDriverCQRS[IO]("example", ???)).build
 
   backend.use { b =>
     val srv = b.compile(FooService().liftTo[IO])

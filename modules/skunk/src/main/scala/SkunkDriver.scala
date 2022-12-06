@@ -24,7 +24,7 @@ import edomata.backend.*
 import edomata.backend.eventsourcing.*
 import edomata.core.*
 
-final class SkunkDriver[F[_]: Async](
+final class SkunkDriver[F[_]: Async] private (
     namespace: PGNamespace,
     pool: Resource[F, Session[F]]
 ) extends StorageDriver[F, BackendCodec] {

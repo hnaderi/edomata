@@ -34,6 +34,8 @@ import scala.concurrent.duration.*
 import CommandHandlerSuite.*
 import SUT.given_StateModelTC_State
 import FakeRepository.Interaction
+import cats.effect.std.Random.apply
+import cats.effect.std.Random
 
 class CommandHandlerSuite extends CatsEffectSuite {
 
@@ -136,6 +138,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
           .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
       )
       r <- repo(AggregateS("", 0))
+      given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
       _ <- r.saved.assertEquals(Nil)
@@ -151,6 +154,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
           .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
       )
       r <- repo(AggregateS("", 0))
+      given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl
         .executeEmbed(s.apply(cmd))
