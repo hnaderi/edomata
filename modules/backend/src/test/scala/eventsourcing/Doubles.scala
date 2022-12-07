@@ -26,16 +26,6 @@ import edomata.backend.eventsourcing.AggregateState.Valid
 import edomata.core.*
 import fs2.Chunk
 
-object BlackHoleCommandStore extends CommandStore[IO] {
-  def append(cmd: CommandMessage[?]): IO[Unit] = IO.unit
-  def contains(id: String): IO[Boolean] = IO(false)
-}
-
-object YesManCommandStore extends CommandStore[IO] {
-  def append(cmd: CommandMessage[?]): IO[Unit] = IO.unit
-  def contains(id: String): IO[Boolean] = IO(true)
-}
-
 final class BlackHoleSnapshotStore[S] extends SnapshotStore[IO, S] {
   def put(id: StreamId, state: AggregateState.Valid[S]): IO[Unit] =
     IO.unit
@@ -85,19 +75,6 @@ final class FakeSnapShotStore[S](
 object FakeSnapShotStore {
   def apply[S](): IO[FakeSnapShotStore[S]] =
     IO.ref(Map.empty[StreamId, Valid[S]]).map(new FakeSnapShotStore(_))
-}
-
-final class FakeCommandStore(
-    states: Ref[IO, Set[String]]
-) extends CommandStore[IO] {
-  def append(cmd: CommandMessage[?]): IO[Unit] = states.update(_ + cmd.id)
-  def contains(id: String): IO[Boolean] = states.get.map(_.contains(id))
-  def all: IO[Set[String]] = states.get
-}
-
-object FakeCommandStore {
-  def apply(): IO[FakeCommandStore] =
-    IO.ref(Set.empty[String]).map(new FakeCommandStore(_))
 }
 
 class FailingRepository[S, E, R, N] extends Repository[IO, S, E, R, N] {

@@ -49,7 +49,8 @@ final class BackendBuilder[
     commandCache: Option[Resource[F, CommandStore[F]]],
     notifHandler: Option[Handler[N]] = None,
     val maxRetry: Int = 5,
-    val retryInitialDelay: FiniteDuration = 2.seconds
+    val retryInitialDelay: FiniteDuration = 2.seconds,
+    val stateCacheSize: Int = 1000
 )(using StateModelTC[S]) {
   private def copy(
       driver: Resource[F, StorageDriver[F, Codec, Handler]] = driver,
@@ -57,14 +58,16 @@ final class BackendBuilder[
       commandCache: Option[Resource[F, CommandStore[F]]] = commandCache,
       notifHandler: Option[Handler[N]] = notifHandler,
       maxRetry: Int = maxRetry,
-      retryInitialDelay: FiniteDuration = retryInitialDelay
+      retryInitialDelay: FiniteDuration = retryInitialDelay,
+      stateCacheSize: Int = stateCacheSize
   ) = new BackendBuilder(
     driver = driver,
     domain = domain,
     maxRetry = maxRetry,
     commandCache = commandCache,
     notifHandler = notifHandler,
-    retryInitialDelay = retryInitialDelay
+    retryInitialDelay = retryInitialDelay,
+    stateCacheSize = stateCacheSize
   )
 
   def disableCache: BackendBuilder[F, Codec, Handler, C, S, R, N] =
@@ -93,6 +96,10 @@ final class BackendBuilder[
     Some(Resource.eval(CommandStore.inMem(maxCommandsToCache)))
   )
 
+  def withStateCacheSize(
+      size: Int
+  ): BackendBuilder[F, Codec, Handler, C, S, R, N] = copy(stateCacheSize = size)
+
   def withRetryConfig(
       maxRetry: Int = maxRetry,
       retryInitialDelay: FiniteDuration = retryInitialDelay
@@ -108,15 +115,18 @@ final class BackendBuilder[
   ): Resource[F, Backend[F, S, R, N]] = for {
     d <- driver
     storage <- notifHandler.fold(d.build[S, N, R])(d.build[S, N, R](_))
+    repo <- commandCache.fold(Resource.pure(storage.repository))(
+      _.evalMap(CachedRepository(storage.repository, _, size = stateCacheSize))
+    )
     given Random[F] <- Resource.eval(Random.scalaUtilRandom[F])
   } yield new Backend[F, S, R, N] {
 
     override def compile: CommandHandler[F, S, N] =
-      CommandHandler.withRetry(storage.repository, maxRetry, retryInitialDelay)
+      CommandHandler.withRetry(repo, maxRetry, retryInitialDelay)
 
     override def outbox: OutboxReader[F, N] = storage.outbox
 
-    override def repository: RepositoryReader[F, S] = storage.repository
+    override def repository: RepositoryReader[F, S] = repo
 
     override def updates: NotificationsConsumer[F] = storage.updates
 
