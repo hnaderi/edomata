@@ -26,6 +26,7 @@ import edomata.skunk.*
 import edomata.syntax.all.*
 import natchez.Trace.Implicits.noop
 import scodec.bits.ByteVector
+
 import scala.concurrent.duration.*
 
 import SkunkCompatibilitySuite.*

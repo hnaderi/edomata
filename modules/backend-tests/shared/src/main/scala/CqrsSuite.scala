@@ -48,7 +48,7 @@ abstract class CqrsSuite[S, R, N](
         .assertEquals(Right(()))
       _ <- b.repository
         .get(aggId)
-        .assertEquals(AggregateS(version = 1, state = 2))
+        .assertEquals(AggregateState(version = 1, state = 2))
 
       _ <- assertNotifiedState(b)
     } yield ()
@@ -68,7 +68,7 @@ abstract class CqrsSuite[S, R, N](
 
       _ <- b.repository
         .get(aggId)
-        .assertEquals(AggregateS(version = 2, state = 5))
+        .assertEquals(AggregateState(version = 2, state = 5))
 
       _ <- assertNotifiedState(b)
     } yield ()
@@ -83,7 +83,7 @@ abstract class CqrsSuite[S, R, N](
         .assertEquals(Right(()))
       _ <- b.repository
         .get(aggId)
-        .assertEquals(AggregateS(version = 1, state = 0))
+        .assertEquals(AggregateState(version = 1, state = 0))
       _ <- b.outbox.read
         .filter(_.streamId == aggId)
         .map(_.data)
@@ -117,7 +117,7 @@ abstract class CqrsSuite[S, R, N](
       _ <- s.repository
         .get(cmd.address)
         .assertEquals(
-          AggregateS(
+          AggregateState(
             state = 10,
             version = 1
           )
@@ -149,7 +149,7 @@ abstract class CqrsSuite[S, R, N](
       _ <- s.repository
         .get(aggId)
         .assertEquals(
-          AggregateS(
+          AggregateState(
             state = 50,
             version = 5
           )

@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS $table (
 );
 """.update
 
-    import cqrs.AggregateS
+    import cqrs.AggregateState
 
     def put(id: String, state: S, version: Long): Update0 =
       sql"""
@@ -225,7 +225,7 @@ set version = $table.version + 1,
 where $table.version = $version
          """.update
 
-    def get(id: String): Query0[AggregateS[S]] =
+    def get(id: String): Query0[AggregateState[S]] =
       sql"""select state , version from $table where id = $id""".query
   }
 }

@@ -24,7 +24,7 @@ import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.implicits.*
 import edomata.backend.BackendError
-import edomata.backend.CommandState
+import edomata.backend.CommandState.Redundant
 import edomata.backend.SeqNr
 import edomata.backend.StreamId
 import edomata.backend.cqrs.*
@@ -47,20 +47,20 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
     handler: SkunkHandler[F][N]
 )(using tc: StateModelTC[S], F: Concurrent[F])
     extends Repository[F, S, N] {
-  private val redundant: F[AggregateState[S]] =
-    CommandState.Redundant.pure[F]
+  private val redundant: F[CommandState[S]] =
+    Redundant.pure[F]
   private val trx = pool.flatTap(_.transaction)
 
-  private def _get(s: Session[F], id: StreamId): F[AggregateS[S]] =
+  private def _get(s: Session[F], id: StreamId): F[AggregateState[S]] =
     s.prepare(state.get).use(_.option(id)).map {
-      case None        => AggregateS(tc.initial, 0)
+      case None        => AggregateState(tc.initial, 0)
       case Some(value) => value
     }
 
-  override def get(id: StreamId): F[AggregateS[S]] =
+  override def get(id: StreamId): F[AggregateState[S]] =
     pool.use(_get(_, id))
 
-  override def load(cmd: CommandMessage[?]): F[AggregateState[S]] =
+  override def load(cmd: CommandMessage[?]): F[CommandState[S]] =
     pool.use(s =>
       s.prepare(cmds.count)
         .use(_.unique(cmd.id))

@@ -21,7 +21,7 @@ import cats.data.*
 import cats.effect.kernel.Async
 import cats.implicits.*
 import edomata.backend.Cache
-import edomata.backend.CommandState
+import edomata.backend.CommandState.Redundant
 import edomata.backend.CommandStore
 import edomata.backend.SeqNr
 import edomata.backend.StreamId
@@ -29,16 +29,16 @@ import edomata.core.*
 
 private final class CachedRepository[F[_]: Monad, S, E] private (
     commands: CommandStore[F],
-    cache: Cache[F, StreamId, AggregateS[S]],
+    cache: Cache[F, StreamId, AggregateState[S]],
     underlying: Repository[F, S, E]
 ) extends Repository[F, S, E] {
 
-  override def get(id: StreamId): F[AggregateS[S]] = underlying.get(id)
+  override def get(id: StreamId): F[AggregateState[S]] = underlying.get(id)
 
-  override def load(cmd: CommandMessage[?]): F[AggregateState[S]] = commands
+  override def load(cmd: CommandMessage[?]): F[CommandState[S]] = commands
     .contains(cmd.id)
     .ifM(
-      CommandState.Redundant.pure,
+      Redundant.pure,
       cache.get(cmd.address).flatMap {
         case None        => underlying.load(cmd)
         case Some(value) => value.pure
@@ -51,7 +51,7 @@ private final class CachedRepository[F[_]: Monad, S, E] private (
       newState: S,
       events: Chain[E]
   ): F[Unit] = underlying.save(ctx, version, newState, events) >>
-    cache.replace(ctx.address, AggregateS(newState, version + 1))(
+    cache.replace(ctx.address, AggregateState(newState, version + 1))(
       _.version <= version
     ) >>
     commands.append(ctx)
@@ -69,14 +69,14 @@ private object CachedRepository {
       size: Int = 1000,
       maxCommands: Int = 1000
   ): F[CachedRepository[F, S, E]] = for {
-    cache <- Cache.lru[F, StreamId, AggregateS[S]](size)
+    cache <- Cache.lru[F, StreamId, AggregateState[S]](size)
     cmds <- CommandStore.inMem(maxCommands)
   } yield from(underlying, cmds, cache)
 
   def from[F[_]: Async, S, E](
       underlying: Repository[F, S, E],
       commands: CommandStore[F],
-      cache: Cache[F, StreamId, AggregateS[S]]
+      cache: Cache[F, StreamId, AggregateState[S]]
   ): CachedRepository[F, S, E] =
     new CachedRepository(commands, cache, underlying)
 
@@ -86,6 +86,6 @@ private object CachedRepository {
       size: Int = 1000
   ): F[CachedRepository[F, S, E]] =
     Cache
-      .lru[F, StreamId, AggregateS[S]](size)
+      .lru[F, StreamId, AggregateState[S]](size)
       .map(new CachedRepository(commands, _, underlying))
 }

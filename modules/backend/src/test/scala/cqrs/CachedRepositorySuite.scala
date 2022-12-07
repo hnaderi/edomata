@@ -31,22 +31,22 @@ import FakeRepository.Interaction
 class CachedRepositorySuite extends CatsEffectSuite {
   test("save must use underlying and also update caches") {
     for {
-      und <- FakeRepository(AggregateS("", 1))
-      cache <- Cache.lru[IO, StreamId, AggregateS[String]](1)
+      und <- FakeRepository(AggregateState("", 1))
+      cache <- Cache.lru[IO, StreamId, AggregateState[String]](1)
       cmds <- FakeCommandStore()
       repo = CachedRepository.from(und, cmds, cache)
 
       _ <- repo.save(someCmd, 2, "state", Chain(4, 5, 6))
 
       _ <- und.assert(Interaction.Saved(someCmd, 2, "state", Chain(4, 5, 6)))
-      _ <- cache.get("sut").assertEquals(AggregateS("state", 3).some)
+      _ <- cache.get("sut").assertEquals(AggregateState("state", 3).some)
       _ <- cmds.all.assertEquals(Set("cmdId"))
     } yield ()
   }
 
   test("save must not update when underlying fails") {
     for {
-      cache <- Cache.lru[IO, StreamId, AggregateS[String]](1)
+      cache <- Cache.lru[IO, StreamId, AggregateState[String]](1)
       cmds <- FakeCommandStore()
       repo = CachedRepository.from(FailingRepository(), cmds, cache)
 
@@ -59,34 +59,34 @@ class CachedRepositorySuite extends CatsEffectSuite {
 
   test("cache updating must be convergent") {
     for {
-      und <- FakeRepository(AggregateS("", 1))
-      cache <- Cache.lru[IO, StreamId, AggregateS[String]](1)
+      und <- FakeRepository(AggregateState("", 1))
+      cache <- Cache.lru[IO, StreamId, AggregateState[String]](1)
       cmds <- FakeCommandStore()
       repo = CachedRepository.from(und, cmds, cache)
 
       _ <- repo.save(someCmd.copy(id = "new"), 3, "state new", Chain.nil)
       _ <- repo.save(someCmd.copy(id = "old"), 2, "state old", Chain(4, 5, 6))
 
-      _ <- cache.get("sut").assertEquals(AggregateS("state new", 4).some)
+      _ <- cache.get("sut").assertEquals(AggregateState("state new", 4).some)
       _ <- cmds.all.assertEquals(Set("new", "old"))
     } yield ()
   }
 
   test("get must use underlying") {
     for {
-      und <- FakeRepository(AggregateS("", 1))
+      und <- FakeRepository(AggregateState("", 1))
       repo <- CachedRepository.build(und)
 
       // Even if it is in cache!
       _ <- repo.save(someCmd, 2, "new state", Chain.nil)
 
-      _ <- repo.get("sut").assertEquals(AggregateS("", 1))
+      _ <- repo.get("sut").assertEquals(AggregateState("", 1))
     } yield ()
   }
 
   test("notify must use underlying") {
     for {
-      und <- FakeRepository(AggregateS("", 1))
+      und <- FakeRepository(AggregateState("", 1))
       repo <- CachedRepository.build(und)
       _ <- repo.notify(someCmd, NonEmptyChain(1, 2, 3))
 
@@ -96,23 +96,23 @@ class CachedRepositorySuite extends CatsEffectSuite {
 
   test("load must ignore underlying if cache has the required data") {
     for {
-      und <- FakeRepository(AggregateS("", 1))
+      und <- FakeRepository(AggregateState("", 1))
       repo <- CachedRepository.build(und)
       _ <- repo.save(someCmd, 2, "new state", Chain.nil)
 
       _ <- repo.load(someCmd).assertEquals(CommandState.Redundant)
       _ <- repo
         .load(someCmd.copy(id = "new cmdId"))
-        .assertEquals(AggregateS("new state", 3))
+        .assertEquals(AggregateState("new state", 3))
     } yield ()
   }
 
   test("load must use underlying if cache does not have the required data") {
     for {
-      und <- FakeRepository(AggregateS("underlying", 4))
+      und <- FakeRepository(AggregateState("underlying", 4))
       repo <- CachedRepository.build(und)
 
-      _ <- repo.load(someCmd).assertEquals(AggregateS("underlying", 4))
+      _ <- repo.load(someCmd).assertEquals(AggregateState("underlying", 4))
     } yield ()
   }
 }
@@ -125,9 +125,9 @@ object CachedRepositorySuite {
 
   final class FailingRepository extends Repository[IO, String, Int] {
 
-    override def get(id: StreamId): IO[AggregateS[String]] = fail
+    override def get(id: StreamId): IO[AggregateState[String]] = fail
 
-    override def load(cmd: CommandMessage[?]): IO[AggregateState[String]] = fail
+    override def load(cmd: CommandMessage[?]): IO[CommandState[String]] = fail
 
     override def save(
         ctx: CommandMessage[?],

@@ -29,6 +29,7 @@ import java.util.UUID
 
 type CommandState[S, E, R] = AggregateState[S, E, R] |
   CommandState.Redundant.type
+
 enum AggregateState[+S, +E, +R](val isValid: Boolean) {
   case Valid[S](state: S, version: SeqNr)
       extends AggregateState[S, Nothing, Nothing](true)

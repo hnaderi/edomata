@@ -43,7 +43,7 @@ object CommandHandler {
     val voidF: F[EitherNec[R, Unit]] = void.pure[F]
     cmd =>
       repository.load(cmd).flatMap {
-        case AggregateS(state, version) =>
+        case AggregateState(state, version) =>
           app.run(cmd, state).flatMap { out =>
             out.result match {
               case Right((newState, _)) =>
@@ -101,5 +101,5 @@ object CommandHandler {
     }
 }
 
-final case class AggregateS[S](state: S, version: SeqNr)
-type AggregateState[S] = AggregateS[S] | CommandState.Redundant.type
+final case class AggregateState[S](state: S, version: SeqNr)
+type CommandState[S] = AggregateState[S] | CommandState.Redundant.type

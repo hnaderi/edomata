@@ -18,5 +18,5 @@ package edomata.backend
 package cqrs
 
 trait RepositoryReader[F[_], S] {
-  def get(id: StreamId): F[AggregateS[S]]
+  def get(id: StreamId): F[AggregateState[S]]
 }

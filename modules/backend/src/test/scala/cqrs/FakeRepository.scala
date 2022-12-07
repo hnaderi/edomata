@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package cqrs
+package edomata.backend.cqrs
 
 import cats.data.*
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import cats.implicits.*
 import edomata.backend.cqrs.FakeRepository.*
+import edomata.backend.{SeqNr, StreamId}
 import edomata.core.*
 import edomata.syntax.all.*
 import munit.CatsEffectAssertions.*
 
 final class FakeRepository[State, Event](
-    state: AggregateState[State],
+    state: CommandState[State],
     _saved: Ref[IO, List[Interaction[State, Event]]]
 ) extends Repository[IO, State, Event] {
 
@@ -37,14 +37,14 @@ final class FakeRepository[State, Event](
   ): IO[Unit] =
     _saved.update(_.prepended(Interaction.Notified(ctx, notifications)))
 
-  override def get(id: StreamId): IO[AggregateS[State]] = state match {
-    case a @ AggregateS(_, _) => IO(a)
+  override def get(id: StreamId): IO[AggregateState[State]] = state match {
+    case a @ AggregateState(_, _) => IO(a)
     case _ => IO.raiseError(new Exception("don't know any state!"))
   }
 
   override def load(
       cmd: CommandMessage[?]
-  ): IO[AggregateState[State]] = IO(state)
+  ): IO[CommandState[State]] = IO(state)
 
   override def save(
       ctx: CommandMessage[?],
@@ -69,7 +69,7 @@ final class FakeRepository[State, Event](
 
 object FakeRepository {
   def apply[S, E](
-      state: AggregateState[S]
+      state: CommandState[S]
   ): IO[FakeRepository[S, E]] =
     IO.ref(List.empty[Interaction[S, E]])
       .map(new FakeRepository(state, _))

@@ -21,7 +21,7 @@ import cats.data.*
 import edomata.core.*
 
 trait Repository[F[_], S, E] extends RepositoryReader[F, S] {
-  def load(cmd: CommandMessage[?]): F[AggregateState[S]]
+  def load(cmd: CommandMessage[?]): F[CommandState[S]]
 
   def save(
       ctx: CommandMessage[?],

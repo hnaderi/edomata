@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package edomata.backend
-package cqrs
+package edomata.backend.cqrs
 
 import cats.data.Chain
 import cats.data.NonEmptyChain
@@ -36,6 +35,9 @@ import SUT.given_StateModelTC_State
 import FakeRepository.Interaction
 import cats.effect.std.Random.apply
 import cats.effect.std.Random
+import edomata.backend.BackendError
+import edomata.backend.CommandState.Redundant
+import edomata.backend.EventMetadata
 
 class CommandHandlerSuite extends CatsEffectSuite {
 
@@ -43,7 +45,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     for {
       flag <- IO.ref(false)
       app: APP = Stomaton.eval(flag.set(true))
-      r <- repo(CommandState.Redundant)
+      r <- repo(Redundant)
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.saved.assertEquals(Nil)
@@ -56,7 +58,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     val version = 100
 
     for {
-      r <- repo(AggregateS("", version))
+      r <- repo(AggregateState("", version))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.assert(
@@ -75,7 +77,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     val version = 100
 
     for {
-      r <- repo(AggregateS("", version))
+      r <- repo(AggregateState("", version))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Right(()))
       _ <- r.assert(
@@ -94,7 +96,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     val version = 100
 
     for {
-      r <- repo(AggregateS("", version))
+      r <- repo(AggregateState("", version))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Left(NonEmptyChain("a", "b", "c")))
       _ <- r.saved.assertEquals(Nil)
@@ -106,7 +108,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     val version = 100
 
     for {
-      r <- repo(AggregateS("", version))
+      r <- repo(AggregateState("", version))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).assertEquals(Left(NonEmptyChain("a", "b", "c")))
       _ <- r.assert(
@@ -121,7 +123,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
     val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
 
     for {
-      r <- repo(AggregateS("", 0))
+      r <- repo(AggregateState("", 0))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
       _ <- r.saved.assertEquals(Nil)
@@ -137,7 +139,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
           .map(_ == 0)
           .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
       )
-      r <- repo(AggregateS("", 0))
+      r <- repo(AggregateState("", 0))
       given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
@@ -153,7 +155,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
           .map(_ == 0)
           .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
       )
-      r <- repo(AggregateS("", 0))
+      r <- repo(AggregateState("", 0))
       given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl
@@ -175,7 +177,7 @@ object CommandHandlerSuite {
     Stomaton[IO, CommandMessage[Command], State, Rejection, Event, Unit]
 
   def repo(
-      state: AggregateState[State]
+      state: CommandState[State]
   ): IO[FakeRepository[State, Event]] =
     FakeRepository(state)
 

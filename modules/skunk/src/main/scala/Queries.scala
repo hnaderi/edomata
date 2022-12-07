@@ -229,9 +229,9 @@ CREATE TABLE IF NOT EXISTS $table (
 );
 """.command
 
-    import cqrs.AggregateS
+    import cqrs.AggregateState
 
-    private def aggregateStateCodec: Codec[AggregateS[S]] =
+    private def aggregateStateCodec: Codec[AggregateState[S]] =
       (state *: int8).pimap
 
     def put: Command[String ~ S ~ Long] =
@@ -243,7 +243,7 @@ set version = $table.version + 1,
 where $table.version = $int8
          """.command
 
-    def get: Query[String, AggregateS[S]] =
+    def get: Query[String, AggregateState[S]] =
       sql"""select state , version from $table where id = $text""".query(
         aggregateStateCodec
       )

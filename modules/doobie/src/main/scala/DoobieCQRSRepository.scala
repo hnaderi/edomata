@@ -26,7 +26,7 @@ import doobie.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
 import edomata.backend.BackendError
-import edomata.backend.CommandState
+import edomata.backend.CommandState.Redundant
 import edomata.backend.PGNamespace
 import edomata.backend.SeqNr
 import edomata.backend.StreamId
@@ -47,18 +47,18 @@ private final class DoobieCQRSRepository[F[_]: Concurrent: Clock, S, N](
     extends Repository[F, S, N] {
 
   private def _get(id: StreamId) = states.get(id).option.map {
-    case None        => AggregateS(tc.initial, 0)
+    case None        => AggregateState(tc.initial, 0)
     case Some(value) => value
   }
 
-  override def get(id: StreamId): F[AggregateS[S]] = _get(id).transact(trx)
+  override def get(id: StreamId): F[AggregateState[S]] = _get(id).transact(trx)
 
-  private val redundant: ConnectionIO[AggregateState[S]] =
-    CommandState.Redundant.pure[ConnectionIO]
+  private val redundant: ConnectionIO[CommandState[S]] =
+    Redundant.pure[ConnectionIO]
   private val currentTime: F[OffsetDateTime] =
     Clock[F].realTimeInstant.map(i => i.atOffset(ZoneOffset.UTC))
 
-  override def load(cmd: CommandMessage[?]): F[AggregateState[S]] = cmds
+  override def load(cmd: CommandMessage[?]): F[CommandState[S]] = cmds
     .count(cmd.id)
     .unique
     .flatMap(c =>
