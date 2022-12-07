@@ -60,7 +60,7 @@ class SkunkPersistenceKeywordNamespaceSuite
 
 class SkunkCQRSSuite
     extends CqrsSuite(
-      backendCqrs("cqrs_test", jsonCodec),
+      backendCqrs("skunk_cqrs", jsonCodec),
       "skunk"
     )
 

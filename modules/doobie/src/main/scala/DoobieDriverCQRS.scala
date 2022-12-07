@@ -22,62 +22,60 @@ import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
 import edomata.backend.PGNamespace
-import edomata.backend.eventsourcing.*
+import edomata.backend.cqrs.*
 import edomata.core.*
 
-final class DoobieDriver[F[_]: Async] private (
+final class DoobieDriverCQRS[F[_]: Async] private (
     namespace: PGNamespace,
     pool: Transactor[F]
-) extends StorageDriver[F, BackendCodec] {
+) extends StorageDriver[F, BackendCodec, DoobieHandler] {
 
-  def build[S, E, R, N](
-      snapshot: SnapshotStore[F, S]
-  )(using
-      model: ModelTC[S, E, R],
-      event: BackendCodec[E],
+  override def build[S, N, R](handler: DoobieHandler[N])(using
+      tc: StateModelTC[S],
+      state: BackendCodec[S],
       notifs: BackendCodec[N]
-  ): Resource[F, Storage[F, S, E, R, N]] = {
-    val jQ = Queries.Journal(namespace, event)
+  ): Resource[F, Storage[F, S, N, R]] = {
+    val sQ = Queries.State(namespace, state)
     val nQ = Queries.Outbox(namespace, notifs)
     val cQ = Queries.Commands(namespace)
 
     def setup =
-      (jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
-        .as((jQ, nQ, cQ))
+      (sQ.setup.run >> nQ.setup.run >> cQ.setup.run)
+        .as((sQ, nQ, cQ))
         .transact(pool)
 
-    Resource.eval(
+    Resource.eval {
       for {
         _ <- setup
         updates <- Notifications[F]
-        _outbox = DoobieOutboxReader(pool, nQ)
-        _journal = DoobieJournalReader(pool, jQ)
-        _repo = RepositoryReader(_journal, snapshot)
-        skRepo = DoobieRepository(pool, jQ, nQ, cQ, _repo, updates)
-      } yield Storage(skRepo, _repo, _journal, _outbox, updates)
-    )
+        outbox = DoobieOutboxReader(pool, nQ)
+        repo = DoobieCQRSRepository(pool, sQ, nQ, cQ, updates, handler)
+      } yield Storage(repo, outbox, updates)
+    }
   }
 
-  def snapshot[S](using
-      BackendCodec[S]
-  ): Resource[F, SnapshotPersistence[F, S]] =
-    Resource.eval(DoobieSnapshotPersistence(pool, namespace))
+  override def build[S, N, R](using
+      StateModelTC[S],
+      BackendCodec[S],
+      BackendCodec[N]
+  ): Resource[F, Storage[F, S, N, R]] = build[S, N, R](_ => doobie.FC.unit)
+
 }
 
-object DoobieDriver {
+object DoobieDriverCQRS {
   inline def apply[F[_]: Async](
       inline namespace: String,
       pool: Transactor[F]
-  ): F[DoobieDriver[F]] =
+  ): F[DoobieDriverCQRS[F]] =
     from(PGNamespace(namespace), pool)
 
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Transactor[F]
-  ): F[DoobieDriver[F]] =
+  ): F[DoobieDriverCQRS[F]] =
     Queries
       .setupSchema(namespace)
       .run
       .transact(pool)
-      .as(new DoobieDriver(namespace, pool))
+      .as(new DoobieDriverCQRS(namespace, pool))
 }

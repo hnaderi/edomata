@@ -197,4 +197,35 @@ CREATE TABLE IF NOT EXISTS $table (
 insert into $table (id, address, "time") values (${cmd.id}, ${cmd.address}, ${cmd.time})
 """.update
   }
+
+  final class State[S](
+      namespace: PGNamespace,
+      codec: BackendCodec[S]
+  ) {
+    private val table = sql"${escape(namespace)}.states"
+    private given Meta[S] = codec.codec
+
+    val setup: Update0 = sql"""
+CREATE TABLE IF NOT EXISTS $table (
+  id text NOT NULL,
+  "version" int8 NOT NULL,
+  state ${Fragment.const(codec.tpe)} NOT NULL,
+  CONSTRAINT states_pk PRIMARY KEY (id)
+);
+""".update
+
+    import cqrs.AggregateS
+
+    def put(id: String, state: S, version: Long): Update0 =
+      sql"""
+insert into $table (id, state, "version") values ($id, $state, 1)
+on conflict (id) do update
+set version = $table.version + 1,
+    state   = excluded.state
+where $table.version = $version
+         """.update
+
+    def get(id: String): Query0[AggregateS[S]] =
+      sql"""select state , version from $table where id = $id""".query
+  }
 }

@@ -54,6 +54,12 @@ class DoobiePersistenceKeywordNamespaceSuite
       "doobie"
     )
 
+class DoobieCQRSSuite
+    extends CqrsSuite(
+      backendCqrs("doobie_cqrs", jsonCodec),
+      "doobie"
+    )
+
 object DoobieCompatibilitySuite {
   val jsonCodec: BackendCodec.Json[Int] =
     BackendCodec.Json(_.toString, _.toIntOption.toRight("Not a number"))
@@ -63,6 +69,13 @@ object DoobieCompatibilitySuite {
     i => ByteVector.fromHex(i.toString).get.toArray,
     a => Either.catchNonFatal(ByteVector(a).toHex.toInt).leftMap(_.getMessage)
   )
+  private val trx = Transactor
+    .fromDriverManager[IO](
+      driver = "org.postgresql.Driver",
+      url = "jdbc:postgresql:postgres",
+      user = "postgres",
+      pass = "postgres"
+    )
 
   inline def backend(
       inline name: String,
@@ -70,18 +83,23 @@ object DoobieCompatibilitySuite {
   ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
     given BackendCodec[Int] = codec
     import TestDomain.given_ModelTC_State_Event_Rejection
-    val trx = Transactor
-      .fromDriverManager[IO](
-        driver = "org.postgresql.Driver",
-        url = "jdbc:postgresql:postgres",
-        user = "postgres",
-        pass = "postgres"
-      )
 
     Backend
       .builder(TestDomainModel)
       .use(DoobieDriver(name, trx))
       // Zero for no buffering in tests
       .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+      .build
+
+  inline def backendCqrs(
+      inline name: String,
+      codec: BackendCodec[Int]
+  ): Resource[IO, cqrs.Backend[IO, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestCQRSModel.given_StateModelTC_State
+
+    Backend
+      .builder(TestCQRSDomain)
+      .use(DoobieDriverCQRS(name, trx))
       .build
 }
