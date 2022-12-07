@@ -109,7 +109,7 @@ object SkunkCompatibilitySuite {
       .flatMap(pool =>
         Backend
           .builder(TestCQRSDomain)
-          .use(SkunkDriverCQRS(name, pool))
+          .use(SkunkCQRSDriver(name, pool))
           .withRetryConfig(retryInitialDelay = 200.millis)
           .build
       )

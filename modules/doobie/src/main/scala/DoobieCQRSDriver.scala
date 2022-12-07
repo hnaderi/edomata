@@ -25,7 +25,7 @@ import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
-final class DoobieDriverCQRS[F[_]: Async] private (
+final class DoobieCQRSDriver[F[_]: Async] private (
     namespace: PGNamespace,
     pool: Transactor[F]
 ) extends StorageDriver[F, BackendCodec, DoobieHandler] {
@@ -62,20 +62,20 @@ final class DoobieDriverCQRS[F[_]: Async] private (
 
 }
 
-object DoobieDriverCQRS {
+object DoobieCQRSDriver {
   inline def apply[F[_]: Async](
       inline namespace: String,
       pool: Transactor[F]
-  ): F[DoobieDriverCQRS[F]] =
+  ): F[DoobieCQRSDriver[F]] =
     from(PGNamespace(namespace), pool)
 
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Transactor[F]
-  ): F[DoobieDriverCQRS[F]] =
+  ): F[DoobieCQRSDriver[F]] =
     Queries
       .setupSchema(namespace)
       .run
       .transact(pool)
-      .as(new DoobieDriverCQRS(namespace, pool))
+      .as(new DoobieCQRSDriver(namespace, pool))
 }

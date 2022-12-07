@@ -100,6 +100,6 @@ object DoobieCompatibilitySuite {
 
     Backend
       .builder(TestCQRSDomain)
-      .use(DoobieDriverCQRS(name, trx))
+      .use(DoobieCQRSDriver(name, trx))
       .build
 }

@@ -76,7 +76,7 @@ object StomatonExample {
   val backend2 =
     Backend
       .builder(FooService)
-      .use(SkunkDriverCQRS[IO]("example", ???))
+      .use(SkunkCQRSDriver[IO]("example", ???))
       .withEventHandler(handler)
       .build
 

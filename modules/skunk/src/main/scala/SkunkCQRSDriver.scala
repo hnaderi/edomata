@@ -25,7 +25,7 @@ import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
-final class SkunkDriverCQRS[F[_]: Async] private (
+final class SkunkCQRSDriver[F[_]: Async] private (
     namespace: PGNamespace,
     pool: Resource[F, Session[F]]
 ) extends StorageDriver[F, BackendCodec, SkunkHandler[F]] {
@@ -68,17 +68,17 @@ final class SkunkDriverCQRS[F[_]: Async] private (
 
 }
 
-object SkunkDriverCQRS {
+object SkunkCQRSDriver {
   inline def apply[F[_]: Async](
       inline namespace: String,
       pool: Resource[F, Session[F]]
-  ): F[SkunkDriverCQRS[F]] = from(PGNamespace(namespace), pool)
+  ): F[SkunkCQRSDriver[F]] = from(PGNamespace(namespace), pool)
 
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Resource[F, Session[F]]
-  ): F[SkunkDriverCQRS[F]] =
+  ): F[SkunkCQRSDriver[F]] =
     pool
       .use(_.execute(Queries.setupSchema(namespace)))
-      .as(new SkunkDriverCQRS(namespace, pool))
+      .as(new SkunkCQRSDriver(namespace, pool))
 }
