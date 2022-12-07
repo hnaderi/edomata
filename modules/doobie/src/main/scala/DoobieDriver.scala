@@ -21,7 +21,7 @@ import cats.effect.kernel.Resource
 import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
-import edomata.backend.*
+import edomata.backend.PGNamespace
 import edomata.backend.eventsourcing.*
 import edomata.core.*
 

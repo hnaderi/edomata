@@ -19,7 +19,11 @@ package tests
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.*
+import edomata.backend.EventMessage
+import edomata.backend.EventMetadata
+import edomata.backend.OutboxItem
+import edomata.backend.StreamId
+import edomata.backend.eventsourcing.*
 import edomata.core.CommandMessage
 import edomata.core.Edomaton
 import edomata.core.MessageMetadata

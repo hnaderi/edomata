@@ -15,13 +15,14 @@
  */
 
 package edomata.backend
+package eventsourcing
 
 import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import cats.implicits.*
-import edomata.backend.AggregateState.Valid
+import edomata.backend.eventsourcing.AggregateState.Valid
 import edomata.core.*
 import fs2.Chunk
 

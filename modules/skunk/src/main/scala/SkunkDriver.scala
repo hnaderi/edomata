@@ -20,7 +20,7 @@ import _root_.skunk.Session
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.*
+import edomata.backend.PGNamespace
 import edomata.backend.eventsourcing.*
 import edomata.core.*
 

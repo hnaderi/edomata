@@ -21,6 +21,7 @@ import _root_.skunk.codec.all.*
 import _root_.skunk.implicits.*
 import cats.data.NonEmptyList
 import edomata.backend.*
+import edomata.backend.eventsourcing.AggregateState
 import edomata.core.CommandMessage
 import edomata.core.MessageMetadata
 

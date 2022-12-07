@@ -18,11 +18,11 @@ package edomata.doobie
 
 import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
-import cats.data.NonEmptyChain
 import cats.effect.Concurrent
-import cats.effect.kernel.Clock
 import cats.implicits.*
-import edomata.backend.*
+import edomata.backend.PGNamespace
+import edomata.backend.StreamId
+import edomata.backend.eventsourcing.*
 import edomata.core.*
 import fs2.Chunk
 import fs2.Stream
