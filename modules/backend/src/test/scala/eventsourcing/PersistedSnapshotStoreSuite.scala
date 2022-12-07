@@ -37,6 +37,12 @@ class PersistedSnapshotStoreSuite extends CatsEffectSuite {
       sut.assertPresent("b" -> b)
   }
 
+  check("Must be convergent", size = 1) { sut =>
+    sut.store.put("a", aggregate("aa", 2)) >>
+      sut.store.put("a", aggregate("a", 1)) >>
+      sut.assertPresent("a" -> aggregate("aa", 2))
+  }
+
   check(
     "Must persist evicted items asynchronously when maxWait reached",
     size = 1,

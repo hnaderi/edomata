@@ -106,7 +106,7 @@ private final class InMemorySnapshotStore[F[_]: Monad, S](
     cache.get(id)
   def getFast(id: StreamId): F[Option[AggregateState.Valid[S]]] = get(id)
   def put(id: StreamId, state: AggregateState.Valid[S]): F[Unit] =
-    cache.add(id, state).void
+    cache.replace(id, state)(_.version < state.version).void
 }
 
 type SnapshotItem[S] =
@@ -126,7 +126,7 @@ private[backend] final class PersistedSnapshotStoreImpl[F[_], S](
       case None        => p.get(id)
     }
   def put(id: StreamId, state: AggregateState.Valid[S]): F[Unit] =
-    cache.add(id, state).flatMap {
+    cache.replace(id, state)(_.version < state.version).flatMap {
       case Some(evicted) => q.tryOffer(evicted).void
       case None          => F.unit
     }
