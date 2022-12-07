@@ -21,6 +21,7 @@ import cats.implicits.*
 
 trait Cache[F[_], I, T] {
   def add(key: I, value: T): F[Option[(I, T)]]
+  def replace(key: I, value: T)(pred: T => Boolean): F[Option[(I, T)]]
   def get(key: I): F[Option[T]]
 }
 

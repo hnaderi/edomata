@@ -64,21 +64,7 @@ private final class LRUCache[F[_], I, T] private (
         .iterator
     )
   def add(key: I, value: T): F[Option[(I, T)]] =
-    sem.permit.use { _ =>
-      F.delay {
-        values.get(key) match {
-          case Some(existing) =>
-            existing.value = value
-            makeHead(existing)
-          case None =>
-            val newItem = CacheItem(key, value, None, head)
-            values.update(key, newItem)
-            makeHead(newItem)
-        }
-
-        evict()
-      }
-    }
+    replace(key, value)(_ => true)
 
   def get(key: I): F[Option[T]] =
     sem.permit.use { _ =>
@@ -90,6 +76,24 @@ private final class LRUCache[F[_], I, T] private (
           case None => None
         }
       )
+    }
+
+  def replace(key: I, value: T)(pred: T => Boolean): F[Option[(I, T)]] =
+    sem.permit.use { _ =>
+      F.delay {
+        values.get(key) match {
+          case Some(existing) if pred(existing.value) =>
+            existing.value = value
+            makeHead(existing)
+          case None =>
+            val newItem = CacheItem(key, value, None, head)
+            values.update(key, newItem)
+            makeHead(newItem)
+          case _ => ()
+        }
+
+        evict()
+      }
     }
 
   private def evict() =

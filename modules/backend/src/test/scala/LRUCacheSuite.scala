@@ -60,6 +60,30 @@ class LRUCacheSuite extends CatsEffectSuite {
     } yield ()
   }
 
+  test("must replace if predicate matches") {
+    for {
+      c <- newCache
+      _ <- c.replace(1, 3)(_ == 2)
+      _ <- c.get(1).assertEquals(Some(3))
+    } yield ()
+  }
+
+  test("must not replace if predicate does not match") {
+    for {
+      c <- newCache
+      _ <- c.replace(1, 3)(_ == 4)
+      _ <- c.get(1).assertEquals(Some(2))
+    } yield ()
+  }
+
+  test("must add when replacing and non existing key value") {
+    for {
+      c <- newCache
+      _ <- c.replace(4, 5)(_ == 4)
+      _ <- c.get(4).assertEquals(Some(5))
+    } yield ()
+  }
+
 }
 
 object LRUCacheSuite {
