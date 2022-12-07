@@ -29,14 +29,29 @@ object OutboxConsumer {
   )(
       run: edomata.backend.OutboxItem[N] => F[Unit]
   )(using F: Monad[F]): Stream[F, Nothing] =
-    (emit(()) ++ backend.updates.outbox)
-      .flatMap(_ => backend.outbox.read)
+    from(backend.outbox, backend.updates.outbox)(run)
+
+  def apply[F[_], S, N, R](
+      backend: cqrs.Backend[F, S, R, N]
+  )(
+      run: edomata.backend.OutboxItem[N] => F[Unit]
+  )(using F: Monad[F]): Stream[F, Nothing] =
+    from(backend.outbox, backend.updates.outbox)(run)
+
+  def from[F[_], S, N, R](
+      backend: OutboxReader[F, N],
+      signal: Stream[F, Unit]
+  )(
+      run: OutboxItem[N] => F[Unit]
+  )(using F: Monad[F]): Stream[F, Nothing] =
+    (emit(()) ++ signal)
+      .flatMap(_ => backend.read)
       .chunks
       .foreach(ch =>
         NonEmptyChain
           .fromChain(ch.toChain)
           .fold(F.unit)(
-            ch.traverse(run) >> backend.outbox.markAllAsSent(_)
+            ch.traverse(run) >> backend.markAllAsSent(_)
           )
       )
 }
