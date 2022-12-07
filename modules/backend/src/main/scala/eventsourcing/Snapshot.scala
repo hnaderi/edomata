@@ -15,6 +15,7 @@
  */
 
 package edomata.backend
+package eventsourcing
 
 import cats.Monad
 import cats.effect.Async
@@ -27,8 +28,6 @@ import fs2.Chunk
 import fs2.Stream
 
 import scala.concurrent.duration.*
-
-import eventsourcing.* //FIXME
 
 trait SnapshotReader[F[_], S] {
 

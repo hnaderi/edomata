@@ -37,3 +37,9 @@ type CommandState[S, E, R] = eventsourcing.CommandState[S, E, R]
 type NotificationsConsumer[F[_]] = eventsourcing.NotificationsConsumer[F]
 type NotificationsPublisher[F[_]] = eventsourcing.NotificationsPublisher[F]
 type Notifications[F[_]] = eventsourcing.Notifications[F]
+
+type SnapshotReader[F[_], S] = eventsourcing.SnapshotReader[F, S]
+type SnapshotStore[F[_], S] = eventsourcing.SnapshotStore[F, S]
+type SnapshotPersistence[F[_], S] = eventsourcing.SnapshotPersistence[F, S]
+val SnapshotStore = eventsourcing.SnapshotStore
+type SnapshotItem[S] = eventsourcing.SnapshotItem[S]
