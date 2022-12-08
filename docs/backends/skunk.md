@@ -29,13 +29,24 @@ given BackendCodec[Event] = CirceCodec.jsonb // or .json
 given BackendCodec[Notification] = CirceCodec.jsonb
 ```  
 
-### Persisted snapshots
+when using cqrs style:
+```scala
+given BackendCodec[State] = CirceCodec.jsonb 
+```  
+
+### Persisted snapshots (event sourcing only)
 if you want to use persisted snapshots, you need to provide codec for your state model too.
 ```scala
 given BackendCodec[State] = CirceCodec.jsonb 
 ```  
 
 ## Compiling application to a service
+
+You need to use a driver to build your backend, there are two skunk drivers available:
+
+1. `SkunkDriver` event sourcing driver  
+2. `SkunkCQRSDriver` cqrs driver
+
 ```scala
 val app  = ??? // your application from previous chapter
 val pool : Resource[IO, Session[IO]] = ??? // create your own session pool

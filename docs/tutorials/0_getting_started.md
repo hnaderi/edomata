@@ -27,7 +27,7 @@ application logic is divided into 2 separate layers:
     * aggregate roots just hold enough data to decide based on business rules and maintain invariants; they don't care about any other data
 * service
     * may involve side effects
-    * is very minimal and mostly glueing
+    * is very minimal and mostly gluing
     * must be idempotent
     * models application services and command handlers in DDD
   
