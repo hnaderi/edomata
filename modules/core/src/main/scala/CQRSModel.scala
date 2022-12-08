@@ -44,6 +44,9 @@ trait CQRSModel[State, Rejection] { self =>
     final val domain: CQRSDomain[Command, State, Rejection, Notification] =
       CQRSDomain()
 
+    final protected val App
+        : CQRSDomainDSL[Command, State, Rejection, Notification] = domain.dsl
+
     final type App[F[_], T] =
       Stomaton[F, CommandMessage[Command], State, Rejection, Notification, T]
     final type PureApp[T] = App[cats.Id, T]
