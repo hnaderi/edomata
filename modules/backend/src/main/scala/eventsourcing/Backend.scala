@@ -17,6 +17,8 @@
 package edomata.backend
 package eventsourcing
 
+import cats.effect.std.Random
+
 trait Backend[F[_], S, E, R, N] {
   def compile: CommandHandler[F, S, E, R, N]
   def outbox: OutboxReader[F, N]
@@ -125,6 +127,7 @@ final class BackendBuilder[
     dr <- driver
     s <- snapshot(dr)
     storage <- dr.build[S, E, R, N](s)
+    given Random[F] <- Resource.eval(Random.scalaUtilRandom[F])
     compiler <- commandCache.fold(Resource.pure(storage.repository))(
       _.map(CachedRepository(storage.repository, _, s))
     )

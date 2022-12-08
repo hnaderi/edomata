@@ -17,16 +17,16 @@
 package edomata.backend
 package cqrs
 
+import cats.Applicative
+import cats.Monad
 import cats.data.NonEmptyChain
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Random
-import edomata.core.*
 import cats.implicits.*
+import edomata.core.*
 
 import scala.concurrent.duration.*
-import cats.Applicative
-import cats.Monad
 
 trait Backend[F[_], S, R, N] {
   def compile: CommandHandler[F, S, N]

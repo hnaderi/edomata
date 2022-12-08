@@ -20,6 +20,7 @@ package eventsourcing
 import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.IO
+import cats.effect.std.Random
 import cats.effect.testkit.TestControl
 import cats.implicits.*
 import edomata.core.*
@@ -180,6 +181,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
           .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
       )
       r <- repo(AggregateState.Valid("", 0))
+      given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl.executeEmbed(s.apply(cmd)).assertEquals(().asRight)
       _ <- r.listActions.assertEquals(Nil)
@@ -195,6 +197,7 @@ class CommandHandlerSuite extends CatsEffectSuite {
           .ifM(IO.unit, IO.raiseError(BackendError.VersionConflict))
       )
       r <- repo(AggregateState.Valid("", 0))
+      given Random[IO] <- Random.scalaUtilRandom[IO]
       s = CommandHandler.withRetry(r, 3, 1.minute).apply(app)
       _ <- TestControl
         .executeEmbed(s.apply(cmd))

@@ -26,6 +26,7 @@ import cats.implicits.*
 import edomata.core.*
 
 import scala.concurrent.duration.*
+import cats.effect.std.Random
 
 trait CommandHandler[F[_], S, E, R, N] {
   def apply[C](
@@ -74,7 +75,7 @@ object CommandHandler {
       run(repository, app)
   }
 
-  def withRetry[F[_]: Temporal, S, E, R, N](
+  def withRetry[F[_]: Temporal: Random, S, E, R, N](
       repository: Repository[F, S, E, R, N],
       maxRetry: Int = 5,
       retryInitialDelay: FiniteDuration = 2.seconds
@@ -85,14 +86,4 @@ object CommandHandler {
       val handler = CommandHandler(repository).apply(app)
       cmd => retry(maxRetry, retryInitialDelay)(handler(cmd))
   }
-
-  private def retry[F[_]: Temporal, T](max: Int, wait: FiniteDuration)(
-      f: F[T]
-  ): F[T] =
-    f.recoverWith {
-      case BackendError.VersionConflict if max > 1 =>
-        retry(max - 1, wait * 2)(f).delayBy(wait)
-    }.adaptErr { case BackendError.VersionConflict =>
-      BackendError.MaxRetryExceeded
-    }
 }
