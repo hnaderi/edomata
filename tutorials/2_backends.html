@@ -127,10 +127,11 @@
         <h4 id="persistence" class="section"><a class="anchor-link left" href="#persistence"><i class="icofont-laika">&#xef71;</i></a>Persistence</h4>
         <p>Each aggregate type has its own namespace (which is a separate schema in postgres), that contains all the required tables:</p>
         <ul>
-          <li>journal: where events are stored</li>
+          <li>journal: where events are stored (for event sourced applications only)</li>
           <li>outbox: where notifications are stored for consuming</li>
           <li>commands: for idempotency checking of commands</li>
-          <li>snapshots: for persisting snapshots, if configured to do so<br></li>
+          <li>snapshots: for persisting snapshots, if configured to do so  (for event sourced applications only)</li>
+          <li>states: current state (for cqrs applications only)</li>
         </ul>
         <p>Beside that, these backends also have built-in caches that when sized correctly, can prevent most of the database stuff and runs application like a <a href="https://martinfowler.com/bliki/MemoryImage.html">memory image</a> which can boost a lot of performance. this database stuff are required if you need to ensure no dataloss in a normal webservice/microservice scenario, which is the most common use case; however there is nothing that prevents a backend to use a disruptor pattern (like LMAX disruptor) to eliminates all the disk stuff while running business code.</p>
         <p>These 2 backends are completely compatible with each others data, so you can change your mind on which one to use any time.</p>

@@ -106,7 +106,7 @@
           <li class="level1"><a href="#install">Install</a></li>
           <li class="level1"><a href="#imports">Imports</a></li>
           <li class="level1"><a href="#defining-codecs">Defining codecs</a></li>
-          <li class="level2"><a href="#persisted-snapshots">Persisted snapshots</a></li>
+          <li class="level2"><a href="#persisted-snapshots-event-sourcing-only">Persisted snapshots (event sourcing only)</a></li>
           <li class="level1"><a href="#compiling-application-to-a-service">Compiling application to a service</a></li>
         </ul>
 
@@ -118,24 +118,32 @@
         <h1 id="doobie" class="title">Doobie</h1>
         
         <h2 id="install" class="section"><a class="anchor-link left" href="#install"><i class="icofont-laika">&#xef71;</i></a>Install</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-doobie&quot;</span><span> % </span><span class="string-literal">&quot;0.7.0&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-doobie&quot;</span><span> % </span><span class="string-literal">&quot;0.8.0&quot;</span></code></pre>
         <p>or for integrated modules:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-doobie-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.7.0&quot;</span><span>
-</span><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-doobie-upickle&quot;</span><span> % </span><span class="string-literal">&quot;0.7.0&quot;</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-doobie-circe&quot;</span><span> % </span><span class="string-literal">&quot;0.8.0&quot;</span><span>
+</span><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-doobie-upickle&quot;</span><span> % </span><span class="string-literal">&quot;0.8.0&quot;</span></code></pre>
         <p>Note that doobie is built on top of JDBC which can&#39;t be used in javascript obviously, and this packages are available for JVM only.</p>
         
         <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">doobie</span><span>.*</span></code></pre>
         
         <h2 id="defining-codecs" class="section"><a class="anchor-link left" href="#defining-codecs"><i class="icofont-laika">&#xef71;</i></a>Defining codecs</h2>
+        <p>when event sourcing:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">Event</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span><span> </span><span class="comment">// or .json
 </span><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">Notification</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span></code></pre>
+        <p>when using cqrs style:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">State</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span><span> </span></code></pre>
         
-        <h3 id="persisted-snapshots" class="section"><a class="anchor-link left" href="#persisted-snapshots"><i class="icofont-laika">&#xef71;</i></a>Persisted snapshots</h3>
+        <h3 id="persisted-snapshots-event-sourcing-only" class="section"><a class="anchor-link left" href="#persisted-snapshots-event-sourcing-only"><i class="icofont-laika">&#xef71;</i></a>Persisted snapshots (event sourcing only)</h3>
         <p>if you want to use persisted snapshots, you need to provide codec for your state model too.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">given</span><span> </span><span class="type-name">BackendCodec</span><span>[</span><span class="type-name">State</span><span>] = </span><span class="type-name">CirceCodec</span><span>.</span><span class="identifier">jsonb</span><span> </span></code></pre>
         
         <h2 id="compiling-application-to-a-service" class="section"><a class="anchor-link left" href="#compiling-application-to-a-service"><i class="icofont-laika">&#xef71;</i></a>Compiling application to a service</h2>
+        <p>You need to use a driver to build your backend, there are two doobie drivers available:</p>
+        <ol class="arabic">
+          <li><code>DoobieDriver</code> event sourcing driver<br></li>
+          <li><code>DoobieCQRSDriver</code> cqrs driver</li>
+        </ol>
         <pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">app</span><span>  = ??? </span><span class="comment">// your application from previous chapter
 </span><span class="keyword">val</span><span> </span><span class="identifier">trx</span><span> : </span><span class="type-name">Transactor</span><span>[</span><span class="type-name">IO</span><span>] = ??? </span><span class="comment">// create your Transactor
 </span><span>
