@@ -120,31 +120,16 @@ enum Order {
 
 ### DomainModel
 
-In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use `DomainModel`, which is a helper class that creates the required stuff for the next steps:
+In order to complete modeling we must also define our aggregate's initial state;
+you can assume that it's like `None` in `Option[T]`, explicitly defining an initial state has the following advantages:
+- Model consistency; you are always working with your domain model, not with `Option[YourModel]`
+- It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.
 
 ```scala mdoc
 object Order extends CQRSModel[Order, Rejection] {
   def initial = Empty
 }
 ```
-
-1. `initial` is the initial state of your domain model which is the first start in timeline changes, you can assume that it's like `None` in `Option[T]`. beside it being required for our tutorial purposes, defining an initial state has the following advantages:
-- Model consistency; you are always working with your domain model, not with `Option[YourModel]`
-- It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.
-2. `transition` is the fold function that given an event, tells how to go to the next state. it's a function in `E => S => ValidatedNec[R, S]`. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, or changing your transition to a conflicting logic with a history of already created timelines.
-
-#### Tip
-> Writing transition without using a library for optics and lenses would be cumbersome and not expressive enough for domain modeling; I suggest you to use the great [monocle](https://www.optics.dev/Monocle/) library which provides neat macros for lenses, and you don't even need to think about it twice after using it for the first time.
-
-#### Thinking further
-> Writing event-driven (and specifically event-sourced) domain models deal with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you'll read from a journal; for example, in the example above, we might receive a Withdrawn event on `New` or `Closed` state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can't even find a balance to decrement! in non-functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.
-
-
-#### Info
-> If you have a programming error in your folding which can cause conflicts, Edomata has your back! it won't let your program to reach a result where it can be persisted and corrupting data; we'll see this in the next chapters.
-
-
-As simple as that!
 
 ### Testing domain model
 
