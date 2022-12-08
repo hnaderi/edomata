@@ -211,30 +211,13 @@
 </span><span>}</span></code></pre>
         
         <h3 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h3>
-        <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates the required stuff for the next steps:</p>
+        <p>In order to complete modeling we must also define our aggregate&#39;s initial state;
+        you can assume that it&#39;s like <code>None</code> in <code>Option[T]</code>, explicitly defining an initial state has the following advantages:
+        - Model consistency; you are always working with your domain model, not with <code>Option[YourModel]</code>
+        - It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Order</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">CQRSModel</span><span>[</span><span class="type-name">Order</span><span>, </span><span class="type-name">Rejection</span><span>] {
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">initial</span><span> = </span><span class="type-name">Empty</span><span>
 }</span></code></pre>
-        <ol class="arabic">
-          <li>
-            <code>initial</code> is the initial state of your domain model which is the first start in timeline changes, you can assume that it&#39;s like <code>None</code> in <code>Option[T]</code>. beside it being required for our tutorial purposes, defining an initial state has the following advantages:
-            <ul>
-              <li>Model consistency; you are always working with your domain model, not with <code>Option[YourModel]</code></li>
-              <li>It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.</li>
-            </ul>
-          </li>
-          <li><code>transition</code> is the fold function that given an event, tells how to go to the next state. it&#39;s a function in <code>E =&gt; S =&gt; ValidatedNec[R, S]</code>. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, or changing your transition to a conflicting logic with a history of already created timelines.</li>
-        </ol>
-        
-        <h4 id="tip" class="section"><a class="anchor-link left" href="#tip"><i class="icofont-laika">&#xef71;</i></a>Tip</h4>
-        <blockquote>Writing transition without using a library for optics and lenses would be cumbersome and not expressive enough for domain modeling; I suggest you to use the great <a href="https://www.optics.dev/Monocle/">monocle</a> library which provides neat macros for lenses, and you don&#39;t even need to think about it twice after using it for the first time.</blockquote>
-        
-        <h4 id="thinking-further" class="section"><a class="anchor-link left" href="#thinking-further"><i class="icofont-laika">&#xef71;</i></a>Thinking further</h4>
-        <blockquote>Writing event-driven (and specifically event-sourced) domain models deal with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you&#39;ll read from a journal; for example, in the example above, we might receive a Withdrawn event on <code>New</code> or <code>Closed</code> state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can&#39;t even find a balance to decrement! in non-functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.</blockquote>
-        
-        <h4 id="info" class="section"><a class="anchor-link left" href="#info"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
-        <blockquote>If you have a programming error in your folding which can cause conflicts, Edomata has your back! it won&#39;t let your program to reach a result where it can be persisted and corrupting data; we&#39;ll see this in the next chapters.</blockquote>
-        <p>As simple as that!</p>
         
         <h3 id="testing-domain-model" class="section"><a class="anchor-link left" href="#testing-domain-model"><i class="icofont-laika">&#xef71;</i></a>Testing domain model</h3>
         <p>As everything is pure and all the logic is implemented as programs that are values, you can easily test everything:<br></p>
