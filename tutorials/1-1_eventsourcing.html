@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
+    <title>Event sourcing</title>
+    
+      <meta name="author" content="Hossein Naderi"/>
+    
+    
+      <meta name="description" content="docs"/>
+    
+    
+      <link rel="icon" sizes="32x32" type="image/png" href="/icon.png"/>
+    
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
+    
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
+    
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
+        </a>
+        
+      </div>
+
+      <a class="image-link" href="../introduction.html"><img src="../icon.png"></a>
+
+      <span class="row links"><a class="icon-link" href="https://github.com/hnaderi/edomata/"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://edomata.ir/"><i class="icofont-laika" title="Home">&#xef47;</i></a></span>
+
+    </header>
+
+    <nav id="sidebar">
+
+      <div class="row">
+        <a class="icon-link" href="https://github.com/hnaderi/edomata/"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://edomata.ir/"><i class="icofont-laika" title="Home">&#xef47;</i></a>
+      </div>
+
+      <ul class="nav-list">
+        <li class="level1"><a href="../introduction.html">Introduction</a></li>
+        <li class="level1 nav-header">about</li>
+        <li class="level2"><a href="../about/features.html">Features</a></li>
+        <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
+        <li class="level1 nav-header">tutorials</li>
+        <li class="level2"><a href="0_getting_started.html">Getting started</a></li>
+        <li class="level2 active"><a href="#">Event sourcing</a></li>
+        <li class="level2"><a href="1-2_cqrs.html">CQRS style</a></li>
+        <li class="level2"><a href="2_backends.html">Running</a></li>
+        <li class="level2"><a href="3_processes.html">Processes</a></li>
+        <li class="level1 nav-header">principles</li>
+        <li class="level2"><a href="../principles/index.html">Principles</a></li>
+        <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
+        <li class="level1 nav-header">backends</li>
+        <li class="level2"><a href="../backends/skunk.html">Skunk</a></li>
+        <li class="level2"><a href="../backends/doobie.html">Doobie</a></li>
+        <li class="level1 nav-header">other</li>
+        <li class="level2"><a href="../other/modules.html">Modules</a></li>
+        <li class="level2"><a href="../other/faq.html">FAQ</a></li>
+      </ul>
+
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+        
+          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
+        
+          <li class="level2"><a href="https://github.com/typelevel/discipline/">discipline</a></li>
+        
+      </ul>
+
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">Event sourcing</a></p>
+
+        <ul class="nav-list">
+          <li class="level1"><a href="#imports">Imports</a></li>
+          <li class="level1"><a href="#domain-layer">Domain layer</a></li>
+          <li class="level2"><a href="#decision">Decision</a></li>
+          <li class="level2"><a href="#modeling">Modeling</a></li>
+          <li class="level2"><a href="#domainmodel">DomainModel</a></li>
+          <li class="level2"><a href="#testing-domain-model">Testing domain model</a></li>
+          <li class="level1"><a href="#service-layer">Service layer</a></li>
+          <li class="level2"><a href="#edomaton">Edomaton</a></li>
+          <li class="level2"><a href="#testing-an-edomaton">Testing an edomaton</a></li>
+          <li class="level1"><a href="#what-s-next">What&#39;s next?</a></li>
+        </ul>
+
+        <p class="footer"></p>
+      </nav>
+
+      <main class="content">
+
+        <h1 id="event-sourcing" class="title">Event sourcing</h1>
+        
+        <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.* </span><span class="comment">// for convenient extension methods</span></code></pre>
+        
+        <h2 id="domain-layer" class="section"><a class="anchor-link left" href="#domain-layer"><i class="icofont-laika">&#xef71;</i></a>Domain layer</h2>
+        
+        <h3 id="decision" class="section"><a class="anchor-link left" href="#decision"><i class="icofont-laika">&#xef71;</i></a>Decision</h3>
+        <p>It all starts with decisions!<br>
+        Decision models programs that decide in an event-driven context, these programs are pure and can:</p>
+        <ul>
+          <li>accept events<br></li>
+          <li>reject with errors<br></li>
+          <li>stay indecisive!<br></li>
+        </ul>
+        <p><img src="https://www.plantuml.com/plantuml/svg/jPHBJy9058Nt_HMpr4HCC83YWWIiHHDMOE9wc5xeI9cfyu0Out_tGdbCIul5G9DsSS_fT-xCt5RFk4YeedFIesmsLTAAy4d6KX5_VNbwPz0H3UMIYocPq5Y3empJjvG0HUwTUbSfkKnfZMQZrMWwMY25AP56y6b1C1Zm2Tu2UbA5eFumzx7rv0KeEYkWr-wglkhvgVCjucmcG6jIzzpzspXzlk3e8jyUmQi0lY-xf5NreECVDm2VXZEUK66syDoP1a4hQDMFvUuJtYDkeBYNsrnmI0qTKmqbgUq77AJdQgb5wm9XkFagNPBVlMl_7owaAUjxmAUHwIi0SHA--FWoePGPgKfI3oWdBcYyGb5rgVrYg2ePNumUny0CbqAVOOIF7KX-Xl7Rj726p208ZWME3CLvUnK-CAxv0iWZaTOarcoKBcEG60Yn3WiSV7sJrOVmWVkJwlXtLThp75ZD9hNE0IFZw6J3nro46HqD-OmhVUtjc5a-PSpEROoTQSTIpFW5" alt=""><br></p>
+        <p>Examples:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d1</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="number-literal">1</span><span>)
+</span><span class="comment">// d1: Decision[Nothing, Nothing, Int] = InDecisive(1)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d2</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;Missile Launched!&quot;</span><span>)
+</span><span class="comment">// d2: Decision[Nothing, String, Unit] = Accepted(Chain(Missile Launched!),())
+</span><span class="keyword">val</span><span> </span><span class="identifier">d3</span><span> = </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>)
+</span><span class="comment">// d3: Decision[String, Nothing, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
+        <p>You can also use the following syntax if you import syntax modules<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.*
+
+</span><span class="number-literal">1</span><span>.</span><span class="identifier">asDecision</span><span>
+</span><span class="comment">// res0: Decision[Nothing, Nothing, Int] = InDecisive(1)
+</span><span class="string-literal">&quot;Missile Launched!&quot;</span><span>.</span><span class="identifier">accept</span><span>
+</span><span class="comment">// res1: Decision[Nothing, String, Unit] = Accepted(Chain(Missile Launched!),())
+</span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>.</span><span class="identifier">reject</span><span>
+</span><span class="comment">// res2: Decision[String, Nothing, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
+        <p>decisions are composable<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d4</span><span> = </span><span class="identifier">d1</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> * </span><span class="number-literal">2</span><span>)
+</span><span class="comment">// d4: Decision[Nothing, Nothing, Int] = InDecisive(2)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d5</span><span> = </span><span class="identifier">d2</span><span> &gt;&gt; </span><span class="identifier">d1</span><span>
+</span><span class="comment">// d5: Decision[Nothing, String, Int] = Accepted(Chain(Missile Launched!),1)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d6</span><span> = </span><span class="identifier">d5</span><span> &gt;&gt; </span><span class="identifier">d3</span><span>
+</span><span class="comment">// d6: Decision[String, String, Nothing] = Rejected(Chain(No remained missiles to launch!))</span></code></pre>
+        <p>You can also use for-comprehension:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">d7</span><span> = </span><span class="keyword">for</span><span> {
+  </span><span class="identifier">i</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">pure</span><span>(</span><span class="number-literal">1</span><span>)
+  </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;A&quot;</span><span>) </span><span class="comment">// accepting one event
+</span><span>  </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="string-literal">&quot;B&quot;</span><span>, </span><span class="string-literal">&quot;C&quot;</span><span>) </span><span class="comment">// accepting several events
+</span><span>  </span><span class="identifier">j</span><span> &lt;- </span><span class="type-name">Decision</span><span>.</span><span class="identifier">acceptReturn</span><span>(</span><span class="identifier">i</span><span> * </span><span class="number-literal">2</span><span>)(</span><span class="string-literal">&quot;D&quot;</span><span>, </span><span class="string-literal">&quot;E&quot;</span><span>) </span><span class="comment">// accepting several events and returning a value
+</span><span>} </span><span class="keyword">yield</span><span> </span><span class="identifier">i</span><span> + </span><span class="identifier">j</span><span>
+</span><span class="comment">// d7: Decision[Nothing, String, Int] = Accepted(Chain(A, B, C, D, E),3)</span></code></pre>
+        <p>or in presence of cats syntax:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*  
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">d8</span><span> = (</span><span class="identifier">d1</span><span>, </span><span class="identifier">d7</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>)
+</span><span class="comment">// d8: Decision[Nothing, String, Int] = Accepted(Chain(A, B, C, D, E),4)
+</span><span class="keyword">val</span><span> </span><span class="identifier">d9</span><span> = </span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>).</span><span class="identifier">traverse</span><span>(</span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="identifier">_</span><span>))
+</span><span class="comment">// d9: Decision[Nothing, Int, List[Unit]] = Accepted(Chain(1, 2, 3, 4),List((), (), (), ()))
+</span><span class="keyword">val</span><span> </span><span class="identifier">d10</span><span> = </span><span class="type-name">Decision</span><span>(</span><span class="type-name">List</span><span>.</span><span class="identifier">range</span><span>(</span><span class="number-literal">1</span><span>, </span><span class="number-literal">5</span><span>)).</span><span class="identifier">sequence</span><span>[</span><span class="type-name">List</span><span>, </span><span class="type-name">Int</span><span>]
+</span><span class="comment">// d10: List[Decision[Nothing, Nothing, Int]] = List(InDecisive(1), InDecisive(2), InDecisive(3), InDecisive(4))</span></code></pre>
+        
+        <h3 id="modeling" class="section"><a class="anchor-link left" href="#modeling"><i class="icofont-laika">&#xef71;</i></a>Modeling</h3>
+        <p>Let&#39;s use what we&#39;ve learned so far to create an overly simplified model of a bank account.<br>
+        Assume we have the following business requirements:</p>
+        <ul>
+          <li>We must be able to open an account, if we did not have used that account name before<br></li>
+          <li>We can deposit/withdraw some amount of assets to an open account<br></li>
+          <li>We must be able to close an account, if it is settled (meaning its balance is zero)<br></li>
+        </ul>
+        <p>We&#39;ll start by modeling domain events first, that we have from event storming or other kinds of design practices:<br></p>
+        <blockquote>I&#39;ll use scala 3 enums for modeling ADTs, as they are neat and closer to what modeling is all about; but you can use <code>sealed trait</code>s and normal <code>case class</code>es too</blockquote>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Event</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Opened</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Deposited</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Closed</span><span>
+}</span></code></pre>
+        <p>we&#39;ll continue with modeling rejection scenarios that also came from event storming:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Rejection</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">ExistingAccount</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">NoSuchAccount</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">InsufficientBalance</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">NotSettled</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">AlreadyClosed</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">BadRequest</span><span>
+}</span></code></pre>
+        <p>no we must model an aggregate root:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Account</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>(</span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span>
+}</span></code></pre>
+        <p>No we can use <code>Decision</code> to write our domain logic:<br></p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">ValidatedNec</span><span>
+
+</span><span class="keyword">enum</span><span> </span><span class="type-name">Account</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>(</span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span>
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">open</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">decide</span><span> { </span><span class="comment">// 1
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span> =&gt; </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Opened</span><span>)
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">ExistingAccount</span><span>)
+  }.</span><span class="identifier">validate</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>) </span><span class="comment">// 2
+</span><span>  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">close</span><span> : </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Account</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; </span><span class="comment">// 3, 4
+</span><span>    </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> == </span><span class="number-literal">0</span><span> </span><span class="keyword">then</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Closed</span><span>.</span><span class="identifier">accept</span><span>
+    </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">NotSettled</span><span>)
+  })
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">withdraw</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt; 
+    </span><span class="keyword">if</span><span> </span><span class="identifier">account</span><span>.</span><span class="identifier">balance</span><span> &gt;= </span><span class="identifier">amount</span><span> &amp;&amp; </span><span class="identifier">amount</span><span> &gt; </span><span class="number-literal">0</span><span> 
+    </span><span class="keyword">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">amount</span><span>))
+    </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">InsufficientBalance</span><span>) 
+    </span><span class="comment">// We can model rejections to have values, which helps a lot for showing error messages, but it&#39;s out of scope for this document
+</span><span>  }).</span><span class="identifier">validate</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>)
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">deposit</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>): </span><span class="type-name">Decision</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span>.</span><span class="identifier">perform</span><span>(</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">toDecision</span><span>.</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">account</span><span> =&gt;
+    </span><span class="keyword">if</span><span> </span><span class="identifier">amount</span><span> &gt; </span><span class="number-literal">0</span><span> </span><span class="keyword">then</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">accept</span><span>(</span><span class="type-name">Event</span><span>.</span><span class="type-name">Deposited</span><span>(</span><span class="identifier">amount</span><span>))
+    </span><span class="keyword">else</span><span> </span><span class="type-name">Decision</span><span>.</span><span class="identifier">reject</span><span>(</span><span class="type-name">Rejection</span><span>.</span><span class="type-name">BadRequest</span><span>)
+  }).</span><span class="identifier">validate</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>)
+  
+  </span><span class="keyword">private</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">mustBeOpen</span><span> : </span><span class="type-name">ValidatedNec</span><span>[</span><span class="type-name">Rejection</span><span>, </span><span class="type-name">Open</span><span>] = </span><span class="keyword">this</span><span> </span><span class="keyword">match</span><span> { </span><span class="comment">// 5
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="identifier">o</span><span class="annotation">@Open</span><span>(</span><span class="identifier">_</span><span>) =&gt; </span><span class="identifier">o</span><span>.</span><span class="identifier">validNec</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">NoSuchAccount</span><span>.</span><span class="identifier">invalidNec</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">AlreadyClosed</span><span>.</span><span class="identifier">invalidNec</span><span>
+  }
+}</span></code></pre>
+        <ol class="arabic">
+          <li><code>.decide</code> is an extension method from Edomata syntax that helps with deciding and transitioning to a new state which I&#39;ll describe below</li>
+          <li><code>.validate</code> ensures that after applying decision events, we will end up in an <code>Open</code> state, and will return <code>Open</code> instead of simply <code>Account</code></li>
+          <li><code>.perform</code> like <code>.decide</code> takes a decision as an argument, and runs the decision on the current state to return new state, it is basically a helper for folding to let you reuse <code>transition</code> and not repeating yourself</li>
+          <li><code>Decision</code> can be converted <code>.toValidated</code>, <code>.toOption</code> or <code>.toEither</code>.</li>
+          <li>as functional data structures are composable, you can extract common use cases like validations.</li>
+        </ol>
+        <p>but you might say, domain logic is not just deciding, you must perform the actions you decided; and you are right, let&#39;s go to that part:</p>
+        
+        <h3 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h3>
+        <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates the required stuff for the next steps:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Account</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">DomainModel</span><span>[</span><span class="type-name">Account</span><span>, </span><span class="type-name">Event</span><span>, </span><span class="type-name">Rejection</span><span>] {
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">initial</span><span> = </span><span class="type-name">New</span><span>  </span><span class="comment">// 1
+</span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">transition</span><span> = { </span><span class="comment">// 2
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Opened</span><span> =&gt; </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Open</span><span>(</span><span class="number-literal">0</span><span>).</span><span class="identifier">validNec</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Withdrawn</span><span>(</span><span class="identifier">b</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">s</span><span> =&gt; </span><span class="identifier">s</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">balance</span><span> = </span><span class="identifier">s</span><span>.</span><span class="identifier">balance</span><span> - </span><span class="identifier">b</span><span>)) </span><span class="comment">// 3
+</span><span>    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Deposited</span><span>(</span><span class="identifier">b</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">mustBeOpen</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">s</span><span> =&gt; </span><span class="identifier">s</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">balance</span><span> = </span><span class="identifier">s</span><span>.</span><span class="identifier">balance</span><span> + </span><span class="identifier">b</span><span>)) 
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Event</span><span>.</span><span class="type-name">Closed</span><span> =&gt; </span><span class="identifier">_</span><span>=&gt; </span><span class="type-name">Close</span><span>.</span><span class="identifier">validNec</span><span>
+  }
+
+}</span></code></pre>
+        <ol class="arabic">
+          <li>
+            <code>initial</code> is the initial state of your domain model which is the first start in timeline changes, you can assume that it&#39;s like <code>None</code> in <code>Option[T]</code>. beside it being required for our tutorial purposes, defining an initial state has the following advantages:
+            <ul>
+              <li>Model consistency; you are always working with your domain model, not with <code>Option[YourModel]</code></li>
+              <li>It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.</li>
+            </ul>
+          </li>
+          <li><code>transition</code> is the fold function that given an event, tells how to go to the next state. it&#39;s a function in <code>E =&gt; S =&gt; ValidatedNec[R, S]</code>. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, or changing your transition to a conflicting logic with a history of already created timelines.</li>
+        </ol>
+        
+        <h4 id="tip" class="section"><a class="anchor-link left" href="#tip"><i class="icofont-laika">&#xef71;</i></a>Tip</h4>
+        <blockquote>Writing transition without using a library for optics and lenses would be cumbersome and not expressive enough for domain modeling; I suggest you to use the great <a href="https://www.optics.dev/Monocle/">monocle</a> library which provides neat macros for lenses, and you don&#39;t even need to think about it twice after using it for the first time.</blockquote>
+        
+        <h4 id="thinking-further" class="section"><a class="anchor-link left" href="#thinking-further"><i class="icofont-laika">&#xef71;</i></a>Thinking further</h4>
+        <blockquote>Writing event-driven (and specifically event-sourced) domain models deal with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you&#39;ll read from a journal; for example, in the example above, we might receive a Withdrawn event on <code>New</code> or <code>Closed</code> state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can&#39;t even find a balance to decrement! in non-functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.</blockquote>
+        
+        <h4 id="info-1" class="section"><a class="anchor-link left" href="#info-1"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
+        <blockquote>If you have a programming error in your folding which can cause conflicts, Edomata has your back! it won&#39;t let your program to reach a result where it can be persisted and corrupting data; we&#39;ll see this in the next chapters.</blockquote>
+        <p>As simple as that!</p>
+        
+        <h3 id="testing-domain-model" class="section"><a class="anchor-link left" href="#testing-domain-model"><i class="icofont-laika">&#xef71;</i></a>Testing domain model</h3>
+        <p>As everything is pure and all the logic is implemented as programs that are values, you can easily test everything:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>.</span><span class="identifier">open</span><span>
+</span><span class="comment">// res4: Decision[Rejection, Event, Open] = Accepted(Chain(Opened),Open(0))
+</span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">10</span><span>).</span><span class="identifier">deposit</span><span>(</span><span class="number-literal">2</span><span>)
+</span><span class="comment">// res5: Decision[Rejection, Event, Open] = Accepted(Chain(Deposited(2)),Open(12))
+</span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">5</span><span>).</span><span class="identifier">close</span><span>
+</span><span class="comment">// res6: Decision[Rejection, Event, Account] = Rejected(Chain(NotSettled))
+</span><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>.</span><span class="identifier">open</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">close</span><span>)
+</span><span class="comment">// res7: Decision[Rejection, Event, Account] = Accepted(Chain(Opened, Closed),Close)</span></code></pre>
+        
+        <h2 id="service-layer" class="section"><a class="anchor-link left" href="#service-layer"><i class="icofont-laika">&#xef71;</i></a>Service layer</h2>
+        <p>Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:<br></p>
+        <ul>
+          <li>store and load models</li>
+          <li>interact with them</li>
+          <li>possibly perform some side effects</li>
+        </ul>
+        <p>you can do all that without Edomata, as everything in Edomata is just pure data and you can use it however you like; but here we&#39;ll focus on what Edomata has to offer.<br>
+        Edomata is designed around the idea of event-driven state machines,
+        and it&#39;s not surprising that the tools that it provides for building services are also event-driven state machines!
+        these state machines are like <a href="../principles/index.html#actor-model">actors</a> that respond to incoming messages which are domain commands,
+        may possibly change state through emitting some events as we&#39;ve seen in domain modeling above,
+        and possibly emit some other type of events for communication and integration with other services;
+        while doing so, they can also perform any side effects that are idempotent,
+        as these machines may be run several times in case of failure. that takes us to the next building block:</p>
+        
+        <h3 id="edomaton" class="section"><a class="anchor-link left" href="#edomaton"><i class="icofont-laika">&#xef71;</i></a>Edomaton</h3>
+        <p>An <code>Edomaton</code> is an event-driven automata (pl. Edomata) that can do the following:<br></p>
+        <ul>
+          <li>read the current state</li>
+          <li>ask what is requested (command message)</li>
+          <li>perform side effects</li>
+          <li>decide (as described in the decision above)</li>
+          <li>notify (emit notifications, integration events, ...)</li>
+          <li>output a value</li>
+        </ul>
+        <p><code>Edomaton</code>s are composable, so you can assemble them together, change them or treat them like normal data structures. </p>
+        
+        <h4 id="info-2" class="section"><a class="anchor-link left" href="#info-2"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
+        <blockquote>an <code>Edomaton</code> is like an employee, while a <code>Decision</code> is like a business rule</blockquote>
+        <p>for creating our first <code>Edomaton</code>, we need to model 2 more ADTs; commands, and notifications.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Command</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Open</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Deposit</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Withdraw</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Close</span><span>
+}
+
+</span><span class="keyword">enum</span><span> </span><span class="type-name">Notification</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">AccountOpened</span><span>(</span><span class="identifier">accountId</span><span>: </span><span class="type-name">String</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accountId</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">balance</span><span>: </span><span class="type-name">BigDecimal</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">AccountClosed</span><span>(</span><span class="identifier">accountId</span><span>: </span><span class="type-name">String</span><span>)
+}</span></code></pre>
+        <p>and we can create our first service:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">AccountService</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Account</span><span>.</span><span class="type-name">Service</span><span>[</span><span class="type-name">Command</span><span>, </span><span class="type-name">Notification</span><span>] {
+  </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Monad</span><span>
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>] : </span><span class="type-name">Monad</span><span>] : </span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">Unit</span><span>] = </span><span class="type-name">App</span><span>.</span><span class="identifier">router</span><span> {
+
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Open</span><span> =&gt; </span><span class="keyword">for</span><span> {
+      </span><span class="identifier">ns</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">open</span><span>)
+      </span><span class="identifier">acc</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">aggregateId</span><span>
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">AccountOpened</span><span>(</span><span class="identifier">acc</span><span>))
+    } </span><span class="keyword">yield</span><span> ()
+
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Deposit</span><span>(</span><span class="identifier">amount</span><span>) =&gt; </span><span class="keyword">for</span><span> {
+      </span><span class="identifier">deposited</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">deposit</span><span>(</span><span class="identifier">amount</span><span>))
+      </span><span class="identifier">accId</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">aggregateId</span><span>
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accId</span><span>, </span><span class="identifier">deposited</span><span>.</span><span class="identifier">balance</span><span>))
+    } </span><span class="keyword">yield</span><span> ()
+
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Withdraw</span><span>(</span><span class="identifier">amount</span><span>) =&gt; </span><span class="keyword">for</span><span> {
+      </span><span class="identifier">withdrawn</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">withdraw</span><span>(</span><span class="identifier">amount</span><span>))
+      </span><span class="identifier">accId</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">aggregateId</span><span>
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">BalanceUpdated</span><span>(</span><span class="identifier">accId</span><span>, </span><span class="identifier">withdrawn</span><span>.</span><span class="identifier">balance</span><span>))
+    } </span><span class="keyword">yield</span><span> ()
+
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Close</span><span> =&gt; 
+      </span><span class="type-name">App</span><span>.</span><span class="identifier">state</span><span>.</span><span class="identifier">decide</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">close</span><span>).</span><span class="identifier">void</span><span>
+  }
+
+}</span></code></pre>
+        <p>That&#39;s it! we&#39;ve just written our first <code>Edomaton</code>.</p>
+        
+        <h3 id="testing-an-edomaton" class="section"><a class="anchor-link left" href="#testing-an-edomaton"><i class="icofont-laika">&#xef71;</i></a>Testing an edomaton</h3>
+        <p>As said earlier, everything in Edomata is just a normal value, and you can treat them like normal data.<br>
+        <code>Edomaton</code>s take an environment, and work in that context to produce a result; 
+        using default DSL like what we&#39;ve done in this tutorial creates <code>Edomaton</code>s that require a data type called <code>RequestContext</code> which is pretty standard modeling of a request context in an event-driven setup.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
+
+</span><span class="keyword">val</span><span> </span><span class="identifier">scenario1</span><span> = </span><span class="type-name">RequestContext</span><span>(
+  </span><span class="identifier">command</span><span> = </span><span class="type-name">CommandMessage</span><span>(
+    </span><span class="identifier">id</span><span> = </span><span class="string-literal">&quot;some random id for request&quot;</span><span>,
+    </span><span class="identifier">time</span><span> = </span><span class="type-name">Instant</span><span>.</span><span class="type-name">MIN</span><span>,
+    </span><span class="identifier">address</span><span> = </span><span class="string-literal">&quot;our account id&quot;</span><span>,
+    </span><span class="identifier">payload</span><span> = </span><span class="type-name">Command</span><span>.</span><span class="type-name">Open</span><span>
+  ),
+  </span><span class="identifier">state</span><span> = </span><span class="type-name">Account</span><span>.</span><span class="type-name">New</span><span>
+)
+</span><span class="comment">// scenario1: RequestContext[Command, Account] = RequestContext(
+//   command = CommandMessage(
+//     id = &quot;some random id for request&quot;,
+//     time = -1000000000-01-01T00:00:00Z,
+//     address = &quot;our account id&quot;,
+//     payload = Open,
+//     metadata = MessageMetadata(
+//       correlation = Some(value = &quot;some random id for request&quot;),
+//       causation = Some(value = &quot;some random id for request&quot;)
+//     )
+//   ),
+//   state = New
+// )</span></code></pre>
+        <p>There are 2 ways for running an <code>Edomaton</code> to get its result:<br></p>
+        <ul>
+          <li>Recommended way is to use <code>.execute</code> which takes input and returns processed results, which is used in real backends too.</li>
+        </ul>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// as we&#39;ve written our service definition in a tagless style, 
+// we are free to provide any type param that satisfies required type-classes
+</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Id</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">obtained</span><span> = </span><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
+</span><span class="comment">// obtained: EdomatonResult[Account, Event, Rejection, Notification] = Accepted(Open(0),Chain(Opened),Chain(AccountOpened(our account id)))
+</span><span>
+</span><span class="comment">// or even use a real IO monad if needed
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="type-name">IO</span><span>
+
+</span><span class="type-name">AccountService</span><span>[</span><span class="type-name">IO</span><span>].</span><span class="identifier">execute</span><span>(</span><span class="identifier">scenario1</span><span>)
+</span><span class="comment">// res8: IO[EdomatonResult[Account, Event, Rejection, Notification]] = IO(...)</span></code></pre>
+        <ul>
+          <li>or you can use <code>.run</code>, which takes input and returns raw <code>Response</code> model, which you can interpret however you like.</li>
+        </ul>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)
+</span><span class="comment">// res9: ResponseT[[_$1 &gt;: Nothing &lt;: Any] =&gt; Decision[Rejection, Event, _$1], Rejection, Notification, Unit] = ResponseT(
+//   result = Accepted(events = Singleton(a = Opened), result = ()),
+//   notifications = Singleton(a = AccountOpened(accountId = &quot;our account id&quot;))
+// )</span></code></pre>
+        <p>now we can easily assert our expectations using our favorite test framework</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">assertEquals</span><span>(
+  </span><span class="identifier">obtained</span><span>,
+  </span><span class="type-name">EdomatonResult</span><span>.</span><span class="type-name">Accepted</span><span>(
+    </span><span class="identifier">newState</span><span> = </span><span class="type-name">Account</span><span>.</span><span class="type-name">Open</span><span>(</span><span class="number-literal">0</span><span>),
+    </span><span class="identifier">events</span><span> = ...
+    </span><span class="identifier">notifications</span><span> = ...
+  )
+)</span></code></pre>
+        
+        <h2 id="what-s-next" class="section"><a class="anchor-link left" href="#what-s-next"><i class="icofont-laika">&#xef71;</i></a>What&#39;s next?</h2>
+        <p>So far we&#39;ve created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I&#39;ll discuss in the <a href="2_backends.html">next chapter</a></p>
+
+        <hr style="margin-top: 30px"/>
+        <footer style="font-size: 90%; text-align: center">
+          Edomata is a <a href="https://typelevel.org/">Typelevel</a> project distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
+        </footer>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>

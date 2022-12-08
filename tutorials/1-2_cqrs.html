@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
+    <title>CQRS style</title>
+    
+      <meta name="author" content="Hossein Naderi"/>
+    
+    
+      <meta name="description" content="docs"/>
+    
+    
+      <link rel="icon" sizes="32x32" type="image/png" href="/icon.png"/>
+    
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
+    
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
+    
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
+        </a>
+        
+      </div>
+
+      <a class="image-link" href="../introduction.html"><img src="../icon.png"></a>
+
+      <span class="row links"><a class="icon-link" href="https://github.com/hnaderi/edomata/"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://edomata.ir/"><i class="icofont-laika" title="Home">&#xef47;</i></a></span>
+
+    </header>
+
+    <nav id="sidebar">
+
+      <div class="row">
+        <a class="icon-link" href="https://github.com/hnaderi/edomata/"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a><a class="icon-link" href="https://edomata.ir/"><i class="icofont-laika" title="Home">&#xef47;</i></a>
+      </div>
+
+      <ul class="nav-list">
+        <li class="level1"><a href="../introduction.html">Introduction</a></li>
+        <li class="level1 nav-header">about</li>
+        <li class="level2"><a href="../about/features.html">Features</a></li>
+        <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
+        <li class="level1 nav-header">tutorials</li>
+        <li class="level2"><a href="0_getting_started.html">Getting started</a></li>
+        <li class="level2"><a href="1-1_eventsourcing.html">Event sourcing</a></li>
+        <li class="level2 active"><a href="#">CQRS style</a></li>
+        <li class="level2"><a href="2_backends.html">Running</a></li>
+        <li class="level2"><a href="3_processes.html">Processes</a></li>
+        <li class="level1 nav-header">principles</li>
+        <li class="level2"><a href="../principles/index.html">Principles</a></li>
+        <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
+        <li class="level1 nav-header">backends</li>
+        <li class="level2"><a href="../backends/skunk.html">Skunk</a></li>
+        <li class="level2"><a href="../backends/doobie.html">Doobie</a></li>
+        <li class="level1 nav-header">other</li>
+        <li class="level2"><a href="../other/modules.html">Modules</a></li>
+        <li class="level2"><a href="../other/faq.html">FAQ</a></li>
+      </ul>
+
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+        
+          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
+        
+          <li class="level2"><a href="https://github.com/typelevel/discipline/">discipline</a></li>
+        
+      </ul>
+
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">CQRS style</a></p>
+
+        <ul class="nav-list">
+          <li class="level1"><a href="#imports">Imports</a></li>
+          <li class="level1"><a href="#domain-layer">Domain layer</a></li>
+          <li class="level2"><a href="#eithernec">EitherNec</a></li>
+          <li class="level2"><a href="#modeling">Modeling</a></li>
+          <li class="level2"><a href="#domainmodel">DomainModel</a></li>
+          <li class="level2"><a href="#testing-domain-model">Testing domain model</a></li>
+          <li class="level1"><a href="#service-layer">Service layer</a></li>
+          <li class="level2"><a href="#stomaton">Stomaton</a></li>
+          <li class="level2"><a href="#testing-an-stomaton">Testing an stomaton</a></li>
+          <li class="level1"><a href="#what-s-next">What&#39;s next?</a></li>
+        </ul>
+
+        <p class="footer"></p>
+      </nav>
+
+      <main class="content">
+
+        <h1 id="cqrs-style" class="title">CQRS style</h1>
+        
+        <h2 id="imports" class="section"><a class="anchor-link left" href="#imports"><i class="icofont-laika">&#xef71;</i></a>Imports</h2>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.* </span><span class="comment">// for convenient extension methods // for convenient extension methods
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.* </span><span class="comment">// to make life easier</span></code></pre>
+        
+        <h2 id="domain-layer" class="section"><a class="anchor-link left" href="#domain-layer"><i class="icofont-laika">&#xef71;</i></a>Domain layer</h2>
+        
+        <h3 id="eithernec" class="section"><a class="anchor-link left" href="#eithernec"><i class="icofont-laika">&#xef71;</i></a>EitherNec</h3>
+        <p>If you are not familiar with <code>EitherNec</code> from cats, it is basically a type alias like the following</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">type</span><span> </span><span class="type-name">EitherNec</span><span>[</span><span class="type-name">L</span><span>, </span><span class="type-name">R</span><span>] = </span><span class="type-name">Either</span><span>[</span><span class="type-name">NonEmptyChain</span><span>[</span><span class="type-name">L</span><span>], </span><span class="type-name">R</span><span>]</span></code></pre>
+        <p>which obviously shows that it behaves exactly like <code>Either</code>; </p>
+        <p>Examples:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">e1</span><span> = </span><span class="type-name">Right</span><span>(</span><span class="number-literal">1</span><span>)
+</span><span class="comment">// e1: Right[Nothing, Int] = Right(1)
+</span><span class="keyword">val</span><span> </span><span class="identifier">e2</span><span> = </span><span class="string-literal">&quot;Missile Launched!&quot;</span><span>.</span><span class="identifier">asRight</span><span>
+</span><span class="comment">// e2: Either[Nothing, String] = Right(Missile Launched!)
+</span><span class="keyword">val</span><span> </span><span class="identifier">e3</span><span> = </span><span class="string-literal">&quot;No remained missiles to launch!&quot;</span><span>.</span><span class="identifier">leftNec</span><span>
+</span><span class="comment">// e3: Either[Type[String], Nothing] = Left(Chain(No remained missiles to launch!))</span></code></pre>
+        <p>either is composable<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">e4</span><span> = </span><span class="identifier">e1</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> * </span><span class="number-literal">2</span><span>)
+</span><span class="comment">// e4: Either[Nothing, Int] = Right(2)
+</span><span class="keyword">val</span><span> </span><span class="identifier">e5</span><span> = </span><span class="identifier">e2</span><span> &gt;&gt; </span><span class="identifier">e1</span><span>
+</span><span class="comment">// e5: Either[Nothing, Int] = Right(1)</span></code></pre>
+        <p>You can also use for-comprehension:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">e6</span><span> = </span><span class="keyword">for</span><span> {
+  </span><span class="identifier">a</span><span> &lt;- </span><span class="identifier">e4</span><span>
+  </span><span class="identifier">b</span><span> &lt;- </span><span class="identifier">e5</span><span>
+} </span><span class="keyword">yield</span><span> </span><span class="identifier">a</span><span> + </span><span class="identifier">b</span><span>
+</span><span class="comment">// e6: Either[Nothing, Int] = Right(3)</span></code></pre>
+        <p>for more <a href="https://typelevel.org/cats/datatypes/either.html">examples see here</a> and also <a href="https://typelevel.org/cats/datatypes/validated.html">here</a></p>
+        
+        <h3 id="modeling" class="section"><a class="anchor-link left" href="#modeling"><i class="icofont-laika">&#xef71;</i></a>Modeling</h3>
+        <p>Let&#39;s use what we&#39;ve learned so far to create an overly simplified model of a food delivery system.<br>
+        Assume we have the following business requirements:</p>
+        <ul>
+          <li>User must be able to place order<br></li>
+          <li>Line cook gets notified of new orders<br></li>
+          <li>Line cook allocates food to a cook</li>
+          <li>User gets notified of order status<br></li>
+          <li>Kitchen can report that food is ready</li>
+          <li>Delivery gets notified of ready foods</li>
+          <li>Delivery allocates food to a delivery unit</li>
+          <li>Delivery can mark an order as delivered</li>
+          <li>User can submit a rating of her experience</li>
+        </ul>
+        <blockquote>I&#39;ll use scala 3 enums for modeling ADTs, as they are neat and closer to what modeling is all about; but you can use <code>sealed trait</code>s and normal <code>case class</code>es too</blockquote>
+        <p>Let&#39;s start with aggregate root which is the order here:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Order</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Empty</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Placed</span><span>(</span><span class="identifier">food</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">address</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">status</span><span>: </span><span class="type-name">OrderStatus</span><span> = </span><span class="type-name">OrderStatus</span><span>.</span><span class="type-name">New</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Delivered</span><span>(</span><span class="identifier">rating</span><span>: </span><span class="type-name">Int</span><span>)
+}</span></code></pre>
+        <p>and order status</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">OrderStatus</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">New</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Cooking</span><span>(</span><span class="identifier">cook</span><span>: </span><span class="type-name">String</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">WaitingToPickUp</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Delivering</span><span>(</span><span class="identifier">unit</span><span>: </span><span class="type-name">String</span><span>)
+}</span></code></pre>
+        <p>we&#39;ll continue with modeling rejection scenarios that also came from event storming:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Rejection</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">ExistingOrder</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">NoSuchOrder</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">InvalidRequest</span><span> </span><span class="comment">// this should be more fine grained in real world applications
+</span><span>}</span></code></pre>
+        <p>No we can use <code>EitherNec</code> to write our domain logic:<br></p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">edomata</span><span>.</span><span class="identifier">core</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">data</span><span>.</span><span class="type-name">ValidatedNec</span><span>
+
+</span><span class="keyword">enum</span><span> </span><span class="type-name">Order</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Empty</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Placed</span><span>(</span><span class="identifier">food</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">address</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">status</span><span>: </span><span class="type-name">OrderStatus</span><span> = </span><span class="type-name">OrderStatus</span><span>.</span><span class="type-name">New</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Delivered</span><span>(</span><span class="identifier">rating</span><span>: </span><span class="type-name">Int</span><span>)
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">place</span><span>(</span><span class="identifier">food</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">address</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="keyword">this</span><span> </span><span class="keyword">match</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Empty</span><span> =&gt; </span><span class="type-name">Placed</span><span>(</span><span class="identifier">food</span><span>, </span><span class="identifier">address</span><span>).</span><span class="identifier">asRight</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">ExistingOrder</span><span>.</span><span class="identifier">leftNec</span><span>
+  }
+  
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">markAsCooking</span><span>(</span><span class="identifier">cook</span><span>: </span><span class="type-name">String</span><span>) = </span><span class="keyword">this</span><span> </span><span class="keyword">match</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="identifier">st</span><span class="annotation">@Placed</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">_</span><span>, </span><span class="type-name">OrderStatus</span><span>.</span><span class="type-name">New</span><span>) =&gt; </span><span class="identifier">st</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">status</span><span> = </span><span class="type-name">OrderStatus</span><span>.</span><span class="type-name">Cooking</span><span>(</span><span class="identifier">cook</span><span>)).</span><span class="identifier">asRight</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Rejection</span><span>.</span><span class="type-name">InvalidRequest</span><span>.</span><span class="identifier">leftNec</span><span>
+  }
+  
+  </span><span class="comment">// other logics from business
+</span><span>}</span></code></pre>
+        
+        <h3 id="domainmodel" class="section"><a class="anchor-link left" href="#domainmodel"><i class="icofont-laika">&#xef71;</i></a>DomainModel</h3>
+        <p>In order to complete modeling we must also define transitions (the famous event sourcing fold!) and our starting point, for doing so we use <code>DomainModel</code>, which is a helper class that creates the required stuff for the next steps:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Order</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">CQRSModel</span><span>[</span><span class="type-name">Order</span><span>, </span><span class="type-name">Rejection</span><span>] {
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">initial</span><span> = </span><span class="type-name">Empty</span><span>
+}</span></code></pre>
+        <ol class="arabic">
+          <li>
+            <code>initial</code> is the initial state of your domain model which is the first start in timeline changes, you can assume that it&#39;s like <code>None</code> in <code>Option[T]</code>. beside it being required for our tutorial purposes, defining an initial state has the following advantages:
+            <ul>
+              <li>Model consistency; you are always working with your domain model, not with <code>Option[YourModel]</code></li>
+              <li>It enables to add new default values in the future, where your model evolves, and reduces the number of times when an upcasting or migration is required.</li>
+            </ul>
+          </li>
+          <li><code>transition</code> is the fold function that given an event, tells how to go to the next state. it&#39;s a function in <code>E =&gt; S =&gt; ValidatedNec[R, S]</code>. if an event is not possible to apply, we call it a conflict; and it might be due to programming errors, storage manipulation, or changing your transition to a conflicting logic with a history of already created timelines.</li>
+        </ol>
+        
+        <h4 id="tip" class="section"><a class="anchor-link left" href="#tip"><i class="icofont-laika">&#xef71;</i></a>Tip</h4>
+        <blockquote>Writing transition without using a library for optics and lenses would be cumbersome and not expressive enough for domain modeling; I suggest you to use the great <a href="https://www.optics.dev/Monocle/">monocle</a> library which provides neat macros for lenses, and you don&#39;t even need to think about it twice after using it for the first time.</blockquote>
+        
+        <h4 id="thinking-further" class="section"><a class="anchor-link left" href="#thinking-further"><i class="icofont-laika">&#xef71;</i></a>Thinking further</h4>
+        <blockquote>Writing event-driven (and specifically event-sourced) domain models deal with explicitly modeling a timeline of facts, and one thing that you will face as soon you start modeling your first domain in such a context, is that not all timelines are valid as you are not always in the control of what you&#39;ll read from a journal; for example, in the example above, we might receive a Withdrawn event on <code>New</code> or <code>Closed</code> state (of course that does not happen unless there is a programming error or manipulated data, but we are speaking about possibility here), and you can&#39;t even find a balance to decrement! in non-functional settings where states are not modeled as ADTs, this problem is somewhat implicit, as it is hidden from eyes, but in modeling with ADTs, compiler slaps you in the face! just kidding :D, explicit modeling allows you to be more expressive and find logical problems very easily.</blockquote>
+        
+        <h4 id="info" class="section"><a class="anchor-link left" href="#info"><i class="icofont-laika">&#xef71;</i></a>Info</h4>
+        <blockquote>If you have a programming error in your folding which can cause conflicts, Edomata has your back! it won&#39;t let your program to reach a result where it can be persisted and corrupting data; we&#39;ll see this in the next chapters.</blockquote>
+        <p>As simple as that!</p>
+        
+        <h3 id="testing-domain-model" class="section"><a class="anchor-link left" href="#testing-domain-model"><i class="icofont-laika">&#xef71;</i></a>Testing domain model</h3>
+        <p>As everything is pure and all the logic is implemented as programs that are values, you can easily test everything:<br></p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">Order</span><span>.</span><span class="type-name">Empty</span><span>.</span><span class="identifier">place</span><span>(</span><span class="string-literal">&quot;kebab&quot;</span><span>, </span><span class="string-literal">&quot;home&quot;</span><span>)
+</span><span class="comment">// res0: Either[Type[Rejection], Placed] = Right(Placed(kebab,home,New))
+</span><span class="type-name">Order</span><span>.</span><span class="type-name">Placed</span><span>(</span><span class="string-literal">&quot;pizza&quot;</span><span>, </span><span class="string-literal">&quot;office&quot;</span><span>).</span><span class="identifier">markAsCooking</span><span>(</span><span class="string-literal">&quot;chef&quot;</span><span>)
+</span><span class="comment">// res1: Either[Type[Rejection], Placed] = Right(Placed(pizza,office,Cooking(chef)))</span></code></pre>
+        
+        <h2 id="service-layer" class="section"><a class="anchor-link left" href="#service-layer"><i class="icofont-laika">&#xef71;</i></a>Service layer</h2>
+        <p>Domain models are pure state machines, in isolation, in order to create a complete service you need a way to:<br></p>
+        <ul>
+          <li>store and load models</li>
+          <li>interact with them</li>
+          <li>possibly perform some side effects</li>
+        </ul>
+        <p>you can do all that without Edomata, as everything in Edomata is just pure data and you can use it however you like; but here we&#39;ll focus on what Edomata has to offer.<br>
+        Edomata is designed around the idea of event-driven state machines,
+        and it&#39;s not surprising that the tools that it provides for building services are also event-driven state machines!
+        these state machines are like <a href="../principles/index.html#actor-model">actors</a> that respond to incoming messages which are domain commands,
+        may possibly change state through emitting some events as we&#39;ve seen in domain modeling above,
+        and possibly emit some other type of events for communication and integration with other services;
+        while doing so, they can also perform any side effects that are idempotent,
+        as these machines may be run several times in case of failure. that takes us to the next building block:</p>
+        
+        <h3 id="stomaton" class="section"><a class="anchor-link left" href="#stomaton"><i class="icofont-laika">&#xef71;</i></a>Stomaton</h3>
+        <p>A <code>Stomaton</code> is an state-driven automata that can do the following:<br></p>
+        <ul>
+          <li>read or modify the current state</li>
+          <li>ask what is requested (e.g. command message)</li>
+          <li>perform side effects</li>
+          <li>decide (using EitherNec, return a value or reject with one or more rejections)</li>
+          <li>notify (emit notifications, integration events, ...)</li>
+          <li>output a value</li>
+        </ul>
+        <p><code>Stomaton</code>s are composable, so you can assemble them together, change them or treat them like normal data structures. </p>
+        <p>for creating our first <code>Stomaton</code>, we need to model 2 more ADTs; commands, and notifications.</p>
+        <pre><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Command</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Place</span><span>(</span><span class="identifier">food</span><span>: </span><span class="type-name">String</span><span>, </span><span class="identifier">address</span><span>: </span><span class="type-name">String</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">MarkAsCooking</span><span>(</span><span class="identifier">cook</span><span>: </span><span class="type-name">String</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">MarkAsCooked</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">MarkAsDelivering</span><span>(</span><span class="identifier">unit</span><span>: </span><span class="type-name">String</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">MarkAsDelivered</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Rate</span><span>(</span><span class="identifier">score</span><span>: </span><span class="type-name">Int</span><span>)
+}
+
+</span><span class="keyword">enum</span><span> </span><span class="type-name">Notification</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Received</span><span>(</span><span class="identifier">food</span><span>: </span><span class="type-name">String</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Cooking</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Cooked</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Delivering</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Delivered</span><span>
+}</span></code></pre>
+        <p>and we can create our first service:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">OrderService</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Order</span><span>.</span><span class="type-name">Service</span><span>[</span><span class="type-name">Command</span><span>, </span><span class="type-name">Notification</span><span>] {
+  </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Monad</span><span>
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>] : </span><span class="type-name">Monad</span><span>]: </span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">Unit</span><span>] = </span><span class="type-name">App</span><span>.</span><span class="identifier">router</span><span>{
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">Place</span><span>(</span><span class="identifier">food</span><span>, </span><span class="identifier">address</span><span>) =&gt; </span><span class="keyword">for</span><span> {
+      </span><span class="identifier">ns</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">modifyS</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">place</span><span>(</span><span class="identifier">food</span><span>, </span><span class="identifier">address</span><span>))
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">Received</span><span>(</span><span class="identifier">food</span><span>))
+    } </span><span class="keyword">yield</span><span> ()
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Command</span><span>.</span><span class="type-name">MarkAsCooking</span><span>(</span><span class="identifier">cook</span><span>: </span><span class="type-name">String</span><span>) =&gt; </span><span class="keyword">for</span><span> {
+      </span><span class="identifier">ns</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">modifyS</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">markAsCooking</span><span>(</span><span class="identifier">cook</span><span>))
+      </span><span class="identifier">_</span><span> &lt;- </span><span class="type-name">App</span><span>.</span><span class="identifier">publish</span><span>(</span><span class="type-name">Notification</span><span>.</span><span class="type-name">Cooking</span><span>)
+    } </span><span class="keyword">yield</span><span> ()
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; ??? </span><span class="comment">// other command handling logic
+</span><span>  }
+}</span></code></pre>
+        <p>That&#39;s it! we&#39;ve just written our first <code>Stomaton</code>.</p>
+        
+        <h3 id="testing-an-stomaton" class="section"><a class="anchor-link left" href="#testing-an-stomaton"><i class="icofont-laika">&#xef71;</i></a>Testing an stomaton</h3>
+        <p>As said earlier, everything in Edomata is just a normal value, and you can treat them like normal data.<br></p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">java</span><span>.</span><span class="identifier">time</span><span>.</span><span class="type-name">Instant</span><span>
+
+</span><span class="comment">// as we&#39;ve written our service definition in a tagless style, 
+// we are free to provide any type param that satisfies required type-classes
+</span><span class="keyword">val</span><span> </span><span class="identifier">srv</span><span> = </span><span class="type-name">OrderService</span><span>[</span><span class="identifier">cats</span><span>.</span><span class="type-name">Id</span><span>] </span><span class="comment">// or any other effect type
+</span><span>
+</span><span class="keyword">val</span><span> </span><span class="identifier">scenario1</span><span> = </span><span class="identifier">srv</span><span>.</span><span class="identifier">run</span><span>(
+  </span><span class="type-name">CommandMessage</span><span>(
+    </span><span class="identifier">id</span><span> = </span><span class="string-literal">&quot;cmd id&quot;</span><span>,
+    </span><span class="identifier">time</span><span> = </span><span class="type-name">Instant</span><span>.</span><span class="type-name">MIN</span><span>,
+    </span><span class="identifier">address</span><span> = </span><span class="string-literal">&quot;aggregate id&quot;</span><span>,
+    </span><span class="identifier">payload</span><span> = </span><span class="type-name">Command</span><span>.</span><span class="type-name">Place</span><span>(</span><span class="string-literal">&quot;taco&quot;</span><span>, </span><span class="string-literal">&quot;home&quot;</span><span>)
+  ),
+  </span><span class="type-name">Order</span><span>.</span><span class="type-name">Empty</span><span>    </span><span class="comment">// state to run command on
+</span><span>)</span></code></pre>
+        <p>and you can assert on response easily</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">scenario1</span><span>.</span><span class="identifier">result</span><span>
+</span><span class="comment">// res2: Either[Type[Rejection], Tuple2[Order, Unit]] = Right((Placed(taco,home,New),()))
+</span><span class="identifier">scenario1</span><span>.</span><span class="identifier">notifications</span><span>
+</span><span class="comment">// res3: Chain[Notification] = Chain(Received(taco))</span></code></pre>
+        
+        <h2 id="what-s-next" class="section"><a class="anchor-link left" href="#what-s-next"><i class="icofont-laika">&#xef71;</i></a>What&#39;s next?</h2>
+        <p>So far we&#39;ve created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I&#39;ll discuss in the <a href="2_backends.html">next chapter</a></p>
+
+        <hr style="margin-top: 30px"/>
+        <footer style="font-size: 90%; text-align: center">
+          Edomata is a <a href="https://typelevel.org/">Typelevel</a> project distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
+        </footer>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
