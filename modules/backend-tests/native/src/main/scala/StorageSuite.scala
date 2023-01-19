@@ -17,6 +17,20 @@
 package tests
 
 import cats.effect.IO
-import cats.effect.std.UUIDGen
+import cats.effect.kernel.Resource
+import edomata.backend.*
+import munit.CatsEffectSuite
+import munit.Location
 
-def randomString: IO[String] = UUIDGen.randomString[IO]
+abstract class StorageSuite[Res](
+    storage: Resource[IO, Res],
+    suiteName: String
+) extends CatsEffectSuite {
+  private val storageFixture = ResourceSuiteLocalFixture("Storage", storage)
+
+  final override def munitFixtures = List(storageFixture)
+
+  def check(name: String)(f: Res => IO[Unit])(using
+      Location
+  ) = test(s"${suiteName}: ${name}")(f(storageFixture()))
+}

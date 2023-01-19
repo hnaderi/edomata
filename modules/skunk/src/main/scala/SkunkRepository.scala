@@ -30,6 +30,7 @@ import edomata.core.*
 
 import java.time.ZoneOffset
 import java.util.UUID
+import cats.effect.std.UUIDGen
 
 private final class SkunkRepository[F[_], S, E, R, N](
     pool: Resource[F, Session[F]],
@@ -42,7 +43,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
     extends Repository[F, S, E, R, N] {
 
   private val trx = pool.flatTap(_.transaction)
-  private val newId = F.delay(UUID.randomUUID)
+  private val newId = UUIDGen[F].randomUUID
   private val redundant: F[CommandState[S, E, R]] =
     CommandState.Redundant.pure[F]
 

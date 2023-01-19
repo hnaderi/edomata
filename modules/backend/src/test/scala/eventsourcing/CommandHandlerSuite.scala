@@ -34,6 +34,7 @@ import scala.concurrent.duration.*
 
 import CommandHandlerSuite.*
 import SUT.given_ModelTC_State_Event_Rejection
+import cats.effect.std.UUIDGen
 
 class CommandHandlerSuite extends CatsEffectSuite {
 
@@ -145,11 +146,12 @@ class CommandHandlerSuite extends CatsEffectSuite {
 
   test("Must reject working on conflicted state") {
     val app: APP = SUT.dsl.unit
-    val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
-    val evMsg = EventMessage(meta, -1)
-    val rejection = "don't know what to do"
 
     for {
+      id <- UUIDGen[IO].randomUUID
+      meta = EventMetadata(id, OffsetDateTime.MAX, 42, 16, "sut")
+      evMsg = EventMessage(meta, -1)
+      rejection = "don't know what to do"
       r <- repo(
         AggregateState.Conflicted("", evMsg, NonEmptyChain(rejection))
       )
@@ -162,9 +164,10 @@ class CommandHandlerSuite extends CatsEffectSuite {
   test("Must not change raised errors") {
     val exception = new Exception("Some error!")
     val app: APP = SUT.dsl.eval(IO.raiseError(exception))
-    val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
 
     for {
+      id <- UUIDGen.randomUUID[IO]
+      meta = EventMetadata(id, OffsetDateTime.MAX, 42, 16, "sut")
       r <- repo(AggregateState.Valid("", 0))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)

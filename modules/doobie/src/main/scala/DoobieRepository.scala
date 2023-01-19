@@ -32,6 +32,7 @@ import fs2.Stream
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
+import cats.effect.std.UUIDGen
 
 private final class DoobieRepository[F[_], S, E, R, N](
     trx: Transactor[F],
@@ -45,7 +46,7 @@ private final class DoobieRepository[F[_], S, E, R, N](
     clock: Clock[F]
 ) extends Repository[F, S, E, R, N] {
 
-  private val newId = F.delay(UUID.randomUUID)
+  private val newId = UUIDGen[F].randomUUID
   private val redundant: F[CommandState[S, E, R]] =
     CommandState.Redundant.pure[F]
   private val currentTime: F[OffsetDateTime] =
