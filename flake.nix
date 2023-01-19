@@ -20,6 +20,10 @@
           typelevelShell = {
             jdk.package = pkgs.jdk8;
             nodejs.enable = true;
+            native= {
+              enable = true;
+              libraries = with pkgs; [s2n utf8proc];
+            };
           };
         };
       }

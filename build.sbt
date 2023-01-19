@@ -135,14 +135,14 @@ lazy val unidocs = project
   )
 
 lazy val core = module("core") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .settings(
       description := "Purely functional event-driven automata",
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "cats-core" % Versions.cats,
         "org.typelevel" %%% "cats-laws" % Versions.cats % Test,
-        "org.typelevel" %%% "discipline-munit" % "1.0.9" % Test
+        "org.typelevel" %%% "discipline-munit" % Versions.CatsEffectMunit % Test
       )
     )
     .jsSettings(
@@ -155,14 +155,14 @@ lazy val core = module("core") {
 }
 
 lazy val backend = module("backend") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .dependsOn(core)
     .settings(
       description := "Performant eventsourcing backend for edomata",
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "cats-effect" % Versions.catsEffect,
-        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test,
+        "org.typelevel" %%% "munit-cats-effect" % Versions.CatsEffectMunit % Test,
         "org.typelevel" %%% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion % Test,
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect % Test,
         "co.fs2" %%% "fs2-core" % Versions.fs2
@@ -171,7 +171,7 @@ lazy val backend = module("backend") {
 }
 
 lazy val postgres = module("postgres") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .dependsOn(core, backend)
     .settings(
@@ -180,7 +180,7 @@ lazy val postgres = module("postgres") {
 }
 
 lazy val skunkBackend = module("skunk") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .dependsOn(postgres)
     .dependsOn(driverTests % Test)
@@ -188,7 +188,7 @@ lazy val skunkBackend = module("skunk") {
       description := "Skunk based backend for edomata",
       libraryDependencies ++= Seq(
         "org.tpolecat" %%% "skunk-core" % Versions.skunk,
-        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit % Test
+        "org.typelevel" %%% "munit-cats-effect" % Versions.CatsEffectMunit % Test
       )
     )
     .jsSettings(
@@ -213,7 +213,7 @@ lazy val doobieBackend = module("doobie") {
 }
 
 lazy val skunkCirceCodecs = module("skunk-circe") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .dependsOn(skunkBackend)
     .settings(
@@ -225,7 +225,7 @@ lazy val skunkCirceCodecs = module("skunk-circe") {
 }
 
 lazy val skunkUpickleCodecs = module("skunk-upickle") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .dependsOn(skunkBackend)
     .settings(
@@ -261,22 +261,26 @@ lazy val doobieUpickleCodecs = module("doobie-upickle") {
 }
 
 lazy val driverTests = module("backend-tests") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Full)
     .enablePlugins(NoPublishPlugin)
     .dependsOn(postgres)
     .settings(
       description := "Integration tests for postgres backends",
       libraryDependencies ++= Seq(
-        "org.typelevel" %%% "munit-cats-effect-3" % Versions.CatsEffectMunit,
+        "org.typelevel" %%% "munit-cats-effect" % Versions.CatsEffectMunit,
         "org.typelevel" %%% "scalacheck-effect-munit" % Versions.scalacheckEffectVersion,
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect
       )
     )
+    .nativeSettings(
+      libraryDependencies += "com.armanbilge" %%% "epollcat" % "0.1.3",
+      Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
+    )
 }
 
 lazy val munitTestkit = module("munit") {
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
     .settings(
       description := "munit integration for edomata",

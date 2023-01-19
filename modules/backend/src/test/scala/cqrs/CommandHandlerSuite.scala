@@ -38,6 +38,7 @@ import cats.effect.std.Random
 import edomata.backend.BackendError
 import edomata.backend.CommandState.Redundant
 import edomata.backend.EventMetadata
+import cats.effect.std.UUIDGen
 
 class CommandHandlerSuite extends CatsEffectSuite {
 
@@ -120,9 +121,10 @@ class CommandHandlerSuite extends CatsEffectSuite {
   test("Must not change raised errors") {
     val exception = new Exception("Some error!")
     val app: APP = Stomaton.eval(IO.raiseError(exception))
-    val meta = EventMetadata(UUID.randomUUID, OffsetDateTime.MAX, 42, 16, "sut")
 
     for {
+      id <- UUIDGen.randomUUID[IO]
+      meta = EventMetadata(id, OffsetDateTime.MAX, 42, 16, "sut")
       r <- repo(AggregateState("", 0))
       s = CommandHandler(r).apply(app)
       _ <- s.apply(cmd).attempt.assertEquals(exception.asLeft)
