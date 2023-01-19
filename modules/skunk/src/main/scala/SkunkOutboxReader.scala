@@ -39,14 +39,15 @@ private final class SkunkOutboxReader[F[_]: Concurrent: Clock, N](
     q: Queries.Outbox[N]
 ) extends OutboxReader[F, N] {
   def read: Stream[F, OutboxItem[N]] = Stream
-    .resource(pool.flatMap(_.prepare(q.read)))
+    .resource(pool)
+    .evalMap(_.prepare(q.read))
     .flatMap(_.stream(Void, 100))
 
   def markAllAsSent(items: NonEmptyChain[OutboxItem[N]]): F[Unit] = for {
     now <- currentTime[F]
     is = items.toList.map(_.seqNr)
-    _ <- pool
-      .flatMap(_.prepare(q.markAsPublished(is)))
-      .use(_.execute((now, is)))
+    _ <- pool.use(
+      _.prepare(q.markAsPublished(is)).flatMap(_.execute((now, is)))
+    )
   } yield ()
 }

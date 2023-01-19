@@ -48,8 +48,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
 
   def load(cmd: CommandMessage[?]): F[CommandState[S, E, R]] =
     pool
-      .flatMap(_.prepare(cmds.count))
-      .use(_.unique(cmd.id))
+      .use(_.prepare(cmds.count).flatMap(_.unique(cmd.id)))
       .flatMap(c =>
         if c != 0 then redundant
         else repository.get(cmd.address).widen
@@ -78,18 +77,18 @@ private final class SkunkRepository[F[_], S, E, R, N](
         )
         _ <- s
           .prepare(journal.append(evs))
-          .use(_.execute(evs))
+          .flatMap(_.execute(evs))
           .assertInserted(evs.size)
         _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { n =>
           val ns = notifications.toList
             .map((_, ctx.command.address, now, ctx.command.metadata))
           s.prepare(outbox.insertAll(ns))
-            .use(_.execute(ns))
+            .flatMap(_.execute(ns))
             .assertInserted(ns.size)
         }
         _ <- s
           .prepare(cmds.insert)
-          .use(_.execute(ctx.command))
+          .flatMap(_.execute(ctx.command))
           .assertInserted
       } yield ()
     }
@@ -110,7 +109,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
         )
         _ <- s
           .prepare(outbox.insertAll(ns))
-          .use(_.execute(ns))
+          .flatMap(_.execute(ns))
           .assertInserted(ns.size)
       } yield ()
     }

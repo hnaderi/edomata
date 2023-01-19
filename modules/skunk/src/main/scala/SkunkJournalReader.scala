@@ -40,7 +40,7 @@ private final class SkunkJournalReader[F[_]: Concurrent, E](
 ) extends JournalReader[F, E] {
 
   private def run[A, B](q: Query[A, B])(a: A) =
-    Stream.resource(pool.flatMap(_.prepare(q))).flatMap(_.stream(a, 100))
+    Stream.resource(pool).evalMap(_.prepare(q)).flatMap(_.stream(a, 100))
 
   def readStream(streamId: StreamId): Stream[F, EventMessage[E]] =
     run(q.readStream)(streamId)

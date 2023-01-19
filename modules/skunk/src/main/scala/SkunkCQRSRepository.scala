@@ -52,7 +52,7 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
   private val trx = pool.flatTap(_.transaction)
 
   private def _get(s: Session[F], id: StreamId): F[AggregateState[S]] =
-    s.prepare(state.get).use(_.option(id)).map {
+    s.prepare(state.get).flatMap(_.option(id)).map {
       case None        => AggregateState(tc.initial, 0)
       case Some(value) => value
     }
@@ -63,7 +63,7 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
   override def load(cmd: CommandMessage[?]): F[CommandState[S]] =
     pool.use(s =>
       s.prepare(cmds.count)
-        .use(_.unique(cmd.id))
+        .flatMap(_.unique(cmd.id))
         .flatMap(c =>
           if c != 0 then redundant
           else _get(s, cmd.address).widen
@@ -81,7 +81,7 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
         now <- currentTime[F]
         _ <- s
           .prepare(state.put)
-          .use(_.execute(ctx.address ~ newState ~ version))
+          .flatMap(_.execute(ctx.address ~ newState ~ version))
           .flatMap {
             case Completion.Insert(1) | Completion.Update(1) => F.unit
             case Completion.Insert(0) | Completion.Update(0) =>
@@ -97,12 +97,12 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
           val ns = events.toList
             .map((_, ctx.address, now, ctx.metadata))
           s.prepare(outbox.insertAll(ns))
-            .use(_.execute(ns))
+            .flatMap(_.execute(ns))
             .assertInserted(ns.size) >> handler(n)(s)
         }
         _ <- s
           .prepare(cmds.insert)
-          .use(_.execute(ctx))
+          .flatMap(_.execute(ctx))
           .assertInserted
       } yield ()
     }
@@ -123,7 +123,7 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
         )
         _ <- s
           .prepare(outbox.insertAll(ns))
-          .use(_.execute(ns))
+          .flatMap(_.execute(ns))
           .assertInserted(ns.size)
       } yield ()
     }
