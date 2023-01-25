@@ -27,7 +27,8 @@ object SiteConfigs {
         )
       ),
       title = Some("Edomata"),
-      subtitle = Some("Event-driven automatons for Scala and Scala.js"),
+      subtitle =
+        Some("Event-driven automatons for Scala, Scala.js and scala native"),
       latestReleases = Seq(
         ReleaseInfo(
           "Latest develop Release",
@@ -56,6 +57,10 @@ object SiteConfigs {
           "Provides simple, composable tools that encourage good design for complex event-driven systems"
         ),
         Teaser(
+          "Extensible",
+          "Everything can be extended easily, if included components or defaults are not suitable for you"
+        ),
+        Teaser(
           "DDD/Eventsourcing/CQRS",
           "enables modeling true eventsourced systems to ensure you can reason about your system"
         ),
@@ -66,6 +71,10 @@ object SiteConfigs {
         Teaser(
           "Simple",
           "You can easily understand what's going on and don't need a phd in Akka clusterology!"
+        ),
+        Teaser(
+          "Cross platform support",
+          "Supports all scala platforms, so you can use your application on the server, in the browser or compile to a native binary!"
         )
       )
     )
