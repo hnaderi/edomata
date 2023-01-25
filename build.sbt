@@ -8,8 +8,6 @@ import sbtcrossproject.CrossProject
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 lazy val scala3 = "3.2.1"
-val PrimaryJava = JavaSpec.temurin("8")
-val LTSJava = JavaSpec.temurin("17")
 
 inThisBuild(
   List(
@@ -23,8 +21,6 @@ inThisBuild(
     tlSonatypeUseLegacyHost := false,
     tlCiReleaseBranches := Seq("main"),
     tlSitePublishBranch := Some("main"),
-    githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava),
-    githubWorkflowBuildPreamble ++= dockerComposeUp,
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -34,13 +30,6 @@ inThisBuild(
         url = url("https://hnaderi.dev")
       )
     )
-  )
-)
-
-lazy val dockerComposeUp = Seq(
-  WorkflowStep.Run(
-    commands = List("docker-compose up -d"),
-    name = Some("Start up Postgres")
   )
 )
 

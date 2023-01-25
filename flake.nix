@@ -12,20 +12,28 @@
           inherit system;
           overlays = [ typelevel-nix.overlay ];
         };
-      in
-      {
-        devShell = pkgs.devshell.mkShell {
-          imports = [ typelevel-nix.typelevelShell ];
-          name = "edomata-shell";
-          typelevelShell = {
-            jdk.package = pkgs.jdk8;
-            nodejs.enable = true;
-            native= {
-              enable = true;
-              libraries = with pkgs; [s2n utf8proc];
+
+        mkShell = jdk:
+          pkgs.devshell.mkShell {
+            imports = [ typelevel-nix.typelevelShell ];
+            name = "edomata-shell";
+            typelevelShell = {
+              jdk.package = jdk;
+              nodejs.enable = true;
+              native = {
+                enable = true;
+                libraries = with pkgs; [ s2n utf8proc openssl ];
+              };
             };
           };
+      in {
+        devShell = mkShell pkgs.jdk8;
+
+        devShells = {
+          "temurin@8" = mkShell pkgs.temurin-bin-8;
+          "temurin@11" = mkShell pkgs.temurin-bin-11;
+          "temurin@17" = mkShell pkgs.temurin-bin-17;
         };
-      }
-    );
+
+      });
 }
