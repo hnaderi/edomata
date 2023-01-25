@@ -39,7 +39,7 @@ While this is not a direct alternative, it tries to do some of things this libra
 | Usage       | Library                                | Framework           | Framework/Platform            | Library + akka                       |
 | Persistence | Custom interpreters*                   | Axon server         | Akka persistence backends     | like akka                            |
 | Testing     | Trivial                                | Test library        | Test library                  | Trivial + like akka                  |
-| Runtime     | JVM/JS + (Native soon)                 | JVM                 | JVM                           | JVM                                  |
+| Runtime     | JVM/JS/Native                          | JVM                 | JVM                           | JVM                                  |
 | Focus       | Expressive event driven state machines | CQRS+Event-sourcing | Actor model/Erlang OTP on JVM | Purely functional behaviors for Akka |
 | Ecosystem   | Typelevel                              | Java                | Lightbend                     | Typelevel over akka                  |
 |             |                                        |                     |                               |                                      |
