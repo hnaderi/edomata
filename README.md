@@ -2,7 +2,7 @@
   <img src="https://edomata.ir/icon.png" height="100px" alt="Edomata icon" />
   <br/>
   <strong>Edomata</strong>
-  <i>(Event-driven automata for Scala and Scala.js)</i>
+  <i>(Event-driven automata for Scala, Scala.js and scala native)</i>
 </p>
 
 <a href="https://typelevel.org/cats/"><img src="https://typelevel.org/cats/img/cats-badge.svg" height="40px" align="right" alt="Cats friendly" /></a>
@@ -28,7 +28,7 @@ libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "<last version f
 ```  
 See [modules](https://edomata.ir/other/modules.html) for more info.
 
-or for scala.js
+or for scala.js and or scala native
 ```scala
 libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from badge>"
 ```
