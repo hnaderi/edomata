@@ -7,7 +7,7 @@ import sbtcrossproject.CrossProject
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala3 = "3.2.1"
+lazy val scala3 = "3.2.2"
 
 inThisBuild(
   List(
