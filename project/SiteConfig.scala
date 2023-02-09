@@ -41,7 +41,11 @@ object SiteConfigs {
         TextLink.internal(Root / "introduction.md", "Inroduction"),
         TextLink
           .internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
-        TextLink.internal(Root / "principles" / "index.md", "Principles")
+        TextLink.internal(Root / "principles" / "index.md", "Principles"),
+        TextLink.external(
+          "https://github.com/hnaderi/edomata-example",
+          "Example project"
+        )
       ),
       teasers = Seq(
         Teaser(

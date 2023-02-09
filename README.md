@@ -33,6 +33,12 @@ or for scala.js and or scala native
 libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from badge>"
 ```
 
+## Projects
+
+- [Edomata example from tutorials](https://github.com/hnaderi/edomata-example)
+- Feel free to add your projects in a PR!
+
+
 ## Adopters
 
 Here's a (non-exhaustive) list of companies that use edomata in production. Don't see yours? You can add it in a PR!
