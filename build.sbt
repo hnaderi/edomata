@@ -263,7 +263,7 @@ lazy val driverTests = module("backend-tests") {
       )
     )
     .nativeSettings(
-      libraryDependencies += "com.armanbilge" %%% "epollcat" % "0.1.3",
+      libraryDependencies += "com.armanbilge" %%% "epollcat" % "0.1.4",
       Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
     )
 }
