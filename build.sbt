@@ -71,7 +71,7 @@ lazy val root = tlCrossRootProject
 lazy val mdocPlantuml = project
   .in(file("mdoc-plantuml"))
   .settings(
-    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2023.2"
+    libraryDependencies += "net.sourceforge.plantuml" % "plantuml" % "1.2023.4"
   )
   .enablePlugins(MdocPlugin)
   .enablePlugins(NoPublishPlugin)
