@@ -12,6 +12,6 @@ object Dependencies {
     val scalacheckEffectVersion = "2.0.0-M2"
     val doobie = "1.0.0-RC2"
     val circe = "0.14.5"
-    val upickle = "2.0.0"
+    val upickle = "3.0.0"
   }
 }
