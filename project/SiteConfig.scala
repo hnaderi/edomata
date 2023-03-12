@@ -38,7 +38,7 @@ object SiteConfigs {
       ),
       license = Some("Apache 2.0"),
       documentationLinks = Seq(
-        TextLink.internal(Root / "introduction.md", "Inroduction"),
+        TextLink.internal(Root / "introduction.md", "Introduction"),
         TextLink
           .internal(Root / "tutorials" / "0_getting_started.md", "Tutorials"),
         TextLink.internal(Root / "principles" / "index.md", "Principles"),
