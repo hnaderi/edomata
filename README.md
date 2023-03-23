@@ -38,6 +38,9 @@ libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from ba
 - [Edomata example from tutorials](https://github.com/hnaderi/edomata-example)
 - Feel free to add your projects in a PR!
 
+## Articles and blog posts
+
+- [Event driven fractals at DZone](https://dzone.com/articles/event-driven-fractals)
 
 ## Adopters
 
