@@ -18,16 +18,22 @@ package edomata.doobie
 
 import _root_.doobie.*
 import cats.implicits.*
-import com.github.plokhotnyuk.jsoniter_scala.core._
+import com.github.plokhotnyuk.jsoniter_scala.core.*
 import BackendCodec.*
 
 object JsoniterCodec {
   def json[T: JsonValueCodec]: BackendCodec.Json[T] =
-    BackendCodec.Json(writeToString(_), s => Either.catchNonFatal(readFromString[T](s)).leftMap(_.getMessage()))
-  
+    BackendCodec.Json(
+      writeToString(_),
+      s => Either.catchNonFatal(readFromString[T](s)).leftMap(_.getMessage())
+    )
+
   def jsonb[T: JsonValueCodec]: BackendCodec.JsonB[T] =
-    BackendCodec.JsonB(writeToString(_), s => Either.catchNonFatal(readFromString[T](s)).leftMap(_.getMessage()))
-  
+    BackendCodec.JsonB(
+      writeToString(_),
+      s => Either.catchNonFatal(readFromString[T](s)).leftMap(_.getMessage())
+    )
+
   def msgpack[T: JsonValueCodec]: Binary[T] =
     BackendCodec.Binary[T](
       writeToArray(_),

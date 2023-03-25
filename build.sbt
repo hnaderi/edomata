@@ -222,7 +222,7 @@ lazy val skunkJsoniterCodecs = module("skunk-jsoniter") {
     .settings(
       description := "Jsoniter codecs for skunk backend",
       libraryDependencies ++= Seq(
-        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core"   % Versions.jsoniter,
+        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % Versions.jsoniter
       )
     )
 }
@@ -258,7 +258,7 @@ lazy val doobieJsoniterCodecs = module("doobie-jsoniter") {
     .settings(
       description := "Jsoniter codecs for doobie backend",
       libraryDependencies ++= Seq(
-        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core"   % Versions.jsoniter,
+        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % Versions.jsoniter
       )
     )
 }
