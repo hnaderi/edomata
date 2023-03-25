@@ -119,11 +119,11 @@
         <p>there are several data models in <code>core</code> module, which are flexible enough to use for other scenarios.<br>
         the list consists of:<br></p>
         <ul>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/Decision.html">Decision</a> a state machine which represent decisions and has <code>MonadError</code> and is also traversable.</li>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/DecisionT.html">DecisionT</a> a transformer that runs an effect that yields a <code>Decision</code></li>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/Response.html">Response</a> a state machine which consists of a <code>Decision</code> and has publishing capability like a writer monad.</li>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/Action.html">Action</a> a transformer which runs an effect that yields a <code>Response</code></li>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/Edomaton.html">Edomaton</a> a program that reads a value, runs an effect and yields a <code>Response</code></li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/Decision.html">Decision</a> a state machine which represent decisions and has <code>MonadError</code> and is also traversable.</li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/DecisionT.html">DecisionT</a> a transformer that runs an effect that yields a <code>Decision</code></li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/Response.html">Response</a> a state machine which consists of a <code>Decision</code> and has publishing capability like a writer monad.</li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/Action.html">Action</a> a transformer which runs an effect that yields a <code>Response</code></li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/Edomaton.html">Edomaton</a> a program that reads a value, runs an effect and yields a <code>Response</code></li>
         </ul>
         
         <h2 id="convenient-syntax-and-friendly-type-inference" class="section"><a class="anchor-link left" href="#convenient-syntax-and-friendly-type-inference"><i class="icofont-laika">&#xef71;</i></a>Convenient syntax and friendly type inference</h2>
@@ -135,9 +135,9 @@
         <h2 id="starter-kits" class="section"><a class="anchor-link left" href="#starter-kits"><i class="icofont-laika">&#xef71;</i></a>Starter kits</h2>
         <p>Some opinionated types and models are provided to help you while learning or testing. as mentioned in <a href="../introduction.html#rationale">rationale</a>, this library is not meant to replace anything or provide a framework; its most important goal is to provide a working, production ready example of what an event sourced functional system would look like, to help you design and learn. in doing so types we have types like:</p>
         <ul>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/CommandMessage.html">CommandMessage</a> a standard way of modeling command messages.</li>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/MessageMetadata.html">MessageMetadata</a> a standard way of modeling metadata in a message passing system.</li>
-          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.1/edomata/core/RequestContext.html">RequestContext</a> a standard way of representing a request in a functional event sourced system.</li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/CommandMessage.html">CommandMessage</a> a standard way of modeling command messages.</li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/MessageMetadata.html">MessageMetadata</a> a standard way of modeling metadata in a message passing system.</li>
+          <li><a href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.9.2/edomata/core/RequestContext.html">RequestContext</a> a standard way of representing a request in a functional event sourced system.</li>
         </ul>
         <p>you can create your own models and use them with or without other data models provided in edomata.</p>
 
