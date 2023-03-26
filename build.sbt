@@ -11,7 +11,7 @@ lazy val scala3 = "3.2.2"
 
 inThisBuild(
   List(
-    tlBaseVersion := "0.9",
+    tlBaseVersion := "0.10",
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
@@ -50,9 +50,11 @@ lazy val modules = List(
   postgres,
   skunkBackend,
   skunkCirceCodecs,
+  skunkJsoniterCodecs,
   skunkUpickleCodecs,
   doobieBackend,
   doobieCirceCodecs,
+  doobieJsoniterCodecs,
   doobieUpickleCodecs,
   driverTests,
   munitTestkit,
@@ -213,6 +215,18 @@ lazy val skunkCirceCodecs = module("skunk-circe") {
     )
 }
 
+lazy val skunkJsoniterCodecs = module("skunk-jsoniter") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(skunkBackend)
+    .settings(
+      description := "Jsoniter codecs for skunk backend",
+      libraryDependencies ++= Seq(
+        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % Versions.jsoniter
+      )
+    )
+}
+
 lazy val skunkUpickleCodecs = module("skunk-upickle") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
@@ -233,6 +247,18 @@ lazy val doobieCirceCodecs = module("doobie-circe") {
       description := "Circe codecs for doobie backend",
       libraryDependencies ++= Seq(
         "io.circe" %%% "circe-parser" % Versions.circe
+      )
+    )
+}
+
+lazy val doobieJsoniterCodecs = module("doobie-jsoniter") {
+  crossProject(JVMPlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(doobieBackend)
+    .settings(
+      description := "Jsoniter codecs for doobie backend",
+      libraryDependencies ++= Seq(
+        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % Versions.jsoniter
       )
     )
 }
