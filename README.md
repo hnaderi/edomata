@@ -16,6 +16,7 @@
 
 ## Getting started
 visit [Project site](https://edomata.ir/) to see tutorials and docs.
+Also please drop a ⭐ if this project interests you. I need encouragement.
 
 ## Add to your build
 Use latest version from badge above
