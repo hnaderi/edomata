@@ -138,9 +138,7 @@ lazy val core = module("core") {
     )
     .jsSettings(
       libraryDependencies ++= Seq(
-        "io.github.cquiroz" %%% "scala-java-time" % "2.5.0",
-        ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0")
-          .cross(CrossVersion.for3Use2_13)
+        "io.github.cquiroz" %%% "scala-java-time" % "2.5.0"
       )
     )
 }
