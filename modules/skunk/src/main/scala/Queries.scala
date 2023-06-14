@@ -68,7 +68,7 @@ END $$$$;
     )
 
     private val insertRow: Codec[InsertRow] =
-      (uuid *: text *: timestamptz *: int8 *: event).pimap[InsertRow]
+      (uuid *: text *: timestamptz *: int8 *: event).to[InsertRow]
 
     def append(
         n: List[InsertRow]
@@ -78,9 +78,9 @@ END $$$$;
 
     private val readFields = sql"id, time, seqnr, version, stream, payload"
     private val metaCodec: Codec[EventMetadata] =
-      (uuid *: timestamptz *: int8 *: int8 *: text).pimap
+      (uuid *: timestamptz *: int8 *: int8 *: text).to
     private val readCodec: Codec[EventMessage[E]] =
-      (metaCodec *: event).pimap
+      (metaCodec *: event).to
 
     def readAll: Query[Void, EventMessage[E]] =
       sql"select $readFields from $table order by seqnr asc".query(readCodec)
@@ -130,9 +130,9 @@ set published = $timestamptz
 where seqnr in ${int8.list(l).values}
 """.command
 
-    private val metadata: Codec[MessageMetadata] = (text.opt *: text.opt).pimap
+    private val metadata: Codec[MessageMetadata] = (text.opt *: text.opt).to
     private val itemCodec: Codec[OutboxItem[N]] =
-      (int8 *: text *: timestamptz *: notification *: metadata).pimap
+      (int8 *: text *: timestamptz *: notification *: metadata).to
 
     val read: Query[Void, OutboxItem[N]] =
       sql"""
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS $table (
 """.command
 
     private def aggregateStateCodec: Codec[AggregateState.Valid[S]] =
-      (state *: int8).pimap
+      (state *: int8).to
 
     private val insertCodec = (text *: aggregateStateCodec).values
 
@@ -232,9 +232,9 @@ CREATE TABLE IF NOT EXISTS $table (
     import cqrs.AggregateState
 
     private def aggregateStateCodec: Codec[AggregateState[S]] =
-      (state *: int8).pimap
+      (state *: int8).to
 
-    def put: Command[String ~ S ~ Long] =
+    def put: Command[String *: S *: SeqNr *: EmptyTuple] =
       sql"""
 insert into $table (id, state, "version") values ($text, $state, 1)
 on conflict (id) do update
