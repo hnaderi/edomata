@@ -81,7 +81,7 @@ private final class SkunkCQRSRepository[F[_]: Clock, S, N](
         now <- currentTime[F]
         _ <- s
           .prepare(state.put)
-          .flatMap(_.execute(ctx.address ~ newState ~ version))
+          .flatMap(_.execute((ctx.address, newState, version)))
           .flatMap {
             case Completion.Insert(1) | Completion.Update(1) => F.unit
             case Completion.Insert(0) | Completion.Update(0) =>
