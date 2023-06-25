@@ -123,11 +123,11 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1686793766,
-        "narHash": "sha256-CI9i8OY6mGvSzteelfdj9RV72al7bWOxG5NgqGZg+7o=",
+        "lastModified": 1687378499,
+        "narHash": "sha256-8/prMxGBUeyEkUFL9T8pXTLRxHOp1jxU01IJBOssZ9M=",
         "owner": "typelevel",
         "repo": "typelevel-nix",
-        "rev": "3f0fd30b886cd9f92ed82ed28e54a7e1547f6388",
+        "rev": "f57819f26f84632e5983e330b6851bdf51f4e891",
         "type": "github"
       },
       "original": {
