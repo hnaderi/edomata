@@ -74,7 +74,8 @@ object DoobieCompatibilitySuite {
       driver = "org.postgresql.Driver",
       url = "jdbc:postgresql:postgres",
       user = "postgres",
-      pass = "postgres"
+      password = "postgres",
+      logHandler = None
     )
 
   inline def backend(
