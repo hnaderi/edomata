@@ -1,16 +1,11 @@
 {
   inputs = {
-    devshell.url =
-      "github:numtide/devshell?rev=3e0e60ab37cd0bf7ab59888f5c32499d851edb47";
-    typelevel-nix = {
-      url = "github:typelevel/typelevel-nix";
-      inputs.devshell.follows = "devshell";
-    };
+    typelevel-nix.url = "github:typelevel/typelevel-nix";
     nixpkgs.follows = "typelevel-nix/nixpkgs";
     flake-utils.follows = "typelevel-nix/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, typelevel-nix, devshell }:
+  outputs = { self, nixpkgs, flake-utils, typelevel-nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
