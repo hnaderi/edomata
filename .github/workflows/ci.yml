@@ -87,9 +87,6 @@ jobs:
         if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-latest'
         run: 'nix develop .#${{ matrix.java }} -c sbt ''project ${{ matrix.project }}'' ''++ ${{ matrix.scala }}'' doc'
 
-      - name: post build
-        run: echo success!
-
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
         run: mkdir -p modules/skunk-upickle/.native/target modules/backend/.native/target modules/munit/.js/target modules/skunk-upickle/.js/target target modules/skunk-circe/.jvm/target modules/postgres/.js/target modules/skunk/.native/target unidocs/target .js/target modules/skunk-circe/.native/target modules/core/.native/target site/target modules/backend/.jvm/target modules/skunk/.jvm/target modules/skunk-jsoniter/.native/target modules/skunk-jsoniter/.jvm/target modules/postgres/.jvm/target modules/core/.js/target examples/.js/target modules/skunk-circe/.js/target modules/doobie/.jvm/target modules/postgres/.native/target modules/doobie-circe/.jvm/target modules/core/.jvm/target .jvm/target .native/target modules/doobie-jsoniter/.jvm/target examples/.jvm/target modules/backend-tests/js/target modules/backend-tests/jvm/target modules/skunk-jsoniter/.js/target modules/doobie-upickle/.jvm/target modules/skunk-upickle/.jvm/target modules/skunk/.js/target modules/munit/.jvm/target modules/backend-tests/native/target mdoc-plantuml/target modules/backend/.js/target modules/munit/.native/target project/target
@@ -178,6 +175,17 @@ jobs:
 
       - name: Publish
         run: 'nix develop .#${{ matrix.java }} -c sbt tlCiRelease'
+
+  post-build:
+    name: post build
+    needs: [build]
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: post build
+        run: echo success!
 
   site:
     name: Generate Site
