@@ -12,7 +12,12 @@ inThisBuild(
       UseRef.Public("cachix", "install-nix-action", "v17"),
       name = Some("Install Nix")
     ),
-    githubWorkflowSbtCommand := "nix develop .#${{ matrix.java }} -c sbt"
+    githubWorkflowSbtCommand := "nix develop .#${{ matrix.java }} -c sbt",
+    // This job is used as a sign that all jobs have been successful and is used by mergify
+    githubWorkflowBuildPostamble += WorkflowStep.Run(
+      commands = List("echo success!"),
+      name = Some("post build")
+    )
   )
 )
 
