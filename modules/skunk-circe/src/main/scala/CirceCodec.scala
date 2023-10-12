@@ -21,7 +21,7 @@ import edomata.skunk.BackendCodec.Json
 import edomata.skunk.BackendCodec.JsonB
 import io.circe.Decoder
 import io.circe.Encoder
-import io.circe.parser.decode
+import io.circe.jawn.decode
 import io.circe.syntax.*
 
 object CirceCodec {
