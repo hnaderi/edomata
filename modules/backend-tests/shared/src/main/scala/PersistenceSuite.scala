@@ -25,7 +25,6 @@ import edomata.backend.BackendError
 import edomata.core.CommandMessage
 import edomata.core.Edomaton
 import edomata.core.ResponseD
-import munit.CatsEffectSuite
 import tests.TestDomain.given_ModelTC_State_Event_Rejection
 
 import java.time.Instant

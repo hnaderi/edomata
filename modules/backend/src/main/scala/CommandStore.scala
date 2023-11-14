@@ -17,7 +17,6 @@
 package edomata.backend
 
 import cats.Monad
-import cats.effect.Concurrent
 import cats.effect.kernel.Async
 import cats.effect.kernel.Ref
 import cats.implicits.*

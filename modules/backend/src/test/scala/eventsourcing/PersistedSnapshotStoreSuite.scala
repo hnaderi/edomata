@@ -18,7 +18,6 @@ package edomata.backend
 package eventsourcing
 
 import cats.effect.IO
-import cats.effect.kernel.Resource
 import cats.effect.testkit.TestControl
 import cats.implicits.*
 import munit.CatsEffectSuite

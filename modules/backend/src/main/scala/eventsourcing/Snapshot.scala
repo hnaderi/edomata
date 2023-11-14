@@ -81,7 +81,7 @@ object SnapshotStore {
     lc <- Resource.eval(
       LRUCache[F, StreamId, AggregateState.Valid[S]](size)
     )
-    pss = PersistedSnapshotStoreImpl(lc, store, q, maxBuffer, maxWait)
+    pss = PersistedSnapshotStoreImpl(lc, store, q)
     flush = lc.byUsage.use(
       Stream
         .fromIterator(_, size min 1000)
@@ -115,9 +115,7 @@ type SnapshotItem[S] =
 private[backend] final class PersistedSnapshotStoreImpl[F[_], S](
     cache: LRUCache[F, StreamId, AggregateState.Valid[S]],
     p: SnapshotPersistence[F, S],
-    q: Queue[F, SnapshotItem[S]],
-    maxBuffer: Int,
-    maxWait: FiniteDuration
+    q: Queue[F, SnapshotItem[S]]
 )(using F: Temporal[F])
     extends SnapshotStore[F, S] {
   def get(id: StreamId): F[Option[AggregateState.Valid[S]]] =

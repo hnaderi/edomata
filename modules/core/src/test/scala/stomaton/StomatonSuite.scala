@@ -17,11 +17,8 @@
 package tests
 package stomaton
 
-import cats.Eval
-import cats.Monad
 import cats.data.NonEmptyChain
 import cats.implicits.*
-import cats.kernel.Eq
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.*
 import cats.laws.discipline.arbitrary.*
@@ -29,7 +26,6 @@ import cats.laws.discipline.eq.*
 import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 import edomata.core.*
 
 type Rejection = String

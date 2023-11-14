@@ -18,7 +18,6 @@ package tests
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import cats.effect.std.UUIDGen
 import cats.implicits.*
 import edomata.backend.BackendError
 import edomata.backend.cqrs.*

@@ -19,7 +19,6 @@ package eventsourcing
 
 import cats.effect.IO
 import cats.effect.testkit.TestControl
-import cats.implicits.*
 import fs2.Chunk
 import fs2.Stream
 import munit.CatsEffectSuite

@@ -132,7 +132,6 @@ class ActionSuite extends DisciplineSuite {
       val c = a >> b
 
       val ares = a.run.value
-      val bres = b.run.value
       val cres = c.run.value
 
       assertEquals(cres.result, ares.result) // just for doc

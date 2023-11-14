@@ -19,7 +19,6 @@ package decisiont
 
 import cats.Applicative
 import cats.Eval
-import cats.data.NonEmptyChain
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.MonadTests

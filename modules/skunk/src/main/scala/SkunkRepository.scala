@@ -17,20 +17,14 @@
 package edomata.skunk
 
 import _root_.skunk.*
-import _root_.skunk.data.Completion
 import cats.data.Chain
 import cats.data.NonEmptyChain
-import cats.effect.Concurrent
-import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Sync
+import cats.effect.std.UUIDGen
 import cats.implicits.*
 import edomata.backend.*
 import edomata.core.*
-
-import java.time.ZoneOffset
-import java.util.UUID
-import cats.effect.std.UUIDGen
 
 private final class SkunkRepository[F[_], S, E, R, N](
     pool: Resource[F, Session[F]],
@@ -39,7 +33,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
     cmds: Queries.Commands,
     repository: RepositoryReader[F, S, E, R],
     updates: NotificationsPublisher[F]
-)(using F: Sync[F], clock: Clock[F])
+)(using F: Sync[F])
     extends Repository[F, S, E, R, N] {
 
   private val trx = pool.flatTap(_.transaction)

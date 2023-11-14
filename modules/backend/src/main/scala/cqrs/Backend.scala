@@ -17,13 +17,9 @@
 package edomata.backend
 package cqrs
 
-import cats.Applicative
-import cats.Monad
-import cats.data.NonEmptyChain
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Random
-import cats.implicits.*
 import edomata.core.*
 
 import scala.concurrent.duration.*

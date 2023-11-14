@@ -16,11 +16,8 @@
 
 package edomata.backend
 
-import cats.data.Chain
-import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Ref
-import edomata.core.*
 import fs2.Stream
 
 import FakeOutboxReader.*

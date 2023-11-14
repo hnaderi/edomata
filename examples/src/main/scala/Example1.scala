@@ -102,7 +102,6 @@ object Application extends IOApp.Simple {
 
   val application = database.flatMap(backendRes).use { backend =>
     val service = backend.compile(app)
-    val srv2 = backend.compile(CounterService())
 
     service(
       CommandMessage("abc", Instant.now, "a", "receive")

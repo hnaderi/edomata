@@ -17,7 +17,6 @@
 package edomata.core
 
 import cats.Applicative
-import cats.Bifunctor
 import cats.Eval
 import cats.MonadError
 import cats.Traverse

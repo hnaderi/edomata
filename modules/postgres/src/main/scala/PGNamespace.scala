@@ -21,7 +21,6 @@ import scala.util.matching.Regex
 opaque type PGNamespace <: String = String
 
 object PGNamespace {
-  import scala.compiletime
   import scala.quoted.*
 
   private def toNs(ns: Expr[String])(using ctx: Quotes): Expr[PGNamespace] = {

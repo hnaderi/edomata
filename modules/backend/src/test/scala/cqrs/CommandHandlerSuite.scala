@@ -27,13 +27,11 @@ import munit.CatsEffectSuite
 
 import java.time.Instant
 import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.duration.*
 
 import CommandHandlerSuite.*
 import SUT.given_StateModelTC_State
 import FakeRepository.Interaction
-import cats.effect.std.Random.apply
 import cats.effect.std.Random
 import edomata.backend.BackendError
 import edomata.backend.CommandState.Redundant

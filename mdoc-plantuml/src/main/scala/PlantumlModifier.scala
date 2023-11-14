@@ -18,8 +18,6 @@ package ir.hnaderi.mdocPlantuml
 
 import mdoc.Reporter
 import mdoc.StringModifier
-import net.sourceforge.plantuml.FileFormat
-import net.sourceforge.plantuml.FileFormatOption
 import net.sourceforge.plantuml.SourceStringReader
 
 import scala.meta.inputs.Input

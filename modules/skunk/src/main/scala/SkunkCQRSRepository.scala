@@ -19,7 +19,6 @@ package edomata.skunk
 import _root_.skunk.*
 import cats.data.*
 import cats.effect.Concurrent
-import cats.effect.implicits.*
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
 import cats.implicits.*
@@ -29,14 +28,7 @@ import edomata.backend.SeqNr
 import edomata.backend.StreamId
 import edomata.backend.cqrs.*
 import edomata.core.*
-import fs2.Stream
-import skunk.*
 import skunk.data.Completion
-import skunk.implicits.*
-
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import scala.concurrent.duration.*
 
 private final class SkunkCQRSRepository[F[_]: Clock, S, N](
     pool: Resource[F, Session[F]],

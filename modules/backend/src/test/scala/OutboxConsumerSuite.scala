@@ -16,14 +16,12 @@
 
 package edomata.backend
 
-import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.implicits.*
 import edomata.core.MessageMetadata
 import fs2.Stream
 import fs2.Stream.*
 import munit.CatsEffectSuite
-import munit.FunSuite
 
 import java.time.OffsetDateTime
 

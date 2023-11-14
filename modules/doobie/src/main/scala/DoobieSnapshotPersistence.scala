@@ -23,12 +23,7 @@ import cats.implicits.*
 import edomata.backend.PGNamespace
 import edomata.backend.StreamId
 import edomata.backend.eventsourcing.*
-import edomata.core.*
 import fs2.Chunk
-import fs2.Stream
-
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 
 private final class DoobieSnapshotPersistence[F[_]: Concurrent, S](
     trx: Transactor[F],

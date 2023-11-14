@@ -16,15 +16,11 @@
 
 package edomata.backend
 
-import cats.data.Chain
-import cats.data.NonEmptyChain
 import cats.effect.IO
-import cats.implicits.*
 import edomata.core.*
 import munit.CatsEffectSuite
 
 import java.time.Instant
-import scala.collection.immutable.HashSet
 
 import InMemoryCommandStoreSuite.*
 

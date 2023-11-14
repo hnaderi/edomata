@@ -24,9 +24,6 @@ import edomata.core.*
 import fs2.Pipe
 import fs2.Stream
 
-import java.time.OffsetDateTime
-import java.util.UUID
-
 type CommandState[S, E, R] = AggregateState[S, E, R] |
   CommandState.Redundant.type
 

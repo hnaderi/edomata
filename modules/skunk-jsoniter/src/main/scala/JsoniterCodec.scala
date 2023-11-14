@@ -16,7 +16,6 @@
 
 package edomata.skunk
 
-import _root_.skunk.*
 import cats.implicits.*
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import BackendCodec.*

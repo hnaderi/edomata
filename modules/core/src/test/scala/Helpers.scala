@@ -17,12 +17,10 @@
 package tests
 
 import cats.Functor
-import cats.Monad
 import cats.data.NonEmptyChain
 import cats.implicits.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 
 private[tests] def necOf[T](g: Gen[T]): Gen[NonEmptyChain[T]] =
   Gen
