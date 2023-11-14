@@ -1,132 +1,138 @@
 <!DOCTYPE html>
 <html lang="en">
+  
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
-    <title>Getting started</title>
-    
-      <meta name="author" content="Hossein Naderi"/>
-    
-    
-      <meta name="description" content="docs"/>
-    
-    
-      <link rel="icon" sizes="32x32" type="image/png" href="/icon.png"/>
-    
-    
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
-    
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css">
-    
-    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
-    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
-    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
-    <script src="../helium/laika-helium.js"></script>
-    
-    
-    <script> /* for avoiding page load transitions */ </script>
-  </head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="generator" content="Typelevel Laika + Helium Theme" />
+  <title>Getting started</title>
+  
+  <meta name="author" content="Hossein Naderi"/>
+  
+  
+  <meta name="description" content="docs"/>
+  
+  
+  
+  <link rel="icon" sizes="32x32" type="image/png" href="../icon.png"/>
+  
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700">
+  
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Fira+Mono:500">
+  
+  <link rel="stylesheet" type="text/css" href="../helium/site/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/site/laika-helium.css" />
+  <script src="../helium/site/laika-helium.js"></script>
+  
+  
+  <script> /* for avoiding page load transitions */ </script>
+</head>
 
   <body>
 
-    <header id="top-bar">
+    <header id="top-bar" class="light-default dark-default">
 
-      <div class="row">
-        <a id="nav-icon">
-          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
-        </a>
-        
-      </div>
+  <div class="row">
+    <a id="nav-icon">
+      <i class="icofont-laika navigationMenu" title="Navigation">&#xefa2;</i>
+    </a>
+    
+    
+  </div>
 
-      <a class="image-link" href="../introduction.html"><img src="../icon.png"></a>
+  <a class="image-link" href="../introduction.html"><img src="../icon.png"></a>
 
-      <span class="row links"><a class="icon-link" href="https://github.com/hnaderi/edomata/"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <div class="row links">
+    
+    <a class="icon-link svg-link" href="https://github.com/hnaderi/edomata/"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
     <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
   </g>
-</svg></span></a><a class="icon-link" href="https://edomata.ir/"><i class="icofont-laika" title="Home">&#xef47;</i></a></span>
+</svg></span></a>
+    
+    <a class="icon-link glyph-link" href="https://edomata.ir/"><i class="icofont-laika home" title="Home">&#xef47;</i></a>
+    
+  </div>  
 
-    </header>
-
+</header>
+    
     <nav id="sidebar">
 
-      <div class="row">
-        <a class="icon-link" href="https://github.com/hnaderi/edomata/"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <div class="row">
+    
+    <a class="icon-link svg-link" href="https://github.com/hnaderi/edomata/"><span class="github" title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xml:space="preserve" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
   <g class="svg-shape">
     <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
   </g>
-</svg></span></a><a class="icon-link" href="https://edomata.ir/"><i class="icofont-laika" title="Home">&#xef47;</i></a>
-      </div>
+</svg></span></a>
+    
+    <a class="icon-link glyph-link" href="https://edomata.ir/"><i class="icofont-laika home" title="Home">&#xef47;</i></a>
+    
+  </div>
 
-      <ul class="nav-list">
-        <li class="level1"><a href="../introduction.html">Introduction</a></li>
-        <li class="level1 nav-header">about</li>
-        <li class="level2"><a href="../about/design_goals.html">Design goals</a></li>
-        <li class="level2"><a href="../about/features.html">Features</a></li>
-        <li class="level1 nav-header">tutorials</li>
-        <li class="level2 active"><a href="#">Getting started</a></li>
-        <li class="level2"><a href="1-1_eventsourcing.html">Event sourcing</a></li>
-        <li class="level2"><a href="1-2_cqrs.html">CQRS style</a></li>
-        <li class="level2"><a href="2_backends.html">Running</a></li>
-        <li class="level2"><a href="3_processes.html">Processes</a></li>
-        <li class="level1 nav-header">principles</li>
-        <li class="level2"><a href="../principles/definitions.html">Definitions</a></li>
-        <li class="level2"><a href="../principles/index.html">Principles</a></li>
-        <li class="level1 nav-header">backends</li>
-        <li class="level2"><a href="../backends/skunk.html">Skunk</a></li>
-        <li class="level2"><a href="../backends/doobie.html">Doobie</a></li>
-        <li class="level1 nav-header">other</li>
-        <li class="level2"><a href="../other/modules.html">Modules</a></li>
-        <li class="level2"><a href="../other/faq.html">FAQ</a></li>
-      </ul>
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="../introduction.html">Introduction</a></li>
+    <li class="level1 nav-header">about</li>
+    <li class="level2 nav-leaf"><a href="../about/features.html">Features</a></li>
+    <li class="level2 nav-leaf"><a href="../about/design_goals.html">Design goals</a></li>
+    <li class="level1 nav-header">tutorials</li>
+    <li class="level2 active nav-leaf"><a href="#">Getting started</a></li>
+    <li class="level2 nav-leaf"><a href="1-1_eventsourcing.html">Event sourcing</a></li>
+    <li class="level2 nav-leaf"><a href="1-2_cqrs.html">CQRS style</a></li>
+    <li class="level2 nav-leaf"><a href="2_backends.html">Running</a></li>
+    <li class="level2 nav-leaf"><a href="3_processes.html">Processes</a></li>
+    <li class="level1 nav-header">principles</li>
+    <li class="level2 nav-leaf"><a href="../principles/">Principles</a></li>
+    <li class="level2 nav-leaf"><a href="../principles/definitions.html">Definitions</a></li>
+    <li class="level1 nav-header">backends</li>
+    <li class="level2 nav-leaf"><a href="../backends/skunk.html">Skunk</a></li>
+    <li class="level2 nav-leaf"><a href="../backends/doobie.html">Doobie</a></li>
+    <li class="level1 nav-header">other</li>
+    <li class="level2 nav-leaf"><a href="../other/modules.html">Modules</a></li>
+    <li class="level2 nav-leaf"><a href="../other/faq.html">FAQ</a></li>
+    <li class="level1 nav-header">Related projects</li>
+    <li class="level2 nav-leaf"><a href="https://typelevel.org/cats/">cats</a></li>
+    <li class="level2 nav-leaf"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+    <li class="level2 nav-leaf"><a href="https://fs2.io/">fs2</a></li>
+    <li class="level2 nav-leaf"><a href="https://github.com/typelevel/discipline/">discipline</a></li>
+  </ul>
 
-      <ul class="nav-list">
-        <li class="level1 nav-header">Related Projects</li>
-        
-          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
-        
-          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
-        
-          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
-        
-          <li class="level2"><a href="https://github.com/typelevel/discipline/">discipline</a></li>
-        
-      </ul>
-
-    </nav>
+</nav>
 
     <div id="container">
 
-      <nav id="page-nav">
-        <p class="header"><a href="#">Getting started</a></p>
+      
+<nav id="page-nav">
+  <p class="header"><a href="#">Getting started</a></p>
 
-        <ul class="nav-list">
-          <li class="level1"><a href="#add-to-your-build">Add to your build</a></li>
-          <li class="level1"><a href="#layers-of-abstraction">Layers of abstraction</a></li>
-          <li class="level2"><a href="#layers">Layers</a></li>
-          <li class="level2"><a href="#aggregate-space">Aggregate space</a></li>
-          <li class="level2"><a href="#variants">Variants</a></li>
-          <li class="level1"><a href="#next">Next</a></li>
-        </ul>
+  <ul class="nav-list">
+    <li class="level1 nav-leaf"><a href="#add-to-your-build">Add to your build</a></li>
+    <li class="level1 nav-node"><a href="#layers-of-abstraction">Layers of abstraction</a></li>
+    <li class="level2 nav-leaf"><a href="#layers">Layers</a></li>
+    <li class="level2 nav-leaf"><a href="#aggregate-space">Aggregate space</a></li>
+    <li class="level2 nav-leaf"><a href="#variants">Variants</a></li>
+    <li class="level1 nav-leaf"><a href="#next">Next</a></li>
+  </ul>
 
-        <p class="footer"></p>
-      </nav>
+  <p class="footer"></p>
+</nav>
+
 
       <main class="content">
 
         <h1 id="getting-started" class="title">Getting started</h1>
         
-        <h2 id="add-to-your-build" class="section"><a class="anchor-link left" href="#add-to-your-build"><i class="icofont-laika">&#xef71;</i></a>Add to your build</h2>
+        <h2 id="add-to-your-build" class="section"><a class="anchor-link left" href="#add-to-your-build"><i class="icofont-laika link">&#xef71;</i></a>Add to your build</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.11.3&quot;</span></code></pre>
         <p>or for scala.js</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += </span><span class="string-literal">&quot;dev.hnaderi&quot;</span><span> %%% </span><span class="string-literal">&quot;edomata-core&quot;</span><span> % </span><span class="string-literal">&quot;0.11.3&quot;</span></code></pre>
         
-        <h2 id="layers-of-abstraction" class="section"><a class="anchor-link left" href="#layers-of-abstraction"><i class="icofont-laika">&#xef71;</i></a>Layers of abstraction</h2>
+        <h2 id="layers-of-abstraction" class="section"><a class="anchor-link left" href="#layers-of-abstraction"><i class="icofont-laika link">&#xef71;</i></a>Layers of abstraction</h2>
         <p>Before jumping in to code, we should know the big picture of what we are going to do;</p>
         
-        <h4 id="layers" class="section"><a class="anchor-link left" href="#layers"><i class="icofont-laika">&#xef71;</i></a>Layers</h4>
+        <h4 id="layers" class="section"><a class="anchor-link left" href="#layers"><i class="icofont-laika link">&#xef71;</i></a>Layers</h4>
         <p>application logic is divided into 2 separate layers:</p>
         <ul>
           <li>
@@ -150,14 +156,14 @@
           </li>
         </ul>
         
-        <h4 id="aggregate-space" class="section"><a class="anchor-link left" href="#aggregate-space"><i class="icofont-laika">&#xef71;</i></a>Aggregate space</h4>
+        <h4 id="aggregate-space" class="section"><a class="anchor-link left" href="#aggregate-space"><i class="icofont-laika link">&#xef71;</i></a>Aggregate space</h4>
         <ul>
           <li>each aggregate has a unique address</li>
           <li>all the possible aggregates together, form our aggregate space which is an infinite space (mathematically speaking)</li>
           <li>there is nothing as a non existing aggregate, aggregates that are not created yet do exist in their initial state.</li>
         </ul>
         
-        <h4 id="variants" class="section"><a class="anchor-link left" href="#variants"><i class="icofont-laika">&#xef71;</i></a>Variants</h4>
+        <h4 id="variants" class="section"><a class="anchor-link left" href="#variants"><i class="icofont-laika link">&#xef71;</i></a>Variants</h4>
         <p>Currently these kinds of state machines are implemented in edomata:</p>
         <ul>
           <li><code>Edomaton</code> which is a portmanteau for event driven automaton, and models applications that are event sourced.</li>
@@ -166,19 +172,22 @@
           and is especially useful in CQRS style command handling.</li>
         </ul>
         
-        <h2 id="next" class="section"><a class="anchor-link left" href="#next"><i class="icofont-laika">&#xef71;</i></a>Next</h2>
+        <h2 id="next" class="section"><a class="anchor-link left" href="#next"><i class="icofont-laika link">&#xef71;</i></a>Next</h2>
         <p>That&#39;s all we need to know for now; talk is enough, let&#39;s jump into code!</p>
         <p>for event sourced applications, <a href="1-1_eventsourcing.html">follow this link</a>,<br>
         for cqrs applications, <a href="1-2_cqrs.html">follow this link</a></p>
 
-        <hr style="margin-top: 30px"/>
-        <footer style="font-size: 90%; text-align: center">
-          Edomata is a <a href="https://typelevel.org/">Typelevel</a> project distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
-        </footer>
+        
+<hr class="footer-rule"/>
+<footer>
+  Site generated by <a href="https://typelevel.org/Laika/">Laika</a> with the Helium theme.
+</footer>
+
 
       </main>
 
     </div>
 
   </body>
+
 </html>
