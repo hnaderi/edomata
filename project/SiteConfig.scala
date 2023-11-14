@@ -1,6 +1,5 @@
 import laika.ast.Path.Root
 import laika.ast._
-import laika.config.ConfigBuilder
 import laika.config.LaikaKeys
 import laika.helium.Helium
 import laika.helium.config._
