@@ -78,6 +78,7 @@ lazy val mdocPlantuml = project
 lazy val docs = project
   .in(file("site"))
   .enablePlugins(EdomataSitePlugin)
+  .disablePlugins(TypelevelSettingsPlugin)
   .dependsOn(
     core.jvm,
     postgres.jvm,
