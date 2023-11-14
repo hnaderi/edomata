@@ -1,5 +1,3 @@
-import laika.config.ApiLinks
-import laika.config.LinkConfig
 import Dependencies._
 import sbt.ThisBuild
 import sbtcrossproject.CrossProject
@@ -79,27 +77,7 @@ lazy val mdocPlantuml = project
 
 lazy val docs = project
   .in(file("site"))
-  .enablePlugins(TypelevelSitePlugin)
-  .settings(
-    tlSiteHelium := SiteConfigs(mdocVariables.value),
-    tlSiteRelatedProjects := Seq(
-      TypelevelProject.Cats,
-      TypelevelProject.CatsEffect,
-      TypelevelProject.Fs2,
-      TypelevelProject.Discipline
-    ),
-    laikaConfig := LaikaConfig.defaults
-      .withConfigValue(
-        LinkConfig.empty.addApiLinks(
-          ApiLinks(
-            tlSiteApiUrl.value
-              .map(_.toString())
-              .getOrElse("/edomata/api/")
-          ).withPackagePrefix("edomata")
-        )
-      ),
-    laikaIncludeAPI := true
-  )
+  .enablePlugins(EdomataSitePlugin)
   .dependsOn(
     core.jvm,
     postgres.jvm,
