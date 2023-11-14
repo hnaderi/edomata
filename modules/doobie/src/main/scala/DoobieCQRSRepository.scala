@@ -85,6 +85,8 @@ private final class DoobieCQRSRepository[F[_]: Concurrent: Clock, S, N](
         .fromFoldable(events.map((_, ctx.address, now, ctx.metadata)))
         .fold(FC.unit)(n => o.insertAll(n.toList).assertInserted(n.size))
 
+      _ <- NonEmptyChain.fromChain(events).fold(FC.unit)(handler)
+
       _ <- cmds.insert(ctx).run.assertInserted
 
     } yield ()
