@@ -16,7 +16,6 @@
 
 package edomata.doobie
 
-import _root_.doobie.*
 import cats.implicits.*
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 import BackendCodec.*

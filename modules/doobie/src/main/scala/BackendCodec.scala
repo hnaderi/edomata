@@ -20,7 +20,6 @@ import _root_.doobie.*
 import cats.Show
 import cats.data.NonEmptyList
 import cats.implicits.*
-import edomata.backend.*
 import org.postgresql.util.PGobject
 
 import scala.annotation.implicitNotFound

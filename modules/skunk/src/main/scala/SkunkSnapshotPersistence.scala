@@ -23,7 +23,6 @@ import cats.implicits.*
 import edomata.backend.PGNamespace
 import edomata.backend.StreamId
 import edomata.backend.eventsourcing.*
-import edomata.core.*
 import fs2.Chunk
 
 private final class SkunkSnapshotPersistence[F[_]: Concurrent, S](

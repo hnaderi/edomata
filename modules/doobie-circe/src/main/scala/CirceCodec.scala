@@ -16,11 +16,9 @@
 
 package edomata.doobie
 
-import _root_.doobie.*
 import cats.implicits.*
 import io.circe.Decoder
 import io.circe.Encoder
-import io.circe.Json
 import io.circe.parser.decode
 import io.circe.syntax.*
 

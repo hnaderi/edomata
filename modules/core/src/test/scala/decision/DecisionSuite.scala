@@ -17,12 +17,10 @@
 package tests
 package decision
 
-import cats.Monad
 import cats.data.*
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.kernel.laws.discipline.SerializableTests
-import cats.laws.discipline.FunctorTests
 import cats.laws.discipline.MonadErrorTests
 import cats.laws.discipline.TraverseTests
 import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain

@@ -16,18 +16,11 @@
 
 package tests.responset
 
-import cats.Monad
 import cats.data.*
 import cats.implicits.*
-import cats.kernel.laws.discipline.EqTests
-import cats.laws.discipline.MonadTests
 import cats.laws.discipline.TraverseTests
 import cats.laws.discipline.arbitrary.catsLawsArbitraryForNonEmptyChain
-import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
-import munit.*
 import org.scalacheck.Arbitrary
-import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 import edomata.core.*
 
 import tests.decision.Generators.*

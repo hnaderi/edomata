@@ -21,17 +21,14 @@ import _root_.doobie.implicits.*
 import _root_.doobie.postgres.sqlstate
 import cats.data.Chain
 import cats.data.NonEmptyChain
-import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Sync
 import cats.implicits.*
 import edomata.backend.*
 import edomata.core.*
-import fs2.Stream
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import java.util.UUID
 import cats.effect.std.UUIDGen
 
 private final class DoobieRepository[F[_], S, E, R, N](

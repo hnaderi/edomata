@@ -22,8 +22,6 @@ import cats.data.*
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.MonadTests
-import cats.laws.discipline.arbitrary.catsLawsArbitraryForNonEmptyChain
-import cats.laws.discipline.arbitrary.catsLawsCogenForNonEmptyChain
 import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen

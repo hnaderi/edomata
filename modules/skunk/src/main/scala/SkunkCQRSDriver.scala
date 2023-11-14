@@ -17,7 +17,6 @@
 package edomata.skunk
 
 import _root_.skunk.Session
-import cats.data.NonEmptyChain
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*

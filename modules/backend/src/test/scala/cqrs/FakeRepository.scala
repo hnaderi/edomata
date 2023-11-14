@@ -19,11 +19,9 @@ package edomata.backend.cqrs
 import cats.data.*
 import cats.effect.IO
 import cats.effect.kernel.Ref
-import cats.implicits.*
 import edomata.backend.cqrs.FakeRepository.*
 import edomata.backend.{SeqNr, StreamId}
 import edomata.core.*
-import edomata.syntax.all.*
 import munit.CatsEffectAssertions.*
 
 final class FakeRepository[State, Event](

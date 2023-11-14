@@ -16,7 +16,6 @@
 
 package edomata.backend
 
-import cats.effect.Concurrent
 import cats.effect.Resource
 import cats.effect.Sync
 import cats.effect.kernel.Async

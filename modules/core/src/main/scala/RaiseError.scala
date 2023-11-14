@@ -18,7 +18,6 @@ package edomata.core
 
 import cats.data.NonEmptyChainImpl.Type
 import cats.data.*
-import cats.implicits.*
 
 trait RaiseError[F[+_], R] {
   def fold[O, A](v: F[O])(err: NonEmptyChain[R] => A, value: O => A): A

@@ -16,11 +16,7 @@
 
 package edomata.backend
 
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
 import edomata.core.*
-
-import scala.concurrent.duration.*
 
 object Backend {
   def builder[C, S, E, R, N](

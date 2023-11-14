@@ -29,7 +29,6 @@ import munit.CatsEffectSuite
 
 import java.time.Instant
 import java.time.OffsetDateTime
-import java.util.UUID
 import scala.concurrent.duration.*
 
 import CommandHandlerSuite.*

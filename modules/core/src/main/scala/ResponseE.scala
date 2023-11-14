@@ -19,9 +19,6 @@ package edomata.core
 import cats.*
 import cats.data.*
 import cats.implicits.*
-import cats.kernel.Eq
-
-import scala.annotation.tailrec
 
 /** Representation of programs that decide and emit notifications
   *
