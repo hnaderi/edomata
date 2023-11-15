@@ -20,14 +20,12 @@ import _root_.doobie.postgres.sqlstate
 import cats.data.*
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Concurrent
-import cats.effect.kernel.Resource
 import cats.implicits.*
 import doobie.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
 import edomata.backend.BackendError
 import edomata.backend.CommandState.Redundant
-import edomata.backend.PGNamespace
 import edomata.backend.SeqNr
 import edomata.backend.StreamId
 import edomata.backend.cqrs.*
@@ -84,6 +82,8 @@ private final class DoobieCQRSRepository[F[_]: Concurrent: Clock, S, N](
       _ <- NonEmptyList
         .fromFoldable(events.map((_, ctx.address, now, ctx.metadata)))
         .fold(FC.unit)(n => o.insertAll(n.toList).assertInserted(n.size))
+
+      _ <- NonEmptyChain.fromChain(events).fold(FC.unit)(handler)
 
       _ <- cmds.insert(ctx).run.assertInserted
 

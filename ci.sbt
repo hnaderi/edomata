@@ -3,6 +3,7 @@ val LTSJava = JavaSpec.temurin("17")
 
 inThisBuild(
   List(
+    tlSiteJavaVersion := LTSJava,
     githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava),
     githubWorkflowBuildPreamble ++= dockerComposeUp,
     githubWorkflowJobSetup ~= {

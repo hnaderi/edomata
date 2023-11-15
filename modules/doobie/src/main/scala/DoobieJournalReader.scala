@@ -19,13 +19,8 @@ package edomata.doobie
 import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
 import cats.effect.Concurrent
-import cats.implicits.*
 import edomata.backend.*
-import edomata.core.*
 import fs2.Stream
-
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 
 private final class DoobieJournalReader[F[_]: Concurrent, E](
     trx: Transactor[F],

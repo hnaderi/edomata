@@ -16,7 +16,6 @@
 
 package edomata.core
 
-import cats.data.NonEmptyChain
 import cats.implicits.*
 
 import java.time.Instant

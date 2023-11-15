@@ -19,7 +19,6 @@ package edomata.backend
 import cats.Monad
 import cats.data.NonEmptyChain
 import cats.implicits.*
-import edomata.backend.OutboxItem
 import fs2.Stream
 import fs2.Stream.*
 

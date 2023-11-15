@@ -21,7 +21,6 @@ import edomata.core.*
 import fs2.Stream
 
 import java.time.OffsetDateTime
-import java.util.UUID
 
 trait OutboxReader[F[_], N] {
   def read: Stream[F, OutboxItem[N]]

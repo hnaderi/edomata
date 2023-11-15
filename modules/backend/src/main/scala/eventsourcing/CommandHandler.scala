@@ -21,7 +21,6 @@ import cats.Monad
 import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Temporal
-import cats.effect.implicits.*
 import cats.implicits.*
 import edomata.core.*
 

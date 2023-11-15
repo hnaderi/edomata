@@ -18,7 +18,6 @@ package tests
 
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import edomata.backend.*
 import munit.CatsEffectSuite
 import munit.Location
 

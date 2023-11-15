@@ -23,10 +23,8 @@ import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.implicits.*
 import edomata.backend.*
-import edomata.core.*
 import fs2.Stream
 
-import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 private final class DoobieOutboxReader[F[_]: Concurrent: Clock, N](

@@ -22,12 +22,10 @@ import cats.data.*
 import cats.implicits.*
 import cats.kernel.laws.discipline.EqTests
 import cats.laws.discipline.*
-import cats.laws.discipline.arbitrary.*
 import cats.laws.discipline.eq.*
 import munit.*
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
-import org.scalacheck.Prop.forAll
 import edomata.core.*
 import tests.decision.Generators
 

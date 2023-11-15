@@ -27,7 +27,7 @@
             };
           };
       in {
-        devShell = mkShell pkgs.jdk8;
+        devShell = mkShell pkgs.jdk17;
 
         devShells = {
           "temurin@8" = mkShell pkgs.temurin-bin-8;

@@ -23,8 +23,6 @@ import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.implicits.*
 
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import scala.util.NotGiven
 
 type DomainService[F[_], C, R] = C => F[EitherNec[R, Unit]]

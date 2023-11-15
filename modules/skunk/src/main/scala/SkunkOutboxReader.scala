@@ -17,22 +17,13 @@
 package edomata.skunk
 
 import _root_.skunk.*
-import cats.data.EitherNec
 import cats.data.NonEmptyChain
 import cats.effect.Concurrent
-import cats.effect.implicits.*
-import cats.effect.kernel.Async
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Resource
-import cats.effect.kernel.Temporal
 import cats.implicits.*
 import edomata.backend.*
-import edomata.core.*
 import fs2.Stream
-
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import scala.concurrent.duration.*
 
 private final class SkunkOutboxReader[F[_]: Concurrent: Clock, N](
     pool: Resource[F, Session[F]],

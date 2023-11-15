@@ -17,12 +17,7 @@
 package edomata.backend
 package eventsourcing
 
-import cats.data.NonEmptyChain
-import edomata.core.*
 import fs2.Stream
-
-import java.time.OffsetDateTime
-import java.util.UUID
 
 trait JournalReader[F[_], E] {
   def readStream(streamId: StreamId): Stream[F, EventMessage[E]]

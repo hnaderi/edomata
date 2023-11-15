@@ -17,7 +17,6 @@
 package edomata.backend
 package cqrs
 
-import cats.data.NonEmptyChain
 import cats.effect.kernel.Resource
 import edomata.core.StateModelTC
 

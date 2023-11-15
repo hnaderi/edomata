@@ -17,7 +17,6 @@
 package tests
 package decision
 
-import cats.data.NonEmptyChain
 import org.scalacheck.Arbitrary
 import org.scalacheck.Gen
 import edomata.core.Decision
