@@ -8,7 +8,7 @@ lazy val scala3 = "3.3.1"
 
 inThisBuild(
   List(
-    tlBaseVersion := "0.11",
+    tlBaseVersion := "0.12",
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
