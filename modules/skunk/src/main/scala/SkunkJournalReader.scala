@@ -20,6 +20,7 @@ import _root_.skunk.*
 import cats.effect.Concurrent
 import cats.effect.kernel.Resource
 import edomata.backend.*
+import edomata.backend.eventsourcing.JournalReader
 import fs2.Stream
 
 private final class SkunkJournalReader[F[_]: Concurrent, E](

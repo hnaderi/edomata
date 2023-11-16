@@ -25,6 +25,7 @@ import cats.effect.kernel.Clock
 import cats.effect.kernel.Sync
 import cats.implicits.*
 import edomata.backend.*
+import edomata.backend.eventsourcing.*
 import edomata.core.*
 
 import java.time.OffsetDateTime

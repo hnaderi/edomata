@@ -23,8 +23,9 @@ import cats.effect.kernel.Resource
 import cats.effect.kernel.Sync
 import cats.effect.std.UUIDGen
 import cats.implicits.*
-import edomata.backend.*
+import edomata.backend.eventsourcing.*
 import edomata.core.*
+import edomata.backend.*
 
 private final class SkunkRepository[F[_], S, E, R, N](
     pool: Resource[F, Session[F]],

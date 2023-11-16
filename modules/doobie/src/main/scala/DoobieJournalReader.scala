@@ -20,6 +20,7 @@ import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
 import cats.effect.Concurrent
 import edomata.backend.*
+import edomata.backend.eventsourcing.JournalReader
 import fs2.Stream
 
 private final class DoobieJournalReader[F[_]: Concurrent, E](
