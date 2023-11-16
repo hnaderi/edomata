@@ -20,8 +20,8 @@ import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.Backend
 import edomata.backend.BackendError
+import edomata.backend.eventsourcing.Backend
 import edomata.core.CommandMessage
 import edomata.core.Edomaton
 import edomata.core.ResponseD
