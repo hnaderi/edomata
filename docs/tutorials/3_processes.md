@@ -6,6 +6,7 @@
 import cats.implicits.*
 import cats.effect.IO
 import edomata.backend.*
+import edomata.backend.eventsourcing.*
 import fs2.Stream
 import fs2.Stream.*
 
