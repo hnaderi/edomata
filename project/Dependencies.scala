@@ -10,7 +10,7 @@ object Dependencies {
     val MUnit = "1.0.0-M8"
     val CatsEffectMunit = "2.0.0-M3"
     val scalacheckEffectVersion = "2.0.0-M2"
-    val doobie = "1.0.0-RC4"
+    val doobie = "1.0.0-RC5"
     val circe = "0.14.6"
     val upickle = "3.1.3"
     val jsoniter = "2.24.4"
