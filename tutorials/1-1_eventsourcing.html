@@ -175,7 +175,7 @@
 </span><span>} </span><span class="keyword">yield</span><span> </span><span class="identifier">i</span><span> + </span><span class="identifier">j</span><span>
 </span><span class="comment">// d7: Decision[Nothing, String, Int] = Accepted(Chain(A, B, C, D, E),3)</span></code></pre>
         <p>or in presence of cats syntax:<br></p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.*  
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">implicits</span><span>.* 
 
 </span><span class="keyword">val</span><span> </span><span class="identifier">d8</span><span> = (</span><span class="identifier">d1</span><span>, </span><span class="identifier">d7</span><span>).</span><span class="identifier">mapN</span><span>(</span><span class="identifier">_</span><span> + </span><span class="identifier">_</span><span>)
 </span><span class="comment">// d8: Decision[Nothing, String, Int] = Accepted(Chain(A, B, C, D, E),4)
