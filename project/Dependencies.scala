@@ -12,7 +12,7 @@ object Dependencies {
     val scalacheckEffectVersion = "2.0.0-M2"
     val doobie = "1.0.0-RC5"
     val circe = "0.14.6"
-    val upickle = "3.1.3"
+    val upickle = "3.1.4"
     val jsoniter = "2.27.1"
   }
 }
