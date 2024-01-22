@@ -23,7 +23,7 @@ import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Sync
-import cats.implicits.*
+import cats.syntax.all.*
 import edomata.backend.*
 import edomata.backend.eventsourcing.*
 import edomata.core.*
@@ -89,9 +89,12 @@ private final class DoobieRepository[F[_], S, E, R, N](
       _ <- cmds.insert(ctx.command).run.assertInserted
     } yield ()
 
-    _ <- query.transact(trx).attemptSomeSqlState {
-      case sqlstate.class23.UNIQUE_VIOLATION => BackendError.VersionConflict
-    }
+    _ <- query
+      .transact(trx)
+      .attemptSomeSqlState { case sqlstate.class23.UNIQUE_VIOLATION =>
+        BackendError.VersionConflict
+      }
+      .flatMap(F.fromEither)
     _ <- updates.notifyJournal
     _ <- updates.notifyOutbox
   } yield ()

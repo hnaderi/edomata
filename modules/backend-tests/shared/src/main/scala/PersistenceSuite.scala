@@ -25,6 +25,7 @@ import edomata.backend.eventsourcing.Backend
 import edomata.core.CommandMessage
 import edomata.core.Edomaton
 import edomata.core.ResponseD
+import munit.Location
 import tests.TestDomain.given_ModelTC_State_Event_Rejection
 
 import java.time.Instant
@@ -43,25 +44,26 @@ abstract class PersistenceSuite(
   private def assertJournal(
       s: SUT,
       address: String
-  )(evs: Int*) = s.journal
+  )(evs: Int*)(using Location) = s.journal
     .readStream(address)
     .map(_.payload)
     .compile
     .toList
     .assertEquals(evs.toList)
+
   private def assertOutbox(
       s: SUT,
       address: String
-  )(evs: Int*) = s.outbox.read
+  )(evs: Int*)(using Location) = s.outbox.read
     .filter(_.streamId == address)
     .map(_.data)
     .compile
     .toList
     .assertEquals(evs.toList)
 
-  private def assertNotifiedJournal(s: SUT) =
+  private def assertNotifiedJournal(s: SUT)(using Location) =
     s.updates.journal.head.compile.lastOrError.assertEquals(())
-  private def assertNotifiedOutbox(s: SUT) =
+  private def assertNotifiedOutbox(s: SUT)(using Location) =
     s.updates.outbox.head.compile.lastOrError.assertEquals(())
 
   check("Must append correctly") { s =>
