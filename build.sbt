@@ -251,9 +251,15 @@ lazy val doobieUpickleCodecs = module("doobie-upickle") {
 lazy val driverTests = module("backend-tests") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Full)
-    .enablePlugins(NoPublishPlugin)
+    .enablePlugins(NoPublishPlugin, BuildInfoPlugin)
     .dependsOn(postgres)
     .settings(
+      buildInfoKeys := Seq[BuildInfoKey](crossProjectPlatform),
+      buildInfoPackage := "tests",
+      buildInfoOptions ++= Seq(
+        BuildInfoOption.ConstantValue,
+        BuildInfoOption.PackagePrivate
+      ),
       description := "Integration tests for postgres backends",
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "munit-cats-effect" % Versions.CatsEffectMunit,

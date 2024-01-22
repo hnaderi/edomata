@@ -48,13 +48,17 @@ class SkunkBinaryCompatibilitySuite
 
 class SkunkPersistenceSuite
     extends PersistenceSuite(
-      backend("skunk_persistence", jsonbCodec),
+      backendCross("persistence", jsonbCodec),
       "skunk"
     )
 
 class SkunkPersistenceKeywordNamespaceSuite
     extends PersistenceSuite(
-      backend("order", jsonbCodec),
+      backend(
+        "order",
+        jsonbCodec,
+        dbName = s"Skunk_${BuildInfo.crossProjectPlatform}"
+      ),
       "skunk"
     )
 
@@ -73,23 +77,24 @@ object SkunkCompatibilitySuite {
     i => ByteVector.fromHex(i.toString).get.toArray,
     a => Either.catchNonFatal(ByteVector(a).toHex.toInt).leftMap(_.getMessage)
   )
-  private val database = Session
+  private def database(name: String) = Session
     .pooled[IO](
-      "localhost",
-      5432,
-      "postgres",
-      "postgres",
-      Some("postgres"),
+      host = "localhost",
+      port = 5432,
+      user = "postgres",
+      database = name.toLowerCase(),
+      password = Some("postgres"),
       4
     )
 
   inline def backend(
       inline name: String,
-      codec: BackendCodec[Int]
+      codec: BackendCodec[Int],
+      dbName: String = "postgres"
   ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
     given BackendCodec[Int] = codec
     import TestDomain.given_ModelTC_State_Event_Rejection
-    database
+    database(dbName)
       .flatMap(pool =>
         Backend
           .builder(TestDomainModel)
@@ -99,13 +104,24 @@ object SkunkCompatibilitySuite {
           .build
       )
 
-  inline def backendCqrs(
+  inline def backendCross(
       inline name: String,
       codec: BackendCodec[Int]
+  ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
+    backend(
+      name + "_" + BuildInfo.crossProjectPlatform,
+      codec,
+      s"Skunk_${BuildInfo.crossProjectPlatform}"
+    )
+
+  inline def backendCqrs(
+      inline name: String,
+      codec: BackendCodec[Int],
+      dbName: String = "postgres"
   ): Resource[IO, cqrs.Backend[IO, Int, String, Int]] =
     given BackendCodec[Int] = codec
     import TestCQRSModel.given_StateModelTC_State
-    database
+    database(dbName)
       .flatMap(pool =>
         Backend
           .builder(TestCQRSDomain)

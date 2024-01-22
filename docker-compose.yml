@@ -7,5 +7,6 @@ services:
       - POSTGRES_PASSWORD=postgres
     volumes:
       - ./testdata.sql:/docker-entrypoint-initdb.d/testdata.sql
+      - ./testdbs.sql:/docker-entrypoint-initdb.d/testdbs.sql
     ports:
       - 5432:5432
