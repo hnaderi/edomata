@@ -5,7 +5,7 @@ object Dependencies {
     val cats = "2.10.0"
     val catsEffect = "3.5.3"
     val fs2 = "3.9.4"
-    val skunk = "0.6.2"
+    val skunk = "0.6.3"
     val scalaCheck = "1.15.4"
     val MUnit = "1.0.0-M8"
     val CatsEffectMunit = "2.0.0-M3"
