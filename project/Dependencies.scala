@@ -13,6 +13,6 @@ object Dependencies {
     val doobie = "1.0.0-RC5"
     val circe = "0.14.7"
     val upickle = "3.2.0"
-    val jsoniter = "2.30.0"
+    val jsoniter = "2.30.1"
   }
 }
