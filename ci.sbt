@@ -33,7 +33,7 @@ inThisBuild(
 
 lazy val dockerComposeUp = Seq(
   WorkflowStep.Run(
-    commands = List("docker-compose up -d"),
+    commands = List("docker compose up -d"),
     name = Some("Start up Postgres")
   )
 )
