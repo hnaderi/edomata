@@ -54,10 +54,11 @@ object RepositoryReader {
           .flatMap {
             case Some(last) =>
               journal
-                .readStreamAfter(streamId, last.version)
+                .readStreamAfter(streamId, last.version - 1)
                 .through(scanState(last))
                 .compile
                 .lastOrError
+
             case None => history(streamId).compile.lastOrError
           }
 
