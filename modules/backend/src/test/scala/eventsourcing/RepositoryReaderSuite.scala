@@ -69,6 +69,41 @@ class RepositoryReaderSuite extends CatsEffectSuite {
           )
         )
   }
+
+  test("Repository reader uses snapshot") {
+    val snapshot: SnapshotReader[IO, Long] = ConstantSnapshotStore(45, 9)
+    val journal: JournalReader[IO, Int] = JournalReaderStub(data)
+
+    val r = RepositoryReader(journal, snapshot)
+
+    r.get("sut").assertEquals(AggregateState.Valid(55, 10)) >>
+      r.history("sut")
+        .compile
+        .toList
+        .assertEquals(
+          data.scanLeft(initial)((s, e) =>
+            AggregateState.Valid(s.state + e.payload, s.version + 1)
+          )
+        )
+  }
+
+  test("Repository reader uses wrong snapshots too!") {
+    val snapshot: SnapshotReader[IO, Long] = ConstantSnapshotStore(100, 9)
+    val journal: JournalReader[IO, Int] = JournalReaderStub(data)
+
+    val r = RepositoryReader(journal, snapshot)
+
+    r.get("sut").assertEquals(AggregateState.Valid(110, 10)) >>
+      r.history("sut")
+        .compile
+        .toList
+        .assertEquals(
+          data.scanLeft(initial)((s, e) =>
+            AggregateState.Valid(s.state + e.payload, s.version + 1)
+          )
+        )
+  }
+
 }
 
 class JournalReaderStub[E](data: Stream[IO, EventMessage[E]])
