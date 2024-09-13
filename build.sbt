@@ -54,6 +54,7 @@ lazy val modules = List(
   doobieJsoniterCodecs,
   doobieUpickleCodecs,
   driverTests,
+  e2eTests,
   munitTestkit,
   docs,
   unidocs,
@@ -273,6 +274,26 @@ lazy val driverTests = module("backend-tests") {
     )
 }
 
+lazy val e2eTests = module("e2e") {
+  crossProject(JVMPlatform)
+    .crossType(CrossType.Pure)
+    .enablePlugins(NoPublishPlugin)
+    .dependsOn(
+      driverTests,
+      skunkBackend,
+      skunkCirceCodecs,
+      doobieBackend,
+      doobieCirceCodecs
+    )
+    .settings(
+      description := "E2E tests for postgres backends",
+      libraryDependencies ++= Seq(
+        "io.circe" %%% "circe-generic" % Versions.circe
+      )
+    )
+
+}
+
 lazy val munitTestkit = module("munit") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
@@ -292,7 +313,9 @@ lazy val examples =
       skunkUpickleCodecs
     )
     .settings(
-      libraryDependencies += "io.circe" %%% "circe-generic" % Versions.circe
+      libraryDependencies ++= Seq(
+        "io.circe" %%% "circe-generic" % Versions.circe
+      )
     )
     .enablePlugins(NoPublishPlugin)
 
