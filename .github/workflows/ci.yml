@@ -219,7 +219,7 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: edomata_3 docs_3 examples_sjs1_3 edomata_3 edomata_3 examples_3 edomata-backend-tests_sjs1_3 edomata-backend-tests_3 edomata-backend-tests_native0.4_3 mdocplantuml_3
+          modules-ignore: edomata_3 docs_3 examples_sjs1_3 edomata-e2e_3 edomata_3 edomata_3 examples_3 edomata-backend-tests_sjs1_3 edomata-backend-tests_3 edomata-backend-tests_native0.4_3 mdocplantuml_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
   validate-steward:
