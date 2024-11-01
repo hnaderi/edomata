@@ -22,7 +22,7 @@
               nodejs.enable = true;
               native = {
                 enable = true;
-                libraries = with pkgs; [ s2n utf8proc openssl ];
+                libraries = with pkgs; [ s2n-tls utf8proc openssl ];
               };
             };
           };
