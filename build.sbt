@@ -15,7 +15,7 @@ inThisBuild(
     organization := "dev.hnaderi",
     organizationName := "Hossein Naderi",
     startYear := Some(2021),
-    tlSonatypeUseLegacyHost := false,
+    sonatypeCredentialHost := xerial.sbt.Sonatype.sonatypeLegacy,
     tlCiReleaseBranches := Seq("main"),
     tlSitePublishBranch := Some("main"),
     licenses := Seq(License.Apache2),
