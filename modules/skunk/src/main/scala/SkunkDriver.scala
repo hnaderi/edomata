@@ -19,6 +19,7 @@ package edomata.skunk
 import _root_.skunk.Session
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
+import cats.effect.std.SecureRandom
 import cats.implicits.*
 import edomata.backend.PGNamespace
 import edomata.backend.eventsourcing.*
@@ -53,6 +54,8 @@ final class SkunkDriver[F[_]: Async] private (
       .flatMap((jQ, nQ, cQ) =>
         for {
           updates <- Resource.eval(Notifications[F])
+          sr <- Resource.eval(SecureRandom.javaSecuritySecureRandom[F])
+          given SecureRandom[F] = sr
           _outbox = SkunkOutboxReader(pool, nQ)
           _journal = SkunkJournalReader(pool, jQ)
           _repo = RepositoryReader(_journal, snapshot)
