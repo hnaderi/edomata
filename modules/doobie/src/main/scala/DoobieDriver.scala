@@ -18,6 +18,7 @@ package edomata.doobie
 
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
+import cats.effect.std.SecureRandom
 import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
@@ -50,6 +51,8 @@ final class DoobieDriver[F[_]: Async] private (
       for {
         _ <- setup
         updates <- Notifications[F]
+        sr <- SecureRandom.javaSecuritySecureRandom[F]
+        given SecureRandom[F] = sr
         _outbox = DoobieOutboxReader(pool, nQ)
         _journal = DoobieJournalReader(pool, jQ)
         _repo = RepositoryReader(_journal, snapshot)

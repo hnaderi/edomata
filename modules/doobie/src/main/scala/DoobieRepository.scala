@@ -23,6 +23,8 @@ import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Sync
+import cats.effect.std.SecureRandom
+import cats.effect.std.UUIDGen
 import cats.syntax.all.*
 import edomata.backend.*
 import edomata.backend.eventsourcing.*
@@ -30,7 +32,6 @@ import edomata.core.*
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import cats.effect.std.UUIDGen
 
 private final class DoobieRepository[F[_], S, E, R, N](
     trx: Transactor[F],
@@ -41,10 +42,11 @@ private final class DoobieRepository[F[_], S, E, R, N](
     updates: NotificationsPublisher[F]
 )(using
     F: Sync[F],
-    clock: Clock[F]
+    clock: Clock[F],
+    SR: SecureRandom[F]
 ) extends Repository[F, S, E, R, N] {
 
-  private val newId = UUIDGen[F].randomUUID
+  private val newId = UUIDGen.fromSecureRandom[F].randomUUID
   private val redundant: F[CommandState[S, E, R]] =
     CommandState.Redundant.pure[F]
   private val currentTime: F[OffsetDateTime] =

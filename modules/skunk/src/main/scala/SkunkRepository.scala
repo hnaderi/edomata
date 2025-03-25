@@ -21,11 +21,12 @@ import cats.data.Chain
 import cats.data.NonEmptyChain
 import cats.effect.kernel.Resource
 import cats.effect.kernel.Sync
+import cats.effect.std.SecureRandom
 import cats.effect.std.UUIDGen
 import cats.implicits.*
+import edomata.backend.*
 import edomata.backend.eventsourcing.*
 import edomata.core.*
-import edomata.backend.*
 
 private final class SkunkRepository[F[_], S, E, R, N](
     pool: Resource[F, Session[F]],
@@ -34,11 +35,11 @@ private final class SkunkRepository[F[_], S, E, R, N](
     cmds: Queries.Commands,
     repository: RepositoryReader[F, S, E, R],
     updates: NotificationsPublisher[F]
-)(using F: Sync[F])
+)(using F: Sync[F], SR: SecureRandom[F])
     extends Repository[F, S, E, R, N] {
 
   private val trx = pool.flatTap(_.transaction)
-  private val newId = UUIDGen[F].randomUUID
+  private val newId = UUIDGen.fromSecureRandom[F].randomUUID
   private val redundant: F[CommandState[S, E, R]] =
     CommandState.Redundant.pure[F]
 
