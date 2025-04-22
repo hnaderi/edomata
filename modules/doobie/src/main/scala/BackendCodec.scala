@@ -19,7 +19,6 @@ package edomata.doobie
 import _root_.doobie.*
 import cats.Show
 import cats.data.NonEmptyList
-import cats.implicits.*
 import org.postgresql.util.PGobject
 
 import scala.annotation.implicitNotFound
