@@ -23,9 +23,6 @@ import cats.effect.kernel.Resource
 import dev.hnaderi.example.accounts.*
 import edomata.backend.*
 import edomata.doobie.*
-import edomata.doobie.BackendCodec
-import edomata.doobie.CirceCodec
-import edomata.doobie.DoobieDriver
 import io.circe.generic.auto.*
 
 private given BackendCodec[Event] = CirceCodec.jsonb
