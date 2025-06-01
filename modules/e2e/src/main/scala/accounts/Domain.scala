@@ -81,7 +81,7 @@ enum Account {
 object Account extends DomainModel[Account, Event, Rejection] {
   def initial = New
   def transition = {
-    case Event.Opened => _ => Open(0).validNec
+    case Event.Opened       => _ => Open(0).validNec
     case Event.Withdrawn(b) =>
       _.mustBeOpen.map(s => s.copy(balance = s.balance - b))
     case Event.Deposited(b) =>

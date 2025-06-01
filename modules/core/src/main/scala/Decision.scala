@@ -318,7 +318,7 @@ sealed trait DecisionCatsInstances0 extends DecisionCatsInstances1 {
             step(a, evs ++ ev2.toChain)(f)
           case Decision.Accepted(ev2, Right(b)) =>
             Decision.Accepted(ev2.prependChain(evs), b)
-          case Decision.InDecisive(Left(a)) => step(a, evs)(f)
+          case Decision.InDecisive(Left(a))  => step(a, evs)(f)
           case Decision.InDecisive(Right(b)) =>
             NonEmptyChain
               .fromChain(evs)

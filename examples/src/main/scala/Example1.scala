@@ -75,7 +75,7 @@ object Application extends IOApp.Simple {
   private val dsl = CounterDomain.dsl
 
   def app = dsl.router {
-    case "" => dsl.read[IO].map(_.command).map(_.deriveMeta).void
+    case ""        => dsl.read[IO].map(_.command).map(_.deriveMeta).void
     case "receive" =>
       for {
         s <- dsl.state
