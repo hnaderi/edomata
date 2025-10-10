@@ -1,7 +1,7 @@
 addSbtPlugin("com.github.sbt" % "sbt-unidoc" % "0.6.0")
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.5.5")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.3")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.4")
 addSbtPlugin("de.heikoseeberger" % "sbt-header" % "5.10.0")
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.8.2")
 addSbtPlugin("org.typelevel" % "sbt-typelevel-site" % "0.8.2")
