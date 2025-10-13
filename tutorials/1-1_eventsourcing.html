@@ -403,8 +403,8 @@
 //     address = &quot;our account id&quot;,
 //     payload = Open,
 //     metadata = MessageMetadata(
-//       correlation = Some(value = &quot;some random id for request&quot;),
-//       causation = Some(value = &quot;some random id for request&quot;)
+//       correlation = Some(&quot;some random id for request&quot;),
+//       causation = Some(&quot;some random id for request&quot;)
 //     )
 //   ),
 //   state = New
@@ -430,8 +430,8 @@
         </ul>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="type-name">AccountService</span><span>[</span><span class="type-name">Id</span><span>].</span><span class="identifier">run</span><span>(</span><span class="identifier">scenario1</span><span>)
 </span><span class="comment">// res9: ResponseT[[_$1 &gt;: Nothing &lt;: Any] =&gt; Decision[Rejection, Event, _$1], Rejection, Notification, Unit] = ResponseT(
-//   result = Accepted(events = Singleton(a = Opened), result = ()),
-//   notifications = Singleton(a = AccountOpened(accountId = &quot;our account id&quot;))
+//   result = Accepted(events = Singleton(Opened), result = ()),
+//   notifications = Singleton(AccountOpened(&quot;our account id&quot;))
 // )</span></code></pre>
         <p>now we can easily assert our expectations using our favorite test framework</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">assertEquals</span><span>(
