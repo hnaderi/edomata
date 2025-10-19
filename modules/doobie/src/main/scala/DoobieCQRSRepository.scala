@@ -72,22 +72,23 @@ private final class DoobieCQRSRepository[F[_]: Concurrent: Clock, S, N](
       events: Chain[N]
   ): F[Unit] = for {
     now <- currentTime
-    query = for {
-      _ <- states
-        .put(ctx.address, newState, version)
-        .run
-        .map(_ == 1)
-        .ifM(FC.unit, FC.raiseError(BackendError.VersionConflict))
+    query =
+      for {
+        _ <- states
+          .put(ctx.address, newState, version)
+          .run
+          .map(_ == 1)
+          .ifM(FC.unit, FC.raiseError(BackendError.VersionConflict))
 
-      _ <- NonEmptyList
-        .fromFoldable(events.map((_, ctx.address, now, ctx.metadata)))
-        .fold(FC.unit)(n => o.insertAll(n.toList).assertInserted(n.size))
+        _ <- NonEmptyList
+          .fromFoldable(events.map((_, ctx.address, now, ctx.metadata)))
+          .fold(FC.unit)(n => o.insertAll(n.toList).assertInserted(n.size))
 
-      _ <- NonEmptyChain.fromChain(events).fold(FC.unit)(handler)
+        _ <- NonEmptyChain.fromChain(events).fold(FC.unit)(handler)
 
-      _ <- cmds.insert(ctx).run.assertInserted
+        _ <- cmds.insert(ctx).run.assertInserted
 
-    } yield ()
+      } yield ()
     _ <- query
       .transact(trx)
       .attemptSomeSqlState { case sqlstate.class23.UNIQUE_VIOLATION =>
