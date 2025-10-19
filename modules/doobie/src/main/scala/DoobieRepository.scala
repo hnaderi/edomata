@@ -81,15 +81,16 @@ private final class DoobieRepository[F[_], S, E, R, N](
         )
       )
     )
-    query = for {
-      _ <- j.append(evs).assertInserted(events.size)
-      _ <- NonEmptyChain.fromChain(notifications).fold(FC.unit) { n =>
-        o.insertAll(
-          n.toList.map((_, ctx.command.address, now, ctx.command.metadata))
-        ).assertInserted(notifications.size)
-      }
-      _ <- cmds.insert(ctx.command).run.assertInserted
-    } yield ()
+    query =
+      for {
+        _ <- j.append(evs).assertInserted(events.size)
+        _ <- NonEmptyChain.fromChain(notifications).fold(FC.unit) { n =>
+          o.insertAll(
+            n.toList.map((_, ctx.command.address, now, ctx.command.metadata))
+          ).assertInserted(notifications.size)
+        }
+        _ <- cmds.insert(ctx.command).run.assertInserted
+      } yield ()
 
     _ <- query
       .transact(trx)
