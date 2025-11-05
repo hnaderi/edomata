@@ -29,6 +29,7 @@ import scodec.bits.ByteVector
 import scala.concurrent.duration.*
 
 import SkunkCompatibilitySuite.*
+import edomata.backend.eventsourcing.SnapshotPersistence
 
 class SkunkCompatibilitySuite
     extends BackendCompatibilitySuite(
@@ -60,6 +61,12 @@ class SkunkPersistenceKeywordNamespaceSuite
         dbName = s"Skunk_${BuildInfo.crossProjectPlatform}"
       ),
       "skunk"
+    )
+
+class SkunkSnapshotPersistenceSuite
+    extends SnapshotPersistenceSuite(
+      snapshot("snapshot_compatibility_json", jsonCodec),
+      "skunk snapshot json"
     )
 
 class SkunkCQRSSuite
@@ -129,4 +136,14 @@ object SkunkCompatibilitySuite {
           .withRetryConfig(retryInitialDelay = 200.millis)
           .build
       )
+
+  inline def snapshot(
+      inline name: String,
+      codec: BackendCodec[Int],
+      dbName: String = "postgres"
+  ): Resource[IO, SnapshotPersistence[IO, Int]] = {
+    database(dbName)
+      .evalMap(SkunkDriver(name, _))
+      .flatMap(_.snapshot(using codec))
+  }
 }

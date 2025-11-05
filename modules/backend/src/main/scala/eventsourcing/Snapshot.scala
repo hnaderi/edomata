@@ -97,6 +97,15 @@ object SnapshotStore {
     _ <- persist.compile.drain.background
       .onFinalize(if flushOnExit then flush else F.unit)
   } yield pss
+
+  private[edomata] def dedup[S]
+      : Chunk[SnapshotItem[S]] => Iterable[SnapshotItem[S]] =
+    _.foldLeft(Map[StreamId, SnapshotItem[S]]()) { case (m, a @ (id, sn)) =>
+      m.get(id) match {
+        case Some((_, ex)) if ex.version > sn.version => m
+        case _                                        => m.updated(id, a)
+      }
+    }.values
 }
 
 private final class InMemorySnapshotStore[F[_]: Monad, S](
