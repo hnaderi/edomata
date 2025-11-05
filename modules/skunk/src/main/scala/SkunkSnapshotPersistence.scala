@@ -31,9 +31,10 @@ private final class SkunkSnapshotPersistence[F[_]: Concurrent, S](
 ) extends SnapshotPersistence[F, S] {
   def get(id: StreamId): F[Option[AggregateState.Valid[S]]] =
     pool.use(_.prepare(q.get).flatMap(_.option(id)))
-  def put(items: Chunk[SnapshotItem[S]]): F[Unit] =
-    val l = items.toList
+  def put(items: Chunk[SnapshotItem[S]]): F[Unit] = {
+    val l = SnapshotStore.dedup(items).toList
     pool.use(_.prepare(q.put(l)).flatMap(_.execute(l))).void
+  }
 }
 
 private object SkunkSnapshotPersistence {

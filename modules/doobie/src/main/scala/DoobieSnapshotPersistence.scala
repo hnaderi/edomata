@@ -32,7 +32,7 @@ private final class DoobieSnapshotPersistence[F[_]: Concurrent, S](
   def get(id: StreamId): F[Option[AggregateState.Valid[S]]] =
     qs.get(id).option.transact(trx)
   def put(items: Chunk[SnapshotItem[S]]): F[Unit] =
-    qs.put(items.toList).transact(trx).void
+    qs.put(SnapshotStore.dedup(items).toList).transact(trx).void
 }
 
 private object DoobieSnapshotPersistence {

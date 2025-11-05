@@ -26,6 +26,7 @@ import edomata.doobie.*
 import scodec.bits.ByteVector
 
 import DoobieCompatibilitySuite.*
+import edomata.backend.eventsourcing.SnapshotPersistence
 
 class DoobieJsonCompatibilitySuite
     extends BackendCompatibilitySuite(
@@ -53,6 +54,12 @@ class DoobiePersistenceKeywordNamespaceSuite
     extends PersistenceSuite(
       backend("order", jsonbCodec),
       "doobie"
+    )
+
+class DoobieSnapshotPersistenceSuite
+    extends SnapshotPersistenceSuite(
+      snapshot("snapshot_compatibility_json", jsonCodec),
+      "doobie snapshot json"
     )
 
 class DoobieCQRSSuite
@@ -104,4 +111,11 @@ object DoobieCompatibilitySuite {
       .builder(TestCQRSDomain)
       .use(DoobieCQRSDriver(name, trx))
       .build
+
+  inline def snapshot(
+      inline name: String,
+      codec: BackendCodec[Int]
+  ): Resource[IO, SnapshotPersistence[IO, Int]] = {
+    Resource.eval(DoobieDriver(name, trx)).flatMap(_.snapshot(using codec))
+  }
 }
