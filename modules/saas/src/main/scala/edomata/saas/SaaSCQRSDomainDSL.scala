@@ -1,0 +1,111 @@
+/*
+ * Copyright 2021 Hossein Naderi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package edomata.saas
+
+import cats.Applicative
+import cats.Monad
+import cats.data.*
+import edomata.core.*
+
+final class SaaSCQRSDomainDSL[C, A, R, N](
+    rolesFor: CrudAction => Set[String],
+    mkRejection: String => R
+):
+  private val inner =
+    CQRSDomainDSL[SaaSCommand[C], CrudState[A], R, N]()
+
+  type App[F[_], T] =
+    Stomaton[F, CommandMessage[SaaSCommand[C]], CrudState[A], R, N, T]
+
+  def caller[F[_]: Monad]: App[F, CallerIdentity] =
+    inner.command.map(_.caller)
+
+  def command[F[_]: Monad]: App[F, C] =
+    inner.command.map(_.payload)
+
+  def entityState[F[_]: Monad]: App[F, CrudState[A]] =
+    inner.state
+
+  private def liftEither[F[_]: Monad](
+      result: Either[String, Unit]
+  ): App[F, Unit] =
+    result match
+      case Right(()) => inner.unit
+      case Left(msg) => inner.reject(mkRejection(msg))
+
+  private def guard[F[_]: Monad](action: CrudAction): App[F, Unit] =
+    for
+      cmd <- inner.command
+      state <- inner.state
+      cal = cmd.caller
+      _ <- liftEither(SaaSGuard.checkTenant(state, cal, action))
+      _ <- liftEither(SaaSGuard.checkRoles(cal, rolesFor(action)))
+    yield ()
+
+  def guardedRouter[F[_]: Monad](
+      f: C => (CrudAction, App[F, Unit])
+  ): App[F, Unit] =
+    command.flatMap { cmd =>
+      val (action, logic) = f(cmd)
+      guard(action) >> logic
+    }
+
+  def unsafeUnguardedRouter[F[_]: Monad](
+      f: C => App[F, Unit]
+  ): App[F, Unit] =
+    command.flatMap(f)
+
+  def guarded[F[_]: Monad](action: CrudAction)(
+      logic: App[F, Unit]
+  ): App[F, Unit] =
+    guard(action) >> logic
+
+  def unsafeUnguarded[F[_]: Monad](logic: App[F, Unit]): App[F, Unit] = logic
+
+  def set[F[_]: Applicative](s: CrudState[A]): App[F, Unit] =
+    inner.set(s)
+
+  def modifyS[F[_]: Applicative](
+      f: CrudState[A] => EitherNec[R, CrudState[A]]
+  ): App[F, CrudState[A]] =
+    inner.modifyS(f)
+
+  def decideS[F[_]: Applicative](
+      f: CrudState[A] => EitherNec[R, CrudState[A]]
+  ): App[F, CrudState[A]] =
+    inner.decideS(f)
+
+  def reject[F[_]: Applicative, T](r: R, rs: R*): App[F, T] =
+    inner.reject(r, rs*)
+
+  def publish[F[_]: Applicative](ns: N*): App[F, Unit] =
+    inner.publish(ns*)
+
+  def eval[F[_]: Applicative, T](f: F[T]): App[F, T] =
+    inner.eval(f)
+
+  def pure[F[_]: Monad, T](t: T): App[F, T] =
+    inner.pure(t)
+
+  def unit[F[_]: Monad]: App[F, Unit] =
+    inner.unit
+
+  def aggregateId[F[_]: Monad]: App[F, String] =
+    inner.aggregateId
+
+  def validate[F[_]: Applicative, T](v: ValidatedNec[R, T]): App[F, T] =
+    inner.validate(v)
