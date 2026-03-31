@@ -58,9 +58,9 @@ modules/
 ├── doobie-upickle/    # uPickle codecs for Doobie
 ├── backend-tests/     # Integration tests
 ├── e2e/               # End-to-end tests
-├── munit/             # MUnit test framework integration
-└── examples/          # Example implementations
+└── munit/             # MUnit test framework integration
 
+examples/              # Example implementations
 docs/                  # Documentation (Markdown)
 site/                  # Documentation site generator
 ```
