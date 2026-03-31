@@ -317,6 +317,7 @@ lazy val examples =
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(
+      saas,
       skunkBackend,
       skunkCirceCodecs,
       skunkUpickleCodecs
