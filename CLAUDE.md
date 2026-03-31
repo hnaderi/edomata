@@ -231,6 +231,10 @@ GitHub Actions runs on:
 - Platforms: JVM, JS, Native
 - Checks: format, compile, test
 
+## Language
+
+All contributions MUST be in English: commit messages, PR titles/descriptions, code comments, documentation, and branch names. This is an international open-source library.
+
 ## Contribution Workflow
 
 When given a ticket (number or URL):
