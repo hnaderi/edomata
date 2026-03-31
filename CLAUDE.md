@@ -12,7 +12,7 @@ Edomata is a lightweight, purely functional Scala 3 library for implementing eve
 
 ## Build System
 
-- **Build tool**: SBT 1.12.1
+- **Build tool**: SBT 1.12.8
 - **Scala version**: 3.3.6
 - **Cross-compilation**: JVM, JS, Native platforms
 
@@ -82,7 +82,7 @@ site/                  # Documentation site generator
 - **Cats Effect** 3.6.3 - IO and effect handling
 - **FS2** 3.12.2 - Functional streams
 - **Skunk** 0.6.5 - Async PostgreSQL client
-- **Doobie** 1.0.0-RC11 - JDBC-based database layer
+- **Doobie** 1.0.0-RC12 - JDBC-based database layer
 - **Circe** 0.14.15 - JSON serialization
 - **MUnit** 1.0.0-M8 - Testing framework
 
@@ -95,9 +95,9 @@ docker-compose up -d
 ```
 
 This starts PostgreSQL 14 on port 5432 with:
-- Database: `test`
-- User: `test`
-- Password: `test`
+- User: `postgres`
+- Password: `postgres`
+- Databases created by init scripts: `postgres` (default), `Skunk_JVMPlatform`, `Skunk_JSPlatform`, `Skunk_NativePlatform`, `Doobie`
 
 Run tests with:
 

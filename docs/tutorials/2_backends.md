@@ -134,6 +134,7 @@ Here's a complete example showing how to wire up a backend:
 ```scala
 import cats.effect.*
 import edomata.backend.*
+import edomata.backend.eventsourcing.Backend
 import edomata.skunk.* // or edomata.doobie.*
 import skunk.Session
 
@@ -143,29 +144,29 @@ import skunk.Session
 object Main extends IOApp.Simple {
   def run: IO[Unit] = {
     // 1. Create database connection pool
-    val session: Resource[IO, Session[IO]] = Session.pooled(
+    val pool: Resource[IO, Session[IO]] = Session.pooled(
       host = "localhost",
       port = 5432,
-      user = "test",
-      database = "test",
-      password = Some("test"),
+      user = "postgres",
+      database = "postgres",
+      password = Some("postgres"),
       max = 10
     )
 
     // 2. Create backend
-    session.flatMap { pool =>
-      SkunkBackend[IO](pool)
-        .builder(Account) // Your domain model
-        .withSnapshot(maxInMemory = 200) // Cache 200 aggregates in memory
-        .build
-    }.use { backend =>
+    val buildBackend = Backend
+      .builder(AccountService)                    // 1
+      .use(SkunkDriver("account", pool))          // 2
+      .persistedSnapshot(maxInMem = 200)          // 3
+      .build
+
+    buildBackend.use { backend =>
       // 3. Compile your service
       val service = backend.compile(AccountService[IO])
 
       // 4. Use it!
       for {
-        result <- service.apply(
-          "account-123", // aggregate ID
+        result <- service(
           CommandMessage(
             id = "cmd-1",
             time = java.time.Instant.now(),
