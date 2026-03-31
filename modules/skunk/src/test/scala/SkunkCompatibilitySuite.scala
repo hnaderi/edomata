@@ -29,6 +29,7 @@ import scodec.bits.ByteVector
 import scala.concurrent.duration.*
 
 import SkunkCompatibilitySuite.*
+import edomata.backend.PGNaming
 import edomata.backend.eventsourcing.SnapshotPersistence
 
 class SkunkCompatibilitySuite
@@ -63,6 +64,12 @@ class SkunkPersistenceKeywordNamespaceSuite
       "skunk"
     )
 
+class SkunkPrefixedPersistenceSuite
+    extends PersistenceSuite(
+      prefixedBackend("skunk_pfx", jsonbCodec),
+      "skunk prefixed"
+    )
+
 class SkunkSnapshotPersistenceSuite
     extends SnapshotPersistenceSuite(
       snapshot("snapshot_compatibility_json", jsonCodec),
@@ -73,6 +80,12 @@ class SkunkCQRSSuite
     extends CqrsSuite(
       backendCqrs("skunk_cqrs", jsonCodec),
       "skunk"
+    )
+
+class SkunkPrefixedCQRSSuite
+    extends CqrsSuite(
+      prefixedBackendCqrs("skunk_pfx_cqrs", jsonCodec),
+      "skunk prefixed"
     )
 
 object SkunkCompatibilitySuite {
@@ -133,6 +146,38 @@ object SkunkCompatibilitySuite {
         Backend
           .builder(TestCQRSDomain)
           .use(SkunkCQRSDriver(name, pool))
+          .withRetryConfig(retryInitialDelay = 200.millis)
+          .build
+      )
+
+  inline def prefixedBackend(
+      inline name: String,
+      codec: BackendCodec[Int],
+      dbName: String = "postgres"
+  ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestDomain.given_ModelTC_State_Event_Rejection
+    database(dbName)
+      .flatMap(pool =>
+        Backend
+          .builder(TestDomainModel)
+          .use(SkunkDriver.from(PGNaming.prefixed(name), pool))
+          .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+          .build
+      )
+
+  inline def prefixedBackendCqrs(
+      inline name: String,
+      codec: BackendCodec[Int],
+      dbName: String = "postgres"
+  ): Resource[IO, cqrs.Backend[IO, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestCQRSModel.given_StateModelTC_State
+    database(dbName)
+      .flatMap(pool =>
+        Backend
+          .builder(TestCQRSDomain)
+          .use(SkunkCQRSDriver.from(PGNaming.prefixed(name), pool))
           .withRetryConfig(retryInitialDelay = 200.millis)
           .build
       )

@@ -56,7 +56,7 @@ These backends are designed to be as standard as possible and to be a great fit 
 
 #### Persistence
 
-Each aggregate type has its own namespace (which is a separate schema in Postgres), that contains all the required tables:
+Each aggregate type has its own namespace that contains all the required tables. By default, each namespace creates a dedicated PostgreSQL schema (e.g. `"auth".journal`). Alternatively, you can use **prefix mode** to keep all tables in a single schema with prefixed names (e.g. `auth_journal`) — see the [Skunk](../backends/skunk.md) or [Doobie](../backends/doobie.md) backend docs for details. The available tables are:
 
 | Table | Purpose | Used By |
 |-------|---------|---------|

@@ -72,3 +72,32 @@ val application = buildBackend.use { backend =>
 1. use your domain as described in previous chapter. 
 2. `domainname` is used as schema name in postgres.
 3. feel free to navigate available options in backend builder.
+
+## Table prefix mode
+
+By default, each aggregate gets its own PostgreSQL schema (e.g. `"domainname".journal`).
+If you prefer to keep all tables in a single schema (e.g. when using Flyway migrations), you can use prefix-based naming instead:
+
+```scala
+import edomata.backend.PGNamespace
+
+val buildBackend = Backend
+  .builder(AccountService)
+  .use(DoobieDriver.from(PGNamespace.prefixed("domainname"), trx))
+  .inMemSnapshot(200)
+  .build
+```
+
+This creates tables named `domainname_journal`, `domainname_outbox`, etc. in the current schema, and skips the `CREATE SCHEMA` statement.
+
+You can also use `PGNaming` directly for more control:
+
+```scala
+import edomata.backend.PGNaming
+
+// Schema mode (default behavior)
+DoobieDriver.from(PGNaming.schema("domainname"), trx)
+
+// Prefix mode
+DoobieDriver.from(PGNaming.prefixed("domainname"), trx)
+```
