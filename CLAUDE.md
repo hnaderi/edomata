@@ -153,3 +153,22 @@ GitHub Actions runs on:
 - JVM versions: temurin@8, temurin@17
 - Platforms: JVM, JS, Native
 - Checks: format, compile, test
+
+## Contribution Workflow
+
+When given a ticket (number or URL):
+
+1. Detect the repository context:
+   ```bash
+   # Check if this is a fork
+   gh repo view --json isFork,parent -q '{fork: .isFork, upstream: .parent.owner.login + "/" + .parent.name}'
+   ```
+2. Read the ticket content:
+   - If on a **fork**: read the ticket from the upstream repo (`gh issue view --repo <upstream> <number>`)
+   - If on the **root repo**: read the ticket directly (`gh issue view <number>`)
+3. Implement the solution on a dedicated branch
+4. Open a PR:
+   - If on a **fork**: target the **upstream** repo with `Fixes <upstream>#<number>`
+   - If on the **root repo**: target the default branch with `Fixes #<number>`
+
+Do not ask for confirmation — go straight to reading the ticket and implementing.
