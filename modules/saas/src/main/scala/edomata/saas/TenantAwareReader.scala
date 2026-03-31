@@ -20,19 +20,19 @@ import cats.Monad
 
 /** Single-entity read with mandatory tenant scoping.
   *
-  * Wraps a repository reader to enforce that only entities belonging to the
-  * caller's tenant are returned.
+  * @tparam Auth
+  *   authentication/authorization context type
   */
-trait TenantAwareReader[F[_], A]:
-  def get(caller: CallerIdentity, entityId: String): F[Option[A]]
+trait TenantAwareReader[F[_], Auth, A]:
+  def get(auth: Auth, entityId: String): F[Option[A]]
 
 /** List/search queries with mandatory tenant scoping.
   *
-  * The `CallerIdentity` parameter is structurally required, making it
-  * impossible to forget tenant filtering.
+  * The `Auth` parameter is structurally required, making it impossible to
+  * forget tenant filtering.
   */
-trait TenantScopedQuery[F[_], A, Q]:
-  def query(caller: CallerIdentity, q: Q): F[List[A]]
+trait TenantScopedQuery[F[_], Auth, A, Q]:
+  def query(auth: Auth, q: Q): F[List[A]]
 
 /** Unguarded cross-tenant query for super-admin / internal dashboards.
   *
@@ -43,10 +43,10 @@ trait UnsafeCrossTenantQuery[F[_], A, Q]:
   def query(q: Q): F[List[A]]
 
 object TenantScopedQuery:
-  def apply[F[_]: Monad, A, Q](
+  def apply[F[_]: Monad, Auth, A, Q](
       run: (TenantId, Q) => F[List[A]]
-  ): TenantScopedQuery[F, A, Q] =
-    (caller, q) => run(caller.tenantId, q)
+  )(using policy: AuthPolicy[Auth]): TenantScopedQuery[F, Auth, A, Q] =
+    (auth, q) => run(policy.tenantId(auth), q)
 
 object UnsafeCrossTenantQuery:
   def apply[F[_]: Monad, A, Q](

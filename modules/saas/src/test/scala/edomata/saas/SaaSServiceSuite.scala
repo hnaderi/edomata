@@ -36,9 +36,10 @@ class SaaSServiceSuite extends FunSuite {
 
   import TestCQRSModel.given
 
+  given AuthPolicy[CallerIdentity] = RoleBasedPolicy(_ => Set.empty)
+
   object TestCQRSService
-      extends SaaSCQRSService[String, String, String, String](
-        rolesFor = _ => Set.empty,
+      extends SaaSCQRSService[CallerIdentity, String, String, String, String](
         mkRejection = identity
       ):
     def apply(): App[Id, Unit] = SaaS.guardedRouter {
@@ -77,7 +78,10 @@ class SaaSServiceSuite extends FunSuite {
       "c1",
       java.time.Instant.now(),
       "e1",
-      SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "create")
+      SaaSCommand[CallerIdentity, String](
+        CallerIdentity(tenantA, userA, Set.empty),
+        "create"
+      )
     )
     val result = TestCQRSService().run(cmd, CrudState.NonExistent)
     result.result match
@@ -92,7 +96,10 @@ class SaaSServiceSuite extends FunSuite {
       "c1",
       java.time.Instant.now(),
       "e1",
-      SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "update")
+      SaaSCommand[CallerIdentity, String](
+        CallerIdentity(tenantA, userA, Set.empty),
+        "update"
+      )
     )
     val result = TestCQRSService().run(cmd, active)
     result.result match
@@ -107,7 +114,10 @@ class SaaSServiceSuite extends FunSuite {
       "c1",
       java.time.Instant.now(),
       "e1",
-      SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "decideS")
+      SaaSCommand[CallerIdentity, String](
+        CallerIdentity(tenantA, userA, Set.empty),
+        "decideS"
+      )
     )
     val result = TestCQRSService().run(cmd, active)
     result.result match
@@ -121,7 +131,10 @@ class SaaSServiceSuite extends FunSuite {
       "c1",
       java.time.Instant.now(),
       "e1",
-      SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "decideS")
+      SaaSCommand[CallerIdentity, String](
+        CallerIdentity(tenantA, userA, Set.empty),
+        "decideS"
+      )
     )
     val result = TestCQRSService().run(cmd, CrudState.NonExistent)
     assert(result.result.isLeft, s"Expected Left, got: ${result.result}")
@@ -133,7 +146,10 @@ class SaaSServiceSuite extends FunSuite {
       "c1",
       java.time.Instant.now(),
       "e1",
-      SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "eval")
+      SaaSCommand[CallerIdentity, String](
+        CallerIdentity(tenantA, userA, Set.empty),
+        "eval"
+      )
     )
     val result = TestCQRSService().run(cmd, active)
     assert(result.result.isRight)
@@ -171,13 +187,13 @@ class SaaSServiceSuite extends FunSuite {
 
   object TestESService
       extends SaaSEventSourcedService[
+        CallerIdentity,
         String,
         String,
         TestEvent,
         String,
         String
       ](
-        rolesFor = _ => Set.empty,
         mkRejection = identity
       ):
     def apply(): App[Id, Unit] = SaaS.guardedRouter {
@@ -200,7 +216,10 @@ class SaaSServiceSuite extends FunSuite {
         "c1",
         java.time.Instant.now(),
         "e1",
-        SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "create")
+        SaaSCommand[CallerIdentity, String](
+          CallerIdentity(tenantA, userA, Set.empty),
+          "create"
+        )
       ),
       CrudState.NonExistent: CrudState[String]
     )
@@ -258,13 +277,16 @@ class SaaSServiceSuite extends FunSuite {
   test("SaaSCommand: wraps caller and payload") {
     val caller = CallerIdentity(tenantA, userA, Set("r"))
     val cmd = SaaSCommand(caller, "my-payload")
-    assertEquals(cmd.caller, caller)
+    assertEquals(cmd.auth, caller)
     assertEquals(cmd.payload, "my-payload")
   }
 
   test("SaaSCommand: covariant in C") {
-    val cmd: SaaSCommand[Any] =
-      SaaSCommand(CallerIdentity(tenantA, userA, Set.empty), "hello")
+    val cmd: SaaSCommand[CallerIdentity, Any] =
+      SaaSCommand[CallerIdentity, String](
+        CallerIdentity(tenantA, userA, Set.empty),
+        "hello"
+      )
     assertEquals(cmd.payload, "hello")
   }
 

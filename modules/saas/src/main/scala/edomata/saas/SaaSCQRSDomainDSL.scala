@@ -21,18 +21,17 @@ import cats.Monad
 import cats.data.*
 import edomata.core.*
 
-final class SaaSCQRSDomainDSL[C, A, R, N](
-    rolesFor: CrudAction => Set[String],
+final class SaaSCQRSDomainDSL[Auth, C, A, R, N](
     mkRejection: String => R
-):
+)(using policy: AuthPolicy[Auth]):
   private val inner =
-    CQRSDomainDSL[SaaSCommand[C], CrudState[A], R, N]()
+    CQRSDomainDSL[SaaSCommand[Auth, C], CrudState[A], R, N]()
 
   type App[F[_], T] =
-    Stomaton[F, CommandMessage[SaaSCommand[C]], CrudState[A], R, N, T]
+    Stomaton[F, CommandMessage[SaaSCommand[Auth, C]], CrudState[A], R, N, T]
 
-  def caller[F[_]: Monad]: App[F, CallerIdentity] =
-    inner.command.map(_.caller)
+  def auth[F[_]: Monad]: App[F, Auth] =
+    inner.command.map(_.auth)
 
   def command[F[_]: Monad]: App[F, C] =
     inner.command.map(_.payload)
@@ -51,9 +50,9 @@ final class SaaSCQRSDomainDSL[C, A, R, N](
     for
       cmd <- inner.command
       state <- inner.state
-      cal = cmd.caller
-      _ <- liftEither(SaaSGuard.checkTenant(state, cal, action))
-      _ <- liftEither(SaaSGuard.checkRoles(cal, rolesFor(action)))
+      a = cmd.auth
+      _ <- liftEither(SaaSGuard.checkTenant(state, a, action))
+      _ <- liftEither(SaaSGuard.checkAuthorization(a, action))
     yield ()
 
   def guardedRouter[F[_]: Monad](

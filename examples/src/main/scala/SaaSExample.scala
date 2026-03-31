@@ -75,18 +75,26 @@ object TodoModel extends CQRSModel[CrudState[Todo], String]:
 // Make the StateModelTC available in scope
 import TodoModel.given
 
+// Role-based auth policy for this service
+given AuthPolicy[CallerIdentity] = RoleBasedPolicy {
+  case CrudAction.Create => Set("todo:write")
+  case CrudAction.Read   => Set("todo:read")
+  case CrudAction.Update => Set("todo:write")
+  case CrudAction.Delete => Set("todo:admin")
+}
+
 // ---------------------------------------------------------------------------
 // 3. SAAS SERVICE (write side -- guards are automatic)
 // ---------------------------------------------------------------------------
 
 object TodoService
-    extends SaaSCQRSService[TodoCommand, Todo, String, TodoNotification](
-      rolesFor = {
-        case CrudAction.Create => Set("todo:write")
-        case CrudAction.Read   => Set("todo:read")
-        case CrudAction.Update => Set("todo:write")
-        case CrudAction.Delete => Set("todo:admin")
-      },
+    extends SaaSCQRSService[
+      CallerIdentity,
+      TodoCommand,
+      Todo,
+      String,
+      TodoNotification
+    ](
       mkRejection = identity
     ):
   import SaaS.*
@@ -97,7 +105,7 @@ object TodoService
       (
         CrudAction.Create,
         for
-          c <- caller
+          c <- auth
           id <- aggregateId
           _ <- set(CrudState.Active(c.tenantId, c.userId, Todo(title, false)))
           _ <- publish(
@@ -140,8 +148,13 @@ object TodoService
 // ---------------------------------------------------------------------------
 
 object TodoAdminService
-    extends SaaSCQRSService[TodoCommand, Todo, String, TodoNotification](
-      rolesFor = _ => Set.empty, // not used by unsafe router
+    extends SaaSCQRSService[
+      CallerIdentity,
+      TodoCommand,
+      Todo,
+      String,
+      TodoNotification
+    ](
       mkRejection = identity
     ):
   import SaaS.*
@@ -233,15 +246,16 @@ final case class TodoReadModel(
 object TodoQueries {
 
   /** List todos for the caller's tenant -- tenant filtering is structural */
-  val listByTenant: TenantScopedQuery[IO, TodoReadModel, Unit] =
-    TenantScopedQuery[IO, TodoReadModel, Unit] { (tenantId, _) =>
-      // In a real app, you'd use a Skunk session from a pool.
-      // This is a placeholder showing the query shape.
-      IO.raiseError(
-        new NotImplementedError(
-          s"SELECT id, tenant_id, title, completed FROM todos_read WHERE tenant_id = '${tenantId.value}' AND deleted = false"
+  val listByTenant: TenantScopedQuery[IO, CallerIdentity, TodoReadModel, Unit] =
+    TenantScopedQuery[IO, CallerIdentity, TodoReadModel, Unit] {
+      (tenantId, _) =>
+        // In a real app, you'd use a Skunk session from a pool.
+        // This is a placeholder showing the query shape.
+        IO.raiseError(
+          new NotImplementedError(
+            s"SELECT id, tenant_id, title, completed FROM todos_read WHERE tenant_id = '${tenantId.value}' AND deleted = false"
+          )
         )
-      )
     }
 
   /** Admin query -- cross-tenant, no tenant filter */

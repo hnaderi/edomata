@@ -24,8 +24,10 @@ import edomata.core.*
   * isolation and authorization guards. The raw `DomainDSL` is not accessible;
   * only the guarded `SaaS` DSL is exposed.
   *
+  * @tparam Auth
+  *   authentication/authorization context type
   * @tparam C
-  *   business command type (will be wrapped in `SaaSCommand[C]`)
+  *   business command type (will be wrapped in `SaaSCommand[Auth, C]`)
   * @tparam A
   *   business entity state type (will be wrapped in `CrudState[A]`)
   * @tparam E
@@ -35,20 +37,20 @@ import edomata.core.*
   * @tparam N
   *   notification type
   */
-abstract class SaaSEventSourcedService[C, A, E, R, N](
-    rolesFor: CrudAction => Set[String],
+abstract class SaaSEventSourcedService[Auth, C, A, E, R, N](
     mkRejection: String => R
-)(using ModelTC[CrudState[A], E, R]):
+)(using ModelTC[CrudState[A], E, R], AuthPolicy[Auth]):
 
-  protected final val SaaS: SaaSDomainDSL[C, A, E, R, N] =
-    SaaSDomainDSL(rolesFor, mkRejection)
+  protected final val SaaS: SaaSDomainDSL[Auth, C, A, E, R, N] =
+    SaaSDomainDSL(mkRejection)
 
   final type App[F[_], T] = SaaS.App[F, T]
 
   final type Handler[F[_]] =
-    DomainService[F, CommandMessage[SaaSCommand[C]], R]
+    DomainService[F, CommandMessage[SaaSCommand[Auth, C]], R]
 
-  final val domain: Domain[SaaSCommand[C], CrudState[A], E, R, N] = Domain()
+  final val domain: Domain[SaaSCommand[Auth, C], CrudState[A], E, R, N] =
+    Domain()
 
 /** Base trait for CQRS SaaS services.
   *
@@ -56,8 +58,10 @@ abstract class SaaSEventSourcedService[C, A, E, R, N](
   * and authorization guards. The raw `CQRSDomainDSL` is not accessible; only
   * the guarded `SaaS` DSL is exposed.
   *
+  * @tparam Auth
+  *   authentication/authorization context type
   * @tparam C
-  *   business command type (will be wrapped in `SaaSCommand[C]`)
+  *   business command type (will be wrapped in `SaaSCommand[Auth, C]`)
   * @tparam A
   *   business entity state type (will be wrapped in `CrudState[A]`)
   * @tparam R
@@ -65,18 +69,17 @@ abstract class SaaSEventSourcedService[C, A, E, R, N](
   * @tparam N
   *   notification type
   */
-abstract class SaaSCQRSService[C, A, R, N](
-    rolesFor: CrudAction => Set[String],
+abstract class SaaSCQRSService[Auth, C, A, R, N](
     mkRejection: String => R
-)(using StateModelTC[CrudState[A]]):
+)(using StateModelTC[CrudState[A]], AuthPolicy[Auth]):
 
-  protected final val SaaS: SaaSCQRSDomainDSL[C, A, R, N] =
-    SaaSCQRSDomainDSL(rolesFor, mkRejection)
+  protected final val SaaS: SaaSCQRSDomainDSL[Auth, C, A, R, N] =
+    SaaSCQRSDomainDSL(mkRejection)
 
   final type App[F[_], T] = SaaS.App[F, T]
 
   final type Handler[F[_]] =
-    DomainService[F, CommandMessage[SaaSCommand[C]], R]
+    DomainService[F, CommandMessage[SaaSCommand[Auth, C]], R]
 
-  final val domain: CQRSDomain[SaaSCommand[C], CrudState[A], R, N] =
+  final val domain: CQRSDomain[SaaSCommand[Auth, C], CrudState[A], R, N] =
     CQRSDomain()

@@ -41,14 +41,22 @@ class SaaSDomainDSLSuite extends FunSuite {
   type TestRejection = String
   type TestNotification = String
 
+  given AuthPolicy[CallerIdentity] = RoleBasedPolicy {
+    case CrudAction.Create => Set("write")
+    case CrudAction.Read   => Set("read")
+    case CrudAction.Update => Set("write")
+    case CrudAction.Delete => Set("admin")
+  }
+
   private val dsl =
-    SaaSDomainDSL[String, String, TestEvent, TestRejection, TestNotification](
-      rolesFor = {
-        case CrudAction.Create => Set("write")
-        case CrudAction.Read   => Set("read")
-        case CrudAction.Update => Set("write")
-        case CrudAction.Delete => Set("admin")
-      },
+    SaaSDomainDSL[
+      CallerIdentity,
+      String,
+      String,
+      TestEvent,
+      TestRejection,
+      TestNotification
+    ](
       mkRejection = identity
     )
 
@@ -59,13 +67,13 @@ class SaaSDomainDSLSuite extends FunSuite {
       caller: CallerIdentity,
       state: CrudState[String],
       payload: String = "test"
-  ): RequestContext[SaaSCommand[String], CrudState[String]] =
+  ): RequestContext[SaaSCommand[CallerIdentity, String], CrudState[String]] =
     RequestContext(
       CommandMessage(
         "cmd-1",
         java.time.Instant.now(),
         "entity-1",
-        SaaSCommand(caller, payload)
+        SaaSCommand(caller, payload): SaaSCommand[CallerIdentity, String]
       ),
       state
     )
@@ -187,8 +195,8 @@ class SaaSDomainDSLSuite extends FunSuite {
 
   // --- accessor methods ---
 
-  test("caller: extracts CallerIdentity from context") {
-    val app = dsl.caller[Id].map(c => assertEquals(c, callerWriter))
+  test("auth: extracts auth context from command") {
+    val app = dsl.auth[Id].map(c => assertEquals(c, callerWriter))
     run(app.void, callerWriter, activeState)
   }
 

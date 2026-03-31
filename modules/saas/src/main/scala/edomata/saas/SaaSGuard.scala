@@ -17,27 +17,25 @@
 package edomata.saas
 
 object SaaSGuard:
-  def checkTenant[A](
+  def checkTenant[Auth, A](
       state: CrudState[A],
-      caller: CallerIdentity,
+      auth: Auth,
       action: CrudAction
-  ): Either[String, Unit] =
+  )(using policy: AuthPolicy[Auth]): Either[String, Unit] =
     action match
       case CrudAction.Create => Right(())
       case _                 =>
         state match
           case CrudState.NonExistent       => Left("Entity not found")
           case CrudState.Active(tid, _, _) =>
-            if tid == caller.tenantId then Right(())
+            if tid == policy.tenantId(auth) then Right(())
             else Left("Tenant mismatch")
           case CrudState.Deleted(tid, _) =>
-            if tid == caller.tenantId then Right(())
+            if tid == policy.tenantId(auth) then Right(())
             else Left("Tenant mismatch")
 
-  def checkRoles(
-      caller: CallerIdentity,
-      required: Set[String]
-  ): Either[String, Unit] =
-    val missing = required -- caller.roles
-    if missing.isEmpty then Right(())
-    else Left(s"Missing roles: ${missing.mkString(", ")}")
+  def checkAuthorization[Auth](
+      auth: Auth,
+      action: CrudAction
+  )(using policy: AuthPolicy[Auth]): Either[String, Unit] =
+    policy.authorize(auth, action)

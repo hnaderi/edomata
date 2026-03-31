@@ -30,13 +30,16 @@ class TenantAwareReaderSuite extends FunSuite {
   private val callerB =
     CallerIdentity(tenantB, userA, Set("read"))
 
+  given AuthPolicy[CallerIdentity] = RoleBasedPolicy(_ => Set.empty)
+
   // --- TenantScopedQuery ---
 
   test("TenantScopedQuery: passes caller's tenantId to the query function") {
     var capturedTenantId: TenantId = TenantId("")
-    val query = TenantScopedQuery[Id, String, Unit] { (tid, _) =>
-      capturedTenantId = tid
-      List("item1", "item2")
+    val query = TenantScopedQuery[Id, CallerIdentity, String, Unit] {
+      (tid, _) =>
+        capturedTenantId = tid
+        List("item1", "item2")
     }
 
     val result = query.query(callerA, ())
@@ -45,8 +48,9 @@ class TenantAwareReaderSuite extends FunSuite {
   }
 
   test("TenantScopedQuery: different callers get different tenant filters") {
-    val query = TenantScopedQuery[Id, String, Unit] { (tid, _) =>
-      List(s"from-${tid.value}")
+    val query = TenantScopedQuery[Id, CallerIdentity, String, Unit] {
+      (tid, _) =>
+        List(s"from-${tid.value}")
     }
 
     assertEquals(query.query(callerA, ()), List("from-tenant-a"))
@@ -55,9 +59,10 @@ class TenantAwareReaderSuite extends FunSuite {
 
   test("TenantScopedQuery: passes query parameter through") {
     var capturedQuery: String = ""
-    val query = TenantScopedQuery[Id, String, String] { (_, q) =>
-      capturedQuery = q
-      List.empty
+    val query = TenantScopedQuery[Id, CallerIdentity, String, String] {
+      (_, q) =>
+        capturedQuery = q
+        List.empty
     }
 
     query.query(callerA, "search-term")
@@ -65,7 +70,7 @@ class TenantAwareReaderSuite extends FunSuite {
   }
 
   test("TenantScopedQuery: returns empty list when no results") {
-    val query = TenantScopedQuery[Id, String, Unit] { (_, _) =>
+    val query = TenantScopedQuery[Id, CallerIdentity, String, Unit] { (_, _) =>
       List.empty
     }
     assertEquals(query.query(callerA, ()), List.empty[String])
@@ -108,9 +113,9 @@ class TenantAwareReaderSuite extends FunSuite {
       ("tenant-b", "e2") -> "data-2"
     )
 
-    val reader = new TenantAwareReader[Id, String] {
-      def get(caller: CallerIdentity, entityId: String): Option[String] =
-        store.get((caller.tenantId.value, entityId))
+    val reader = new TenantAwareReader[Id, CallerIdentity, String] {
+      def get(auth: CallerIdentity, entityId: String): Option[String] =
+        store.get((auth.tenantId.value, entityId))
     }
 
     assertEquals(reader.get(callerA, "e1"), Some("data-1"))

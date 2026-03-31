@@ -30,6 +30,14 @@ class SaaSGuardSuite extends FunSuite {
     CallerIdentity(tenantA, userA, Set("read", "write", "admin"))
   private val callerReadOnly = CallerIdentity(tenantA, userA, Set("read"))
 
+  // RoleBasedPolicy for testing
+  given AuthPolicy[CallerIdentity] = RoleBasedPolicy {
+    case CrudAction.Create => Set("write")
+    case CrudAction.Read   => Set("read")
+    case CrudAction.Update => Set("write")
+    case CrudAction.Delete => Set("admin")
+  }
+
   private val activeState =
     CrudState.Active(tenantA, userA, "some data")
   private val deletedState =
@@ -118,38 +126,66 @@ class SaaSGuardSuite extends FunSuite {
     )
   }
 
-  // --- checkRoles ---
+  // --- checkAuthorization ---
 
-  test("checkRoles: caller with all required roles passes") {
+  test("checkAuthorization: caller with required roles passes") {
     assertEquals(
-      SaaSGuard.checkRoles(callerA, Set("read", "write")),
+      SaaSGuard.checkAuthorization(callerA, CrudAction.Update),
       Right(())
     )
   }
 
-  test("checkRoles: caller with superset of required roles passes") {
+  test("checkAuthorization: caller with superset of required roles passes") {
     assertEquals(
-      SaaSGuard.checkRoles(callerAdmin, Set("read", "write")),
+      SaaSGuard.checkAuthorization(callerAdmin, CrudAction.Update),
       Right(())
     )
   }
 
-  test("checkRoles: empty required roles always passes") {
-    assertEquals(
-      SaaSGuard.checkRoles(callerReadOnly, Set.empty),
-      Right(())
-    )
-  }
-
-  test("checkRoles: caller missing roles is rejected") {
-    val result = SaaSGuard.checkRoles(callerReadOnly, Set("read", "write"))
+  test("checkAuthorization: caller missing roles is rejected") {
+    val result = SaaSGuard.checkAuthorization(callerReadOnly, CrudAction.Update)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("write")))
   }
 
-  test("checkRoles: caller with no matching roles is rejected") {
-    val result = SaaSGuard.checkRoles(callerReadOnly, Set("admin"))
+  test("checkAuthorization: caller with no matching roles is rejected") {
+    val result =
+      SaaSGuard.checkAuthorization(callerReadOnly, CrudAction.Delete)
     assert(result.isLeft)
     assert(result.left.exists(_.contains("admin")))
+  }
+
+  // --- Custom AuthPolicy ---
+
+  case class ApiKeyAuth(key: String, tenant: TenantId, isAdmin: Boolean)
+
+  given AuthPolicy[ApiKeyAuth] = new AuthPolicy[ApiKeyAuth]:
+    def tenantId(auth: ApiKeyAuth): TenantId = auth.tenant
+    def authorize(auth: ApiKeyAuth, action: CrudAction): Either[String, Unit] =
+      if auth.isAdmin then Right(())
+      else if action == CrudAction.Delete then Left("Admin only")
+      else Right(())
+
+  test("custom AuthPolicy: tenant check works with custom type") {
+    val apiKey = ApiKeyAuth("key-1", tenantA, isAdmin = false)
+    assertEquals(
+      SaaSGuard.checkTenant(activeState, apiKey, CrudAction.Read),
+      Right(())
+    )
+  }
+
+  test("custom AuthPolicy: authorization delegates to custom policy") {
+    val regularKey = ApiKeyAuth("key-1", tenantA, isAdmin = false)
+    val adminKey = ApiKeyAuth("key-2", tenantA, isAdmin = true)
+
+    assert(SaaSGuard.checkAuthorization(regularKey, CrudAction.Delete).isLeft)
+    assertEquals(
+      SaaSGuard.checkAuthorization(adminKey, CrudAction.Delete),
+      Right(())
+    )
+    assertEquals(
+      SaaSGuard.checkAuthorization(regularKey, CrudAction.Read),
+      Right(())
+    )
   }
 }

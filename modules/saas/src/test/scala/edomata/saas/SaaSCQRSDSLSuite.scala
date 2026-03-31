@@ -39,15 +39,17 @@ class SaaSCQRSDSLSuite extends FunSuite {
   type TestState = CrudState[String]
   type TestNotification = String
 
-  private val dsl = SaaSCQRSDomainDSL[String, String, String, TestNotification](
-    rolesFor = {
-      case CrudAction.Create => Set("write")
-      case CrudAction.Read   => Set("read")
-      case CrudAction.Update => Set("write")
-      case CrudAction.Delete => Set("admin")
-    },
-    mkRejection = identity
-  )
+  given AuthPolicy[CallerIdentity] = RoleBasedPolicy {
+    case CrudAction.Create => Set("write")
+    case CrudAction.Read   => Set("read")
+    case CrudAction.Update => Set("write")
+    case CrudAction.Delete => Set("admin")
+  }
+
+  private val dsl =
+    SaaSCQRSDomainDSL[CallerIdentity, String, String, String, TestNotification](
+      mkRejection = identity
+    )
 
   private val activeState: TestState =
     CrudState.Active(tenantA, userA, "hello")
@@ -55,12 +57,12 @@ class SaaSCQRSDSLSuite extends FunSuite {
   private def mkCmd(
       caller: CallerIdentity,
       payload: String
-  ): CommandMessage[SaaSCommand[String]] =
+  ): CommandMessage[SaaSCommand[CallerIdentity, String]] =
     CommandMessage(
       "cmd-1",
       java.time.Instant.now(),
       "entity-1",
-      SaaSCommand(caller, payload)
+      SaaSCommand(caller, payload): SaaSCommand[CallerIdentity, String]
     )
 
   private def run(
