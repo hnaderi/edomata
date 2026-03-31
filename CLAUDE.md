@@ -244,8 +244,44 @@ When given a ticket (number or URL):
    - If on a **fork**: read the ticket from the upstream repo (`gh issue view --repo <upstream> <number>`)
    - If on the **root repo**: read the ticket directly (`gh issue view <number>`)
 3. Implement the solution on a dedicated branch
-4. Open a PR:
+4. **Run documentation audit** (mandatory before opening a PR — see below)
+5. Open a PR:
    - If on a **fork**: target the **upstream** repo with `Fixes <upstream>#<number>`
    - If on the **root repo**: target the default branch with `Fixes #<number>`
 
 Do not ask for confirmation — go straight to reading the ticket and implementing.
+
+## Documentation Audit (Pre-PR)
+
+**This audit MUST run before every PR creation.** Launch a background Explore agent with the prompt below. If the agent finds discrepancies, fix them in a dedicated `docs:` commit before opening the PR.
+
+### Audit agent prompt
+
+> Audit the documentation in this project against the actual source code. Check every item below and report ALL discrepancies with exact file paths and line numbers.
+>
+> **1. CLAUDE.md accuracy**
+> - Verify SBT version matches `project/build.properties`
+> - Verify every dependency version matches `project/Dependencies.scala`
+> - Verify docker-compose credentials match `docker-compose.yml`
+> - Verify the project structure listing matches actual `modules/` directories
+> - Verify all code examples and API signatures in the PostgreSQL Naming & DDL section match the actual source in `modules/postgres/src/main/scala/`
+> - Verify driver method signatures (`from`, `apply`, `skipSetup`) match skunk and doobie driver source files
+>
+> **2. docs/backends/skunk.md and docs/backends/doobie.md**
+> - Verify all code examples use existing classes and methods (no `SkunkBackend`, no `.withSnapshot()`)
+> - Verify import paths are correct
+> - Verify `PGSchema` and `skipSetup` examples match actual method signatures
+>
+> **3. docs/tutorials/2_backends.md**
+> - Verify the minimal example uses the actual Backend builder API
+> - Verify connection parameters match docker-compose defaults
+> - Verify table descriptions match actual SQL in Queries.scala
+>
+> **4. docs/about/features.md and docs/introduction.md**
+> - Flag any claims about supported features that don't match the code
+>
+> **5. Cross-reference**
+> - For every public method mentioned in any doc, grep the codebase to confirm it exists
+> - For every file path mentioned in CLAUDE.md, verify the file exists
+>
+> Report findings as a list: `[file:line] issue description — expected X, found Y`
