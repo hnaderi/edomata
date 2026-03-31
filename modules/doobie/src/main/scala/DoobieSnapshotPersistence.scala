@@ -20,7 +20,7 @@ import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
 import cats.effect.Concurrent
 import cats.implicits.*
-import edomata.backend.PGNamespace
+import edomata.backend.PGNaming
 import edomata.backend.StreamId
 import edomata.backend.eventsourcing.*
 import fs2.Chunk
@@ -38,8 +38,8 @@ private final class DoobieSnapshotPersistence[F[_]: Concurrent, S](
 private object DoobieSnapshotPersistence {
   def apply[F[_]: Concurrent, S](
       pool: Transactor[F],
-      namespace: PGNamespace
+      naming: PGNaming
   )(using codec: BackendCodec[S]): F[DoobieSnapshotPersistence[F, S]] =
-    val q = Queries.Snapshot[S](namespace, codec)
+    val q = Queries.Snapshot[S](naming, codec)
     q.setup.run.transact(pool).as(new DoobieSnapshotPersistence(pool, q))
 }

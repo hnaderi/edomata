@@ -22,12 +22,13 @@ import cats.effect.std.SecureRandom
 import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
+import edomata.backend.PGNaming
 import edomata.backend.PGNamespace
 import edomata.backend.eventsourcing.*
 import edomata.core.*
 
 final class DoobieDriver[F[_]: Async] private (
-    namespace: PGNamespace,
+    naming: PGNaming,
     pool: Transactor[F]
 ) extends StorageDriver[F, BackendCodec] {
 
@@ -38,9 +39,9 @@ final class DoobieDriver[F[_]: Async] private (
       event: BackendCodec[E],
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, E, R, N]] = {
-    val jQ = Queries.Journal(namespace, event)
-    val nQ = Queries.Outbox(namespace, notifs)
-    val cQ = Queries.Commands(namespace)
+    val jQ = Queries.Journal(naming, event)
+    val nQ = Queries.Outbox(naming, notifs)
+    val cQ = Queries.Commands(naming)
 
     def setup =
       (jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
@@ -64,7 +65,7 @@ final class DoobieDriver[F[_]: Async] private (
   def snapshot[S](using
       BackendCodec[S]
   ): Resource[F, SnapshotPersistence[F, S]] =
-    Resource.eval(DoobieSnapshotPersistence(pool, namespace))
+    Resource.eval(DoobieSnapshotPersistence(pool, naming))
 }
 
 object DoobieDriver {
@@ -77,10 +78,15 @@ object DoobieDriver {
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Transactor[F]
+  ): F[DoobieDriver[F]] = from(PGNaming.schema(namespace), pool)
+
+  def from[F[_]: Async](
+      naming: PGNaming,
+      pool: Transactor[F]
   ): F[DoobieDriver[F]] =
-    Queries
-      .setupSchema(namespace)
-      .run
-      .transact(pool)
-      .as(new DoobieDriver(namespace, pool))
+    val setup =
+      if naming.needsSchemaSetup then
+        Queries.setupSchema(naming.namespace).run.transact(pool).void
+      else Async[F].unit
+    setup.as(new DoobieDriver(naming, pool))
 }

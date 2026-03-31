@@ -21,12 +21,13 @@ import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.SecureRandom
 import cats.implicits.*
+import edomata.backend.PGNaming
 import edomata.backend.PGNamespace
 import edomata.backend.eventsourcing.*
 import edomata.core.*
 
 final class SkunkDriver[F[_]: Async] private (
-    namespace: PGNamespace,
+    naming: PGNaming,
     pool: Resource[F, Session[F]]
 ) extends StorageDriver[F, BackendCodec] {
 
@@ -38,9 +39,9 @@ final class SkunkDriver[F[_]: Async] private (
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, E, R, N]] = {
     def setup = {
-      val jQ = Queries.Journal(namespace, event)
-      val nQ = Queries.Outbox(namespace, notifs)
-      val cQ = Queries.Commands(namespace)
+      val jQ = Queries.Journal(naming, event)
+      val nQ = Queries.Outbox(naming, notifs)
+      val cQ = Queries.Commands(naming)
 
       pool
         .use(s =>
@@ -67,7 +68,7 @@ final class SkunkDriver[F[_]: Async] private (
   def snapshot[S](using
       BackendCodec[S]
   ): Resource[F, SnapshotPersistence[F, S]] =
-    Resource.eval(SkunkSnapshotPersistence(pool, namespace))
+    Resource.eval(SkunkSnapshotPersistence(pool, naming))
 }
 
 object SkunkDriver {
@@ -79,8 +80,15 @@ object SkunkDriver {
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Resource[F, Session[F]]
+  ): F[SkunkDriver[F]] = from(PGNaming.schema(namespace), pool)
+
+  def from[F[_]: Async](
+      naming: PGNaming,
+      pool: Resource[F, Session[F]]
   ): F[SkunkDriver[F]] =
-    pool
-      .use(_.execute(Queries.setupSchema(namespace)))
-      .as(new SkunkDriver(namespace, pool))
+    val setup: F[Unit] =
+      if naming.needsSchemaSetup then
+        pool.use(_.execute(Queries.setupSchema(naming.namespace))).void
+      else Async[F].unit
+    setup.as(new SkunkDriver(naming, pool))
 }

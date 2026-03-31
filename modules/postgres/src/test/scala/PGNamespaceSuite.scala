@@ -31,4 +31,55 @@ class PGNamespaceSuite extends FunSuite {
       Left("Name is too long: 64 (max allowed is 63)")
     )
   }
+
+  test("PGNaming.Schema produces schema-qualified table names") {
+    val naming = PGNaming.schema(PGNamespace("auth"))
+    assertEquals(naming.table("journal"), """"auth".journal""")
+    assertEquals(naming.table("outbox"), """"auth".outbox""")
+    assertEquals(naming.table("snapshots"), """"auth".snapshots""")
+    assertEquals(naming.table("commands"), """"auth".commands""")
+    assertEquals(naming.table("states"), """"auth".states""")
+  }
+
+  test("PGNaming.Schema does not prefix constraint or index names") {
+    val naming = PGNaming.schema(PGNamespace("auth"))
+    assertEquals(naming.constraint("journal_pk"), "journal_pk")
+    assertEquals(naming.index("journal_seqnr_idx"), "journal_seqnr_idx")
+  }
+
+  test("PGNaming.Schema needs schema setup") {
+    assert(PGNaming.schema(PGNamespace("auth")).needsSchemaSetup)
+  }
+
+  test("PGNaming.Prefixed produces prefixed table names") {
+    val naming = PGNaming.prefixed(PGNamespace("auth"))
+    assertEquals(naming.table("journal"), "auth_journal")
+    assertEquals(naming.table("outbox"), "auth_outbox")
+    assertEquals(naming.table("snapshots"), "auth_snapshots")
+    assertEquals(naming.table("commands"), "auth_commands")
+    assertEquals(naming.table("states"), "auth_states")
+  }
+
+  test("PGNaming.Prefixed prefixes constraint and index names") {
+    val naming = PGNaming.prefixed(PGNamespace("auth"))
+    assertEquals(naming.constraint("journal_pk"), "auth_journal_pk")
+    assertEquals(naming.index("journal_seqnr_idx"), "auth_journal_seqnr_idx")
+  }
+
+  test("PGNaming.Prefixed does not need schema setup") {
+    assert(!PGNaming.prefixed(PGNamespace("auth")).needsSchemaSetup)
+  }
+
+  test("PGNamespace.prefixed convenience") {
+    val naming = PGNamespace.prefixed("auth")
+    assertEquals(naming.table("journal"), "auth_journal")
+    assert(!naming.needsSchemaSetup)
+  }
+
+  test("PGNaming inline constructors") {
+    val schema = PGNaming.schema("auth")
+    assertEquals(schema.table("journal"), """"auth".journal""")
+    val prefixed = PGNaming.prefixed("auth")
+    assertEquals(prefixed.table("journal"), "auth_journal")
+  }
 }

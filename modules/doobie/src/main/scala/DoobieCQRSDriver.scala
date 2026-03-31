@@ -21,12 +21,13 @@ import cats.effect.kernel.Resource
 import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
+import edomata.backend.PGNaming
 import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
 final class DoobieCQRSDriver[F[_]: Async] private (
-    namespace: PGNamespace,
+    naming: PGNaming,
     pool: Transactor[F]
 ) extends StorageDriver[F, BackendCodec, DoobieHandler] {
 
@@ -35,9 +36,9 @@ final class DoobieCQRSDriver[F[_]: Async] private (
       state: BackendCodec[S],
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, N, R]] = {
-    val sQ = Queries.State(namespace, state)
-    val nQ = Queries.Outbox(namespace, notifs)
-    val cQ = Queries.Commands(namespace)
+    val sQ = Queries.State(naming, state)
+    val nQ = Queries.Outbox(naming, notifs)
+    val cQ = Queries.Commands(naming)
 
     def setup =
       (sQ.setup.run >> nQ.setup.run >> cQ.setup.run)
@@ -72,10 +73,15 @@ object DoobieCQRSDriver {
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Transactor[F]
+  ): F[DoobieCQRSDriver[F]] = from(PGNaming.schema(namespace), pool)
+
+  def from[F[_]: Async](
+      naming: PGNaming,
+      pool: Transactor[F]
   ): F[DoobieCQRSDriver[F]] =
-    Queries
-      .setupSchema(namespace)
-      .run
-      .transact(pool)
-      .as(new DoobieCQRSDriver(namespace, pool))
+    val setup =
+      if naming.needsSchemaSetup then
+        Queries.setupSchema(naming.namespace).run.transact(pool).void
+      else Async[F].unit
+    setup.as(new DoobieCQRSDriver(naming, pool))
 }

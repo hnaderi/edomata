@@ -20,12 +20,13 @@ import _root_.skunk.Session
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
+import edomata.backend.PGNaming
 import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
 final class SkunkCQRSDriver[F[_]: Async] private (
-    namespace: PGNamespace,
+    naming: PGNaming,
     pool: Resource[F, Session[F]]
 ) extends StorageDriver[F, BackendCodec, SkunkHandler[F]] {
 
@@ -37,9 +38,9 @@ final class SkunkCQRSDriver[F[_]: Async] private (
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, N, R]] = {
     def setup = {
-      val nQ = Queries.Outbox(namespace, notifs)
-      val cQ = Queries.Commands(namespace)
-      val sQ = Queries.State(namespace, state)
+      val nQ = Queries.Outbox(naming, notifs)
+      val cQ = Queries.Commands(naming)
+      val sQ = Queries.State(naming, state)
 
       pool
         .use(s =>
@@ -76,8 +77,15 @@ object SkunkCQRSDriver {
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Resource[F, Session[F]]
+  ): F[SkunkCQRSDriver[F]] = from(PGNaming.schema(namespace), pool)
+
+  def from[F[_]: Async](
+      naming: PGNaming,
+      pool: Resource[F, Session[F]]
   ): F[SkunkCQRSDriver[F]] =
-    pool
-      .use(_.execute(Queries.setupSchema(namespace)))
-      .as(new SkunkCQRSDriver(namespace, pool))
+    val setup: F[Unit] =
+      if naming.needsSchemaSetup then
+        pool.use(_.execute(Queries.setupSchema(naming.namespace))).void
+      else Async[F].unit
+    setup.as(new SkunkCQRSDriver(naming, pool))
 }
