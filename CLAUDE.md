@@ -147,6 +147,83 @@ core
                 └── doobie-upickle
 ```
 
+## PostgreSQL Naming & DDL
+
+### Table Naming Strategies (`PGNaming`)
+
+Edomata backends use `PGNaming` (in `modules/postgres/`) to control how PostgreSQL tables are named. There are two strategies:
+
+| Strategy | Factory | Table example | Schema creation | Use case |
+|----------|---------|---------------|-----------------|----------|
+| **Schema** (default) | `PGNaming.schema("auth")` | `"auth".journal` | Yes (`CREATE SCHEMA`) | Isolated namespaces per aggregate |
+| **Prefixed** | `PGNaming.prefixed("auth")` | `auth_journal` | No | Flyway/single-schema projects |
+
+Convenience: `PGNamespace.prefixed("auth")` is shorthand for `PGNaming.Prefixed(PGNamespace("auth"))`.
+
+In prefixed mode, constraint and index names are also prefixed (e.g. `auth_journal_pk`) to avoid collisions between aggregates sharing the same schema.
+
+**Key files:**
+- `modules/postgres/src/main/scala/PGNaming.scala` — sealed trait with `Schema` and `Prefixed` case classes
+- `modules/postgres/src/main/scala/PGNamespace.scala` — opaque type for validated PG identifiers
+- `modules/postgres/src/main/scala/PGSchema.scala` — DDL extraction utility
+
+### DDL Extraction (`PGSchema`)
+
+`PGSchema` generates plain SQL DDL strings for migration tools (Flyway, Liquibase, etc.):
+
+```scala
+import edomata.backend.{PGNaming, PGSchema}
+
+// Event sourcing tables: journal, outbox, commands, snapshots
+PGSchema.eventsourcing(PGNaming.prefixed("accounts"), eventType = "jsonb")
+
+// CQRS tables: states, outbox, commands
+PGSchema.cqrs(PGNaming.prefixed("accounts"), stateType = "jsonb")
+```
+
+Returns `List[String]` — each element is a standalone SQL statement (CREATE TABLE, CREATE INDEX).
+Payload type parameters accept `"json"`, `"jsonb"`, or `"bytea"`.
+
+### Disabling Automatic Setup (`skipSetup`)
+
+All driver `.from()` methods accept `skipSetup: Boolean = false`:
+
+```scala
+SkunkDriver.from(naming, pool, skipSetup = true)    // no DDL at all
+DoobieDriver.from(naming, trx, skipSetup = true)
+SkunkCQRSDriver.from(naming, pool, skipSetup = true)
+DoobieCQRSDriver.from(naming, trx, skipSetup = true)
+```
+
+When `skipSetup = true`:
+- No `CREATE SCHEMA` is executed
+- No `CREATE TABLE` / `CREATE INDEX` is executed
+- The driver assumes tables already exist (created by Flyway or manually)
+
+### Typical Flyway Workflow
+
+1. Generate DDL: `PGSchema.eventsourcing(PGNaming.prefixed("myapp")).foreach(println)`
+2. Paste output into `src/main/resources/db/migration/V1__create_myapp_tables.sql`
+3. Wire driver with `skipSetup = true`: `SkunkDriver.from(PGNaming.prefixed("myapp"), pool, skipSetup = true)`
+
+### Where Naming Flows Through
+
+`PGNaming` is passed through:
+1. **Driver factories** (`SkunkDriver.from`, `DoobieDriver.from`, etc.) — schema setup
+2. **Driver instances** (private field) — passed to Queries and SnapshotPersistence
+3. **Queries classes** (`modules/skunk/src/main/scala/Queries.scala`, `modules/doobie/src/main/scala/Queries.scala`) — table refs, constraint names, index names in SQL
+4. **SnapshotPersistence** — snapshot table setup
+
+When modifying SQL generation, update both skunk and doobie Queries files. The skunk variant uses `sql"""#$interpolation"""` for literal SQL fragments; the doobie variant uses `Fragment.const(...)`.
+
+### Adding a New Table
+
+If a new table is needed:
+1. Add a `PGNaming` method call in the new `Queries` class (both skunk and doobie)
+2. Add the DDL to `PGSchema` (private helper method + include in `eventsourcing`/`cqrs`)
+3. Add tests in `PGNamespaceSuite.scala` (PGSchemaSuite section)
+4. Prefix constraint/index names using `naming.constraint()` / `naming.index()`
+
 ## CI/CD
 
 GitHub Actions runs on:
