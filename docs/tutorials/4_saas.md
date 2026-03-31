@@ -2,7 +2,9 @@
 
 ## Overview
 
-The `edomata-saas` module provides generic multi-tenant CRUD abstractions that automatically enforce **tenant isolation** and **role-based authorization** on both reads and writes. When you extend the SaaS service traits, every command is guarded before business logic runs -- no manual checks needed.
+The `edomata-saas` module provides generic multi-tenant CRUD abstractions that automatically enforce **tenant isolation** and **authorization** on both reads and writes. When you extend the SaaS service traits, every command is guarded before business logic runs -- no manual checks needed.
+
+Authorization is **pluggable**: you define your own auth type (JWT claims, API key context, session token, etc.) and implement the `AuthPolicy` typeclass. The module ships with `CallerIdentity` and `RoleBasedPolicy` as a convenient default.
 
 ## Getting Started
 
@@ -20,9 +22,23 @@ import edomata.saas.*
 
 ## Core Types
 
-### CallerIdentity
+### AuthPolicy (typeclass)
 
-Represents the authenticated caller, typically extracted from a JWT or API key at the HTTP boundary:
+The central abstraction for authentication and authorization. Implement this for your auth context type:
+
+```scala
+trait AuthPolicy[Auth]:
+  /** Extract the tenant identifier from the auth context */
+  def tenantId(auth: Auth): TenantId
+
+  /** Verify authorization for the given action.
+    * Return Right(()) if allowed, Left(reason) if denied. */
+  def authorize(auth: Auth, action: CrudAction): Either[String, Unit]
+```
+
+### CallerIdentity (default auth type)
+
+A built-in auth context with role-based access control:
 
 ```scala
 final case class CallerIdentity(
@@ -32,13 +48,24 @@ final case class CallerIdentity(
 )
 ```
 
-### SaaSCommand
-
-Wraps your business command with the caller identity. This is used as the `CommandMessage` payload type:
+Use `RoleBasedPolicy` to create an `AuthPolicy[CallerIdentity]` with role mappings:
 
 ```scala
-final case class SaaSCommand[+C](
-    caller: CallerIdentity,
+given AuthPolicy[CallerIdentity] = RoleBasedPolicy {
+  case CrudAction.Create => Set("write")
+  case CrudAction.Read   => Set("read")
+  case CrudAction.Update => Set("write")
+  case CrudAction.Delete => Set("admin")
+}
+```
+
+### SaaSCommand
+
+Wraps your business command with the auth context. This is used as the `CommandMessage` payload type:
+
+```scala
+final case class SaaSCommand[Auth, +C](
+    auth: Auth,
     payload: C
 )
 ```
@@ -56,7 +83,7 @@ enum CrudState[+A]:
 
 ### CrudAction
 
-The four CRUD operations, used for role mapping:
+The four CRUD operations, used for authorization mapping:
 
 ```scala
 enum CrudAction:
@@ -65,7 +92,7 @@ enum CrudAction:
 
 ## Defining a CQRS Service
 
-Extend `SaaSCQRSService` instead of `CQRSModel#Service`. You provide a role mapping and a rejection factory:
+Extend `SaaSCQRSService` instead of `CQRSModel#Service`. You provide your auth type, an `AuthPolicy` given, and a rejection factory:
 
 ```scala
 import edomata.saas.*
@@ -81,24 +108,27 @@ enum TodoCommand:
 // Your CQRS model (state = CrudState[Todo])
 object TodoModel extends edomata.core.CQRSModel[CrudState[Todo], String]:
   def initial = CrudState.NonExistent
+import TodoModel.given
+
+// Auth policy
+given AuthPolicy[CallerIdentity] = RoleBasedPolicy {
+  case CrudAction.Create => Set("todo:write")
+  case CrudAction.Read   => Set("todo:read")
+  case CrudAction.Update => Set("todo:write")
+  case CrudAction.Delete => Set("todo:admin")
+}
 
 // Your service -- guards are automatic
-object TodoService extends SaaSCQRSService[TodoCommand, Todo, String, String](
-  rolesFor = {
-    case CrudAction.Create => Set("todo:write")
-    case CrudAction.Read   => Set("todo:read")
-    case CrudAction.Update => Set("todo:write")
-    case CrudAction.Delete => Set("todo:admin")
-  },
-  mkRejection = identity  // String -> String, no mapping needed
-):
+object TodoService extends SaaSCQRSService[
+  CallerIdentity, TodoCommand, Todo, String, String
+](mkRejection = identity):
   import SaaS.*
 
   def apply[F[_]: Monad](): App[F, Unit] = guardedRouter {
     case TodoCommand.Create(title) =>
       (CrudAction.Create, for
-        c <- caller
-        _ <- set(CrudState.Active(c.tenantId, c.userId, Todo(title, false)))
+        a <- auth
+        _ <- set(CrudState.Active(a.tenantId, a.userId, Todo(title, false)))
       yield ())
 
     case TodoCommand.Complete =>
@@ -121,13 +151,47 @@ object TodoService extends SaaSCQRSService[TodoCommand, Todo, String, String](
   }
 ```
 
+## Custom Auth Types
+
+You can use any type as your auth context by implementing `AuthPolicy`:
+
+```scala
+// Example: JWT claims from your auth middleware
+case class JwtClaims(
+    sub: String,
+    tenantId: String,
+    scopes: List[String]
+)
+
+given AuthPolicy[JwtClaims] = new AuthPolicy[JwtClaims]:
+  def tenantId(auth: JwtClaims): TenantId = TenantId(auth.tenantId)
+  def authorize(auth: JwtClaims, action: CrudAction): Either[String, Unit] =
+    val requiredScope = action match
+      case CrudAction.Create | CrudAction.Update => "write"
+      case CrudAction.Read                       => "read"
+      case CrudAction.Delete                     => "admin"
+    if auth.scopes.contains(requiredScope) then Right(())
+    else Left(s"Missing scope: $requiredScope")
+
+// Now use JwtClaims as the auth type in your service
+object MyService extends SaaSCQRSService[
+  JwtClaims, MyCommand, MyEntity, String, String
+](mkRejection = identity):
+  // ...
+```
+
+Other examples of custom auth types:
+- **API key context**: `case class ApiKeyAuth(key: String, tenant: TenantId, isAdmin: Boolean)`
+- **OAuth2 token info**: `case class TokenInfo(subject: String, tenant: String, permissions: Set[String])`
+- **Internal service auth**: `case class ServiceAuth(serviceName: String, tenant: TenantId)` (always authorized)
+
 ## How Guards Work
 
 When you use `guardedRouter`, two checks run **automatically** before each command branch:
 
-1. **Tenant check**: For non-Create actions, verifies that the entity's `tenantId` matches the caller's `tenantId`. Returns a rejection on mismatch.
+1. **Tenant check**: For non-Create actions, verifies that the entity's `tenantId` matches `AuthPolicy.tenantId(auth)`. Returns a rejection on mismatch.
 
-2. **Role check**: Verifies that the caller's `roles` contain all roles required for the action (as defined by your `rolesFor` mapping). Returns a rejection if roles are missing.
+2. **Authorization check**: Calls `AuthPolicy.authorize(auth, action)`. Returns a rejection if denied.
 
 These checks use Edomata's monadic sequencing (`guard >> logic`). If the guard produces a `Rejected` result, the business logic is never executed -- `flatMap` short-circuits automatically.
 
@@ -136,11 +200,11 @@ These checks use Edomata's monadic sequencing (`guard >> logic`). If the guard p
 For administrative endpoints (dashboards, super-admin tools), you can bypass guards using the `unsafe` variants:
 
 ```scala
-// Write side: bypass tenant + role checks
+// Write side: bypass tenant + authorization checks
 def adminEndpoint[F[_]: Monad](): App[F, Unit] =
   SaaS.unsafeUnguardedRouter {
     case TodoCommand.Delete =>
-      // No tenant/role check -- admin can delete anything
+      // No tenant/auth check -- admin can delete anything
       SaaS.set(CrudState.NonExistent)
     case cmd =>
       // For other commands, re-enable guards manually if needed
@@ -161,19 +225,19 @@ Edomata does not handle reads directly. The SaaS module provides type-safe abstr
 
 ### TenantScopedQuery (default)
 
-`CallerIdentity` is a required parameter -- you cannot forget the tenant filter:
+The auth context is a required parameter -- you cannot forget the tenant filter:
 
 ```scala
 import edomata.saas.*
 
-val listTodos: TenantScopedQuery[IO, Todo, Unit] =
-  TenantScopedQuery[IO, Todo, Unit] { (tenantId, _) =>
+val listTodos: TenantScopedQuery[IO, CallerIdentity, Todo, Unit] =
+  TenantScopedQuery[IO, CallerIdentity, Todo, Unit] { (tenantId, _) =>
     // Your SQL always includes WHERE tenant_id = ?
     sql"SELECT data FROM todos WHERE tenant_id = $tenantId"
       .query[Todo].to[List].transact(xa)
   }
 
-// Usage: tenant filtering is automatic
+// Usage: tenant filtering is automatic via AuthPolicy.tenantId
 listTodos.query(callerIdentity, ())
 ```
 
@@ -187,7 +251,7 @@ val adminListAll: UnsafeCrossTenantQuery[IO, Todo, Unit] =
     sql"SELECT data FROM todos".query[Todo].to[List].transact(xa)
   }
 
-// No caller identity needed -- queries all tenants
+// No auth context needed -- queries all tenants
 adminListAll.query(())
 ```
 
