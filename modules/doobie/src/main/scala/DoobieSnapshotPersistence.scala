@@ -38,8 +38,12 @@ private final class DoobieSnapshotPersistence[F[_]: Concurrent, S](
 private object DoobieSnapshotPersistence {
   def apply[F[_]: Concurrent, S](
       pool: Transactor[F],
-      naming: PGNaming
+      naming: PGNaming,
+      autoSetup: Boolean = true
   )(using codec: BackendCodec[S]): F[DoobieSnapshotPersistence[F, S]] =
     val q = Queries.Snapshot[S](naming, codec)
-    q.setup.run.transact(pool).as(new DoobieSnapshotPersistence(pool, q))
+    val setup =
+      if autoSetup then q.setup.run.transact(pool).void
+      else Concurrent[F].unit
+    setup.as(new DoobieSnapshotPersistence(pool, q))
 }

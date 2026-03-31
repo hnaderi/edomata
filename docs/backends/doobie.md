@@ -101,3 +101,47 @@ DoobieDriver.from(PGNaming.schema("domainname"), trx)
 // Prefix mode
 DoobieDriver.from(PGNaming.prefixed("domainname"), trx)
 ```
+
+## Using with Flyway
+
+If you manage your database schema with Flyway (or another migration tool), you can extract the DDL and disable automatic table creation:
+
+### 1. Generate migration SQL
+
+Use `PGSchema` to generate DDL statements for your migration files:
+
+```scala
+import edomata.backend.{PGNaming, PGSchema}
+
+// For event sourcing
+val ddl = PGSchema.eventsourcing(
+  PGNaming.prefixed("accounts"),
+  eventType = "jsonb",
+  notificationType = "jsonb",
+  snapshotType = "jsonb"
+)
+ddl.foreach(println)
+
+// For CQRS
+val cqrsDdl = PGSchema.cqrs(
+  PGNaming.prefixed("accounts"),
+  stateType = "jsonb",
+  notificationType = "jsonb"
+)
+```
+
+Copy the output into a Flyway migration file (e.g. `V1__create_accounts_tables.sql`).
+
+### 2. Disable automatic setup
+
+Pass `skipSetup = true` to prevent the driver from executing any DDL:
+
+```scala
+val buildBackend = Backend
+  .builder(AccountService)
+  .use(DoobieDriver.from(PGNaming.prefixed("accounts"), trx, skipSetup = true))
+  .inMemSnapshot(200)
+  .build
+```
+
+This ensures Flyway has full control over your database schema.

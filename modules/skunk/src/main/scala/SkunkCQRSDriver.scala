@@ -27,7 +27,8 @@ import edomata.core.*
 
 final class SkunkCQRSDriver[F[_]: Async] private (
     naming: PGNaming,
-    pool: Resource[F, Session[F]]
+    pool: Resource[F, Session[F]],
+    autoSetup: Boolean
 ) extends StorageDriver[F, BackendCodec, SkunkHandler[F]] {
 
   override def build[S, N, R](
@@ -42,11 +43,15 @@ final class SkunkCQRSDriver[F[_]: Async] private (
       val cQ = Queries.Commands(naming)
       val sQ = Queries.State(naming, state)
 
-      pool
-        .use(s =>
-          s.execute(nQ.setup) >> s.execute(cQ.setup) >> s.execute(sQ.setup)
-        )
-        .as((nQ, cQ, sQ))
+      val run: F[Unit] =
+        if autoSetup then
+          pool
+            .use(s =>
+              s.execute(nQ.setup) >> s.execute(cQ.setup) >> s.execute(sQ.setup)
+            )
+            .void
+        else Async[F].unit
+      run.as((nQ, cQ, sQ))
     }
 
     Resource.eval(setup).flatMap { case (oQ, cQ, sQ) =>
@@ -81,11 +86,12 @@ object SkunkCQRSDriver {
 
   def from[F[_]: Async](
       naming: PGNaming,
-      pool: Resource[F, Session[F]]
+      pool: Resource[F, Session[F]],
+      skipSetup: Boolean = false
   ): F[SkunkCQRSDriver[F]] =
     val setup: F[Unit] =
-      if naming.needsSchemaSetup then
+      if !skipSetup && naming.needsSchemaSetup then
         pool.use(_.execute(Queries.setupSchema(naming.namespace))).void
       else Async[F].unit
-    setup.as(new SkunkCQRSDriver(naming, pool))
+    setup.as(new SkunkCQRSDriver(naming, pool, autoSetup = !skipSetup))
 }

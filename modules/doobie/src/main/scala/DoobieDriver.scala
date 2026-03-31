@@ -29,7 +29,8 @@ import edomata.core.*
 
 final class DoobieDriver[F[_]: Async] private (
     naming: PGNaming,
-    pool: Transactor[F]
+    pool: Transactor[F],
+    autoSetup: Boolean
 ) extends StorageDriver[F, BackendCodec] {
 
   def build[S, E, R, N](
@@ -44,9 +45,11 @@ final class DoobieDriver[F[_]: Async] private (
     val cQ = Queries.Commands(naming)
 
     def setup =
-      (jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
-        .as((jQ, nQ, cQ))
-        .transact(pool)
+      if autoSetup then
+        (jQ.setup.run >> nQ.setup.run >> cQ.setup.run)
+          .as((jQ, nQ, cQ))
+          .transact(pool)
+      else Async[F].pure((jQ, nQ, cQ))
 
     Resource.eval(
       for {
@@ -65,7 +68,7 @@ final class DoobieDriver[F[_]: Async] private (
   def snapshot[S](using
       BackendCodec[S]
   ): Resource[F, SnapshotPersistence[F, S]] =
-    Resource.eval(DoobieSnapshotPersistence(pool, naming))
+    Resource.eval(DoobieSnapshotPersistence(pool, naming, autoSetup))
 }
 
 object DoobieDriver {
@@ -82,11 +85,12 @@ object DoobieDriver {
 
   def from[F[_]: Async](
       naming: PGNaming,
-      pool: Transactor[F]
+      pool: Transactor[F],
+      skipSetup: Boolean = false
   ): F[DoobieDriver[F]] =
-    val setup =
-      if naming.needsSchemaSetup then
+    val setup: F[Unit] =
+      if !skipSetup && naming.needsSchemaSetup then
         Queries.setupSchema(naming.namespace).run.transact(pool).void
       else Async[F].unit
-    setup.as(new DoobieDriver(naming, pool))
+    setup.as(new DoobieDriver(naming, pool, autoSetup = !skipSetup))
 }

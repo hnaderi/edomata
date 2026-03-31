@@ -83,3 +83,98 @@ class PGNamespaceSuite extends FunSuite {
     assertEquals(prefixed.table("journal"), "auth_journal")
   }
 }
+
+class PGSchemaSuite extends FunSuite {
+  test("eventsourcing DDL with schema mode includes CREATE SCHEMA") {
+    val naming = PGNaming.schema(PGNamespace("auth"))
+    val ddl = PGSchema.eventsourcing(naming)
+    assert(ddl.head.contains("""CREATE SCHEMA IF NOT EXISTS "auth""""))
+  }
+
+  test("eventsourcing DDL with prefix mode omits CREATE SCHEMA") {
+    val naming = PGNaming.prefixed(PGNamespace("auth"))
+    val ddl = PGSchema.eventsourcing(naming)
+    assert(ddl.forall(!_.contains("CREATE SCHEMA")))
+  }
+
+  test("eventsourcing DDL creates journal, outbox, commands, snapshots tables") {
+    val naming = PGNaming.prefixed(PGNamespace("myapp"))
+    val ddl = PGSchema.eventsourcing(naming)
+    val all = ddl.mkString("\n")
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_journal"))
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_outbox"))
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_commands"))
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_snapshots"))
+  }
+
+  test("eventsourcing DDL creates indexes for journal") {
+    val naming = PGNaming.prefixed(PGNamespace("myapp"))
+    val ddl = PGSchema.eventsourcing(naming)
+    val all = ddl.mkString("\n")
+    assert(all.contains("CREATE INDEX IF NOT EXISTS myapp_journal_seqnr_idx"))
+    assert(all.contains("CREATE INDEX IF NOT EXISTS myapp_journal_stream_idx"))
+  }
+
+  test("eventsourcing DDL uses prefixed constraint names") {
+    val naming = PGNaming.prefixed(PGNamespace("myapp"))
+    val ddl = PGSchema.eventsourcing(naming)
+    val all = ddl.mkString("\n")
+    assert(all.contains("CONSTRAINT myapp_journal_pk PRIMARY KEY"))
+    assert(all.contains("CONSTRAINT myapp_journal_un UNIQUE"))
+    assert(all.contains("CONSTRAINT myapp_outbox_pk PRIMARY KEY"))
+    assert(all.contains("CONSTRAINT myapp_commands_pk PRIMARY KEY"))
+    assert(all.contains("CONSTRAINT myapp_snapshots_pk PRIMARY KEY"))
+  }
+
+  test("eventsourcing DDL uses schema-qualified table names in schema mode") {
+    val naming = PGNaming.schema(PGNamespace("auth"))
+    val ddl = PGSchema.eventsourcing(naming)
+    val all = ddl.mkString("\n")
+    assert(all.contains(""""auth".journal"""))
+    assert(all.contains(""""auth".outbox"""))
+    assert(all.contains(""""auth".commands"""))
+    assert(all.contains(""""auth".snapshots"""))
+  }
+
+  test("eventsourcing DDL uses custom payload types") {
+    val naming = PGNaming.prefixed(PGNamespace("myapp"))
+    val ddl = PGSchema.eventsourcing(
+      naming,
+      eventType = "bytea",
+      notificationType = "json",
+      snapshotType = "jsonb"
+    )
+    val all = ddl.mkString("\n")
+    // journal uses eventType
+    assert(all.contains("myapp_journal") && all.contains("payload bytea NOT NULL"))
+    // outbox uses notificationType
+    assert(all.contains("myapp_outbox") && all.contains("payload json NOT NULL"))
+    // snapshots uses snapshotType
+    assert(all.contains("myapp_snapshots") && all.contains("state jsonb NOT NULL"))
+  }
+
+  test("cqrs DDL creates states, outbox, commands tables") {
+    val naming = PGNaming.prefixed(PGNamespace("myapp"))
+    val ddl = PGSchema.cqrs(naming)
+    val all = ddl.mkString("\n")
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_states"))
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_outbox"))
+    assert(all.contains("CREATE TABLE IF NOT EXISTS myapp_commands"))
+    assert(!all.contains("myapp_journal"))
+    assert(!all.contains("myapp_snapshots"))
+  }
+
+  test("cqrs DDL with schema mode includes CREATE SCHEMA") {
+    val naming = PGNaming.schema(PGNamespace("auth"))
+    val ddl = PGSchema.cqrs(naming)
+    assert(ddl.head.contains("""CREATE SCHEMA IF NOT EXISTS "auth""""))
+  }
+
+  test("DDL statements are valid standalone SQL") {
+    val naming = PGNaming.prefixed(PGNamespace("test"))
+    val ddl = PGSchema.eventsourcing(naming)
+    ddl.foreach { stmt =>
+      assert(stmt.endsWith(";"), s"Statement does not end with semicolon: $stmt")
+    }
+  }
+}

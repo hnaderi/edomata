@@ -40,8 +40,12 @@ private final class SkunkSnapshotPersistence[F[_]: Concurrent, S](
 private object SkunkSnapshotPersistence {
   def apply[F[_]: Concurrent, S](
       pool: Resource[F, Session[F]],
-      naming: PGNaming
+      naming: PGNaming,
+      autoSetup: Boolean = true
   )(using codec: BackendCodec[S]): F[SkunkSnapshotPersistence[F, S]] =
     val q = Queries.Snapshot[S](naming, codec)
-    pool.use(_.execute(q.setup)).as(new SkunkSnapshotPersistence(pool, q))
+    val setup =
+      if autoSetup then pool.use(_.execute(q.setup)).void
+      else Concurrent[F].unit
+    setup.as(new SkunkSnapshotPersistence(pool, q))
 }
