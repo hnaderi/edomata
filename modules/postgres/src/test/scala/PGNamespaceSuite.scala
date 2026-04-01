@@ -97,7 +97,9 @@ class PGSchemaSuite extends FunSuite {
     assert(ddl.forall(!_.contains("CREATE SCHEMA")))
   }
 
-  test("eventsourcing DDL creates journal, outbox, commands, snapshots tables") {
+  test(
+    "eventsourcing DDL creates journal, outbox, commands, snapshots tables"
+  ) {
     val naming = PGNaming.prefixed(PGNamespace("myapp"))
     val ddl = PGSchema.eventsourcing(naming)
     val all = ddl.mkString("\n")
@@ -146,11 +148,17 @@ class PGSchemaSuite extends FunSuite {
     )
     val all = ddl.mkString("\n")
     // journal uses eventType
-    assert(all.contains("myapp_journal") && all.contains("payload bytea NOT NULL"))
+    assert(
+      all.contains("myapp_journal") && all.contains("payload bytea NOT NULL")
+    )
     // outbox uses notificationType
-    assert(all.contains("myapp_outbox") && all.contains("payload json NOT NULL"))
+    assert(
+      all.contains("myapp_outbox") && all.contains("payload json NOT NULL")
+    )
     // snapshots uses snapshotType
-    assert(all.contains("myapp_snapshots") && all.contains("state jsonb NOT NULL"))
+    assert(
+      all.contains("myapp_snapshots") && all.contains("state jsonb NOT NULL")
+    )
   }
 
   test("cqrs DDL creates states, outbox, commands tables") {
@@ -174,7 +182,10 @@ class PGSchemaSuite extends FunSuite {
     val naming = PGNaming.prefixed(PGNamespace("test"))
     val ddl = PGSchema.eventsourcing(naming)
     ddl.foreach { stmt =>
-      assert(stmt.endsWith(";"), s"Statement does not end with semicolon: $stmt")
+      assert(
+        stmt.endsWith(";"),
+        s"Statement does not end with semicolon: $stmt"
+      )
     }
   }
 }
