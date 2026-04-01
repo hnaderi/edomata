@@ -44,6 +44,7 @@ lazy val modules = List(
   core,
   backend,
   saas,
+  saasSkunk,
   postgres,
   skunkBackend,
   skunkCirceCodecs,
@@ -138,9 +139,18 @@ lazy val backend = module("backend") {
 lazy val saas = module("saas") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Pure)
-    .dependsOn(core, backend)
+    .dependsOn(core, backend, postgres)
     .settings(
       description := "Multi-tenant SaaS CRUD abstractions for edomata"
+    )
+}
+
+lazy val saasSkunk = module("saas-skunk") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(saas, skunkBackend)
+    .settings(
+      description := "SaaS-aware Skunk backend for edomata"
     )
 }
 
@@ -318,6 +328,7 @@ lazy val examples =
     .crossType(CrossType.Pure)
     .dependsOn(
       saas,
+      saasSkunk,
       skunkBackend,
       skunkCirceCodecs,
       skunkUpickleCodecs
