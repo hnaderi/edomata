@@ -78,7 +78,26 @@ libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.0"
 libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.0"
 ```
 
-Available modules: `edomata-core`, `edomata-backend`, `edomata-postgres`, `edomata-skunk`, `edomata-skunk-circe`, `edomata-skunk-jsoniter`, `edomata-skunk-upickle`, `edomata-doobie`, `edomata-doobie-circe`, `edomata-doobie-jsoniter`, `edomata-doobie-upickle`, `edomata-saas`, `edomata-saas-skunk`, `edomata-munit`.
+**Available modules:**
+
+| Module | Artifact | Platforms | Description |
+|--------|----------|-----------|-------------|
+| core | `"dev.bsg" %% "edomata-core"` | JVM, JS, Native | Core abstractions (Decision, Edomaton, Stomaton) |
+| backend | `"dev.bsg" %% "edomata-backend"` | JVM, JS, Native | Event sourcing backend abstractions |
+| postgres | `"dev.bsg" %% "edomata-postgres"` | JVM, JS, Native | PostgreSQL common components |
+| skunk | `"dev.bsg" %% "edomata-skunk"` | JVM, JS, Native | Skunk-based PostgreSQL backend |
+| skunk-circe | `"dev.bsg" %% "edomata-skunk-circe"` | JVM, JS, Native | Circe JSON codecs for Skunk |
+| skunk-jsoniter | `"dev.bsg" %% "edomata-skunk-jsoniter"` | JVM, JS, Native | Jsoniter codecs for Skunk |
+| skunk-upickle | `"dev.bsg" %% "edomata-skunk-upickle"` | JVM, JS, Native | uPickle codecs for Skunk |
+| doobie | `"dev.bsg" %% "edomata-doobie"` | JVM only | Doobie-based PostgreSQL backend |
+| doobie-circe | `"dev.bsg" %% "edomata-doobie-circe"` | JVM only | Circe JSON codecs for Doobie |
+| doobie-jsoniter | `"dev.bsg" %% "edomata-doobie-jsoniter"` | JVM only | Jsoniter codecs for Doobie |
+| doobie-upickle | `"dev.bsg" %% "edomata-doobie-upickle"` | JVM only | uPickle codecs for Doobie |
+| saas | `"dev.bsg" %% "edomata-saas"` | JVM, JS, Native | Multi-tenant SaaS abstractions |
+| saas-skunk | `"dev.bsg" %% "edomata-saas-skunk"` | JVM, JS, Native | Skunk-based SaaS backend |
+| munit | `"dev.bsg" %% "edomata-munit"` | JVM, JS, Native | MUnit test framework integration |
+
+> For Scala.js or Scala Native, use `%%%` instead of `%%`.
 
 **4. For GitHub Actions CI**, add `GITHUB_TOKEN` to your workflow:
 ```yaml
