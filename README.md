@@ -19,20 +19,73 @@ visit [Project site](https://edomata.ir/) to see tutorials and docs.
 Also please drop a ⭐ if this project interests you. I need encouragement.
 
 ## Add to your build
+
+### From Maven Central (upstream)
 Use latest version from badge above
 ```scala
 libraryDependencies += "dev.hnaderi" %% "edomata-core" % "<last version from badge>"
-
-```  
-or other modules  
+```
+or other modules
 ```scala
 libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "<last version from badge>"
-```  
+```
 See [modules](https://edomata.ir/other/modules.html) for more info.
 
 or for scala.js and or scala native
 ```scala
 libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from badge>"
+```
+
+### From GitHub Packages (BSG fork)
+
+This fork publishes artifacts under `dev.bsg` to GitHub Packages. A new version is published automatically on every merge to `main`.
+
+**1. Add the resolver** in your `build.sbt`:
+```scala
+resolvers += "GitHub Packages - edomata" at
+  "https://maven.pkg.github.com/beyond-scale-group/edomata"
+```
+
+**2. Configure credentials** using a [GitHub Personal Access Token](https://github.com/settings/tokens) with `read:packages` scope. Choose one method:
+
+*Option A* - Environment variable:
+```scala
+credentials += Credentials(
+  "GitHub Package Registry",
+  "maven.pkg.github.com",
+  "_",
+  sys.env("GITHUB_TOKEN")
+)
+```
+
+*Option B* - SBT credentials file (`~/.sbt/.credentials`):
+```
+realm=GitHub Package Registry
+host=maven.pkg.github.com
+user=_
+password=<your GitHub PAT>
+```
+```scala
+credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+```
+
+**3. Add the dependency**:
+```scala
+// JVM
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.0"
+
+// Scala.js / Scala Native
+libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.0"
+```
+
+Available modules: `edomata-core`, `edomata-backend`, `edomata-postgres`, `edomata-skunk`, `edomata-skunk-circe`, `edomata-skunk-jsoniter`, `edomata-skunk-upickle`, `edomata-doobie`, `edomata-doobie-circe`, `edomata-doobie-jsoniter`, `edomata-doobie-upickle`, `edomata-saas`, `edomata-saas-skunk`, `edomata-munit`.
+
+**4. For GitHub Actions CI**, add `GITHUB_TOKEN` to your workflow:
+```yaml
+- name: Build
+  run: sbt compile
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Projects
