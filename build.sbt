@@ -9,6 +9,7 @@ lazy val scala3 = "3.3.6"
 inThisBuild(
   List(
     tlBaseVersion := "0.12",
+    tlMimaPreviousVersions := Set.empty,
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
@@ -35,14 +36,17 @@ inThisBuild(
         (ThisBuild / publishTo).value
     },
     credentials ++= {
-      sys.env.get("GITHUB_TOKEN").map { token =>
-        Credentials(
-          "GitHub Package Registry",
-          "maven.pkg.github.com",
-          "_",
-          token
-        )
-      }.toSeq
+      sys.env
+        .get("GITHUB_TOKEN")
+        .map { token =>
+          Credentials(
+            "GitHub Package Registry",
+            "maven.pkg.github.com",
+            "_",
+            token
+          )
+        }
+        .toSeq
     }
   )
 )

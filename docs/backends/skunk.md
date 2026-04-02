@@ -3,18 +3,18 @@
 ## Install 
 
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-skunk" % "@VERSION@"
 ```
 
 or for integrated modules:
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "@VERSION@"
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk-upickle" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-skunk-upickle" % "@VERSION@"
 ```
 
 or for scala.js
 ```scala
-libraryDependencies += "dev.hnaderi" %%% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "dev.bsg" %%% "edomata-skunk" % "@VERSION@"
 ```
 
 ## Imports
