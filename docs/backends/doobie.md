@@ -3,13 +3,13 @@
 ## Install 
 
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-doobie" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-doobie" % "@VERSION@"
 ```
 
 or for integrated modules:
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-doobie-circe" % "@VERSION@"
-libraryDependencies += "dev.hnaderi" %% "edomata-doobie-upickle" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-doobie-circe" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-doobie-upickle" % "@VERSION@"
 ```
 
 Note that doobie is built on top of JDBC which can't be used in javascript obviously, and this packages are available for JVM only.

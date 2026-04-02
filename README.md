@@ -43,17 +43,17 @@ Visit the [upstream project site](https://edomata.ir/) for the original tutorial
 ### From Maven Central (upstream)
 Use latest version from badge above
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-core" % "<last version from badge>"
+libraryDependencies += "dev.bsg" %% "edomata-core" % "<last version from badge>"
 ```
 or other modules
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "<last version from badge>"
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "<last version from badge>"
 ```
 See [modules](https://edomata.ir/other/modules.html) for more info.
 
 or for scala.js and or scala native
 ```scala
-libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from badge>"
+libraryDependencies += "dev.bsg" %%% "edomata-core" % "<last version from badge>"
 ```
 
 ### From GitHub Packages (BSG fork)
