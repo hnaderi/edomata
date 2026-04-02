@@ -50,7 +50,8 @@ object PGSchema {
       journalStatements(naming, eventType) ++
       outboxStatements(naming, notificationType) ++
       commandsStatements(naming) ++
-      snapshotsStatements(naming, snapshotType)
+      snapshotsStatements(naming, snapshotType) ++
+      migrationsStatements(naming)
 
   /** Generates DDL for CQRS tables: states, outbox, and commands.
     *
@@ -146,6 +147,19 @@ object PGSchema {
          |  "version" int8 NOT NULL,
          |  state $payloadType NOT NULL,
          |  CONSTRAINT $pk PRIMARY KEY (id)
+         |);""".stripMargin
+    )
+  }
+
+  private def migrationsStatements(naming: PGNaming): List[String] = {
+    val t = naming.table("migrations")
+    val pk = naming.constraint("migrations_pk")
+    List(
+      s"""CREATE TABLE IF NOT EXISTS $t (
+         |  "version" text NOT NULL,
+         |  description text NOT NULL,
+         |  applied_at timestamptz NOT NULL DEFAULT now(),
+         |  CONSTRAINT $pk PRIMARY KEY ("version")
          |);""".stripMargin
     )
   }
