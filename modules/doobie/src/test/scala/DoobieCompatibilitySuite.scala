@@ -26,7 +26,6 @@ import edomata.doobie.*
 import scodec.bits.ByteVector
 
 import DoobieCompatibilitySuite.*
-import edomata.backend.PGNaming
 import edomata.backend.eventsourcing.SnapshotPersistence
 
 class DoobieJsonCompatibilitySuite

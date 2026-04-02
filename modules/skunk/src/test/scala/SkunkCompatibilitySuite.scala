@@ -29,7 +29,6 @@ import scodec.bits.ByteVector
 import scala.concurrent.duration.*
 
 import SkunkCompatibilitySuite.*
-import edomata.backend.PGNaming
 import edomata.backend.eventsourcing.SnapshotPersistence
 
 class SkunkCompatibilitySuite

@@ -23,9 +23,7 @@ inThisBuild(
         sys.env.getOrElse("GITHUB_TOKEN", "")
       ),
       // Disable gpg signing — GitHub Packages does not require it
-      gpgWarnOnFailure := true,
-      // Disable Sonatype-specific steps that sbt-typelevel enables by default
-      tlSonatypeUseLegacyHost := false
+      gpgWarnOnFailure := true
     )
   } else Nil
 )

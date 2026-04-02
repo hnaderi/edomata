@@ -58,7 +58,9 @@ modules/
 ├── doobie-upickle/    # uPickle codecs for Doobie
 ├── backend-tests/     # Integration tests
 ├── e2e/               # End-to-end tests
-└── munit/             # MUnit test framework integration
+├── munit/             # MUnit test framework integration
+├── saas/              # Multi-tenant SaaS abstractions
+└── saas-skunk/        # Skunk-based SaaS backend
 
 examples/              # Example implementations
 docs/                  # Documentation (Markdown)
@@ -111,7 +113,7 @@ sbt e2eJVM/test            # End-to-end tests
 
 ## Code Style
 
-- **Formatter**: Scalafmt 3.10.4
+- **Formatter**: Scalafmt 3.10.7
 - **Config**: `.scalafmt.conf`
 - **Dialect**: Scala 3
 
