@@ -12,8 +12,8 @@ inThisBuild(
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
-    organization := "dev.hnaderi",
-    organizationName := "Hossein Naderi",
+    organization := "dev.bsg",
+    organizationName := "Beyond Scale Group",
     startYear := Some(2021),
     tlCiReleaseBranches := Seq(),
     tlSitePublishBranch := Some("main"),
@@ -25,7 +25,25 @@ inThisBuild(
         email = "mail@hnaderi.dev",
         url = url("https://hnaderi.dev")
       )
-    )
+    ),
+    publishTo := {
+      if (sys.env.getOrElse("PUBLISH_TO_GITHUB", "false").toBoolean)
+        Some(
+          "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
+        )
+      else
+        (ThisBuild / publishTo).value
+    },
+    credentials ++= {
+      sys.env.get("GITHUB_TOKEN").map { token =>
+        Credentials(
+          "GitHub Package Registry",
+          "maven.pkg.github.com",
+          "_",
+          token
+        )
+      }.toSeq
+    }
   )
 )
 
