@@ -15,7 +15,7 @@ inThisBuild(
     organization := "dev.hnaderi",
     organizationName := "Hossein Naderi",
     startYear := Some(2021),
-    tlCiReleaseBranches := Seq("main"),
+    tlCiReleaseBranches := Seq(),
     tlSitePublishBranch := Some("main"),
     licenses := Seq(License.Apache2),
     developers := List(
