@@ -60,43 +60,19 @@ libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from ba
 
 This fork publishes artifacts under `dev.bsg` to GitHub Packages. A new version is published automatically on every merge to `main`.
 
-**1. Add the resolver** in your `build.sbt`:
+Add the resolver and dependency in your `build.sbt`:
 ```scala
 resolvers += "GitHub Packages - edomata" at
   "https://maven.pkg.github.com/beyond-scale-group/edomata"
-```
 
-**2. Configure credentials** using a [GitHub Personal Access Token](https://github.com/settings/tokens) with `read:packages` scope. Choose one method:
-
-*Option A* - Environment variable:
-```scala
-credentials += Credentials(
-  "GitHub Package Registry",
-  "maven.pkg.github.com",
-  "_",
-  sys.env("GITHUB_TOKEN")
-)
-```
-
-*Option B* - SBT credentials file (`~/.sbt/.credentials`):
-```
-realm=GitHub Package Registry
-host=maven.pkg.github.com
-user=_
-password=<your GitHub PAT>
-```
-```scala
-credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
-```
-
-**3. Add the dependency**:
-```scala
 // JVM
 libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.0"
 
 // Scala.js / Scala Native
 libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.0"
 ```
+
+> This is a public repository — no authentication is required to download packages.
 
 **Available modules:**
 
@@ -119,13 +95,6 @@ libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.0"
 
 > For Scala.js or Scala Native, use `%%%` instead of `%%`.
 
-**4. For GitHub Actions CI**, add `GITHUB_TOKEN` to your workflow:
-```yaml
-- name: Build
-  run: sbt compile
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
 
 ## Projects
 
