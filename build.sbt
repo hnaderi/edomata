@@ -13,7 +13,7 @@ inThisBuild(
     fork := true,
     Test / fork := false,
     organization := "dev.bsg",
-    organizationName := "Beyond Scale Group",
+    organizationName := "Hossein Naderi",
     startYear := Some(2021),
     tlCiReleaseBranches := Seq(),
     tlSitePublishBranch := Some("main"),
