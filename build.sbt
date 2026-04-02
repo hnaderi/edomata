@@ -35,14 +35,17 @@ inThisBuild(
         (ThisBuild / publishTo).value
     },
     credentials ++= {
-      sys.env.get("GITHUB_TOKEN").map { token =>
-        Credentials(
-          "GitHub Package Registry",
-          "maven.pkg.github.com",
-          "_",
-          token
-        )
-      }.toSeq
+      sys.env
+        .get("GITHUB_TOKEN")
+        .map { token =>
+          Credentials(
+            "GitHub Package Registry",
+            "maven.pkg.github.com",
+            "_",
+            token
+          )
+        }
+        .toSeq
     }
   )
 )
