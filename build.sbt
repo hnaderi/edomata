@@ -9,7 +9,7 @@ lazy val scala3 = "3.3.6"
 inThisBuild(
   List(
     tlBaseVersion := "0.12",
-    mimaPreviousArtifacts := Set.empty,
+    tlMimaPreviousVersions := Set.empty,
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
