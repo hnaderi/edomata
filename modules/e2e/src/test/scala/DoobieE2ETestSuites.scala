@@ -20,7 +20,7 @@ package doobie
 import _root_.doobie.util.transactor.Transactor
 import cats.effect.IO
 import cats.effect.kernel.Resource
-import dev.hnaderi.example.accounts.*
+import dev.bsg.example.accounts.*
 import edomata.backend.*
 import edomata.doobie.*
 import io.circe.generic.auto.*
