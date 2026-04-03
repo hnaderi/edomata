@@ -1,3 +1,8 @@
+---
+sidebar_position: 1
+title: "Getting started"
+---
+
 # Getting started
 
 ## What problem does Edomata solve?
@@ -114,5 +119,5 @@ Currently these kinds of state machines are implemented in Edomata:
 ## Next
 That's all we need to know for now; talk is enough, let's jump into code!
 
-For event sourced applications, [follow this link](1-1_eventsourcing.md),
-For CQRS applications (without event sourcing), [follow this link](1-2_cqrs.md)
+For event sourced applications, [follow this link](eventsourcing),
+For CQRS applications (without event sourcing), [follow this link](cqrs)

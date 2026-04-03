@@ -1,3 +1,8 @@
+---
+sidebar_position: 3
+title: "CQRS style"
+---
+
 # CQRS style
 
 ## What is CQRS?
@@ -263,7 +268,7 @@ You can do all that without Edomata, as everything in Edomata is just pure data 
 
 Edomata is designed around the idea of event-driven state machines,
 and it's not surprising that the tools that it provides for building services are also event-driven state machines!
-These state machines are like [actors](../principles/index.md#actor-model) that respond to incoming messages which are domain commands,
+These state machines are like [actors](../principles/#actor-model) that respond to incoming messages which are domain commands,
 may possibly change state through emitting some events as we've seen in domain modeling above,
 and possibly emit some other type of events for communication and integration with other services;
 while doing so, they can also perform any side effects that are idempotent,
@@ -390,4 +395,4 @@ scenario1.notifications
 
 ## What's next?
 
-So far we've created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I'll discuss in the [next chapter](2_backends.md)
+So far we've created our program definitions, in order to run them as a real application in production, we need to compile them using a backend; which I'll discuss in the [next chapter](backends)

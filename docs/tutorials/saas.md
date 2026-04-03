@@ -1,3 +1,8 @@
+---
+sidebar_position: 6
+title: "SaaS Multi-Tenant Module"
+---
+
 # SaaS Multi-Tenant Module
 
 ## Overview

@@ -1,3 +1,8 @@
+---
+sidebar_position: 4
+title: "Running"
+---
+
 # Running
 
 ## What is a Backend?
@@ -56,7 +61,7 @@ These backends are designed to be as standard as possible and to be a great fit 
 
 #### Persistence
 
-Each aggregate type has its own namespace that contains all the required tables. By default, each namespace creates a dedicated PostgreSQL schema (e.g. `"auth".journal`). Alternatively, you can use **prefix mode** to keep all tables in a single schema with prefixed names (e.g. `auth_journal`) — see the [Skunk](../backends/skunk.md) or [Doobie](../backends/doobie.md) backend docs for details. The available tables are:
+Each aggregate type has its own namespace that contains all the required tables. By default, each namespace creates a dedicated PostgreSQL schema (e.g. `"auth".journal`). Alternatively, you can use **prefix mode** to keep all tables in a single schema with prefixed names (e.g. `auth_journal`) — see the [Skunk](../backends/skunk) or [Doobie](../backends/doobie) backend docs for details. The available tables are:
 
 | Table | Purpose | Used By |
 |-------|---------|---------|
@@ -191,5 +196,5 @@ object Main extends IOApp.Simple {
 
 For detailed instructions on how to setup and use these backends refer to:
 
-- [Skunk backend](../backends/skunk.md)
-- [Doobie backend](../backends/doobie.md)
+- [Skunk backend](../backends/skunk)
+- [Doobie backend](../backends/doobie)

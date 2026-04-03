@@ -1,3 +1,8 @@
+---
+sidebar_position: 5
+title: "Processes"
+---
+
 # Processes
 
 ## What are Processes?

@@ -1,3 +1,8 @@
+---
+sidebar_position: 7
+title: "Event Migrations"
+---
+
 # Event Migrations
 
 ## Why Schema Evolution Matters
