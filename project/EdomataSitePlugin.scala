@@ -138,12 +138,18 @@ object EdomataSitePlugin extends AutoPlugin {
           ),
         navLinks = Seq(
           IconLink
-            .external("https://github.com/hnaderi/edomata/", HeliumIcon.github),
+            .external(
+              "https://github.com/beyond-scale-group/edomata/",
+              HeliumIcon.github
+            ),
           IconLink
-            .external("https://edomata.ir/", HeliumIcon.home)
+            .external(
+              "https://beyond-scale-group.github.io/edomata/",
+              HeliumIcon.home
+            )
         )
       )
       .site
-      .baseURL("https://edomata.ir/")
+      .baseURL("https://beyond-scale-group.github.io/edomata/")
 
 }
