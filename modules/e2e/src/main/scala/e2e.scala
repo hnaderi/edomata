@@ -18,7 +18,7 @@ package tests
 
 import cats.effect.IO
 import cats.effect.Resource
-import dev.hnaderi.example.accounts.*
+import dev.bsg.example.accounts.*
 import edomata.backend.Backend
 import edomata.backend.eventsourcing
 import edomata.backend.eventsourcing.AggregateState

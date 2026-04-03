@@ -19,7 +19,7 @@ package skunk
 
 import _root_.skunk.Session
 import cats.effect.IO
-import dev.hnaderi.example.accounts.*
+import dev.bsg.example.accounts.*
 import edomata.skunk.BackendCodec
 import edomata.skunk.CirceCodec
 import edomata.skunk.SkunkDriver
