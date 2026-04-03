@@ -17,7 +17,6 @@ inThisBuild(
     organizationName := "Beyond Scale Group",
     startYear := Some(2021),
     tlCiReleaseBranches := Seq(),
-    tlSitePublishBranch := Some("main"),
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -101,8 +100,15 @@ lazy val mdocPlantuml = project
 
 lazy val docs = project
   .in(file("site"))
-  .enablePlugins(EdomataSitePlugin)
+  .enablePlugins(MdocPlugin)
   .disablePlugins(TypelevelSettingsPlugin)
+  .settings(
+    mdocIn := (ThisBuild / baseDirectory).value / "docs",
+    mdocOut := (ThisBuild / baseDirectory).value / "website" / "docs",
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    )
+  )
   .dependsOn(
     core.jvm,
     postgres.jvm,

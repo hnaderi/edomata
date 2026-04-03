@@ -165,24 +165,31 @@ jobs:
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
 
-      - name: sbt update
-        if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
-        run: 'nix develop .#${{ matrix.java }} -c sbt +update'
-
-      - name: sbt update
-        if: matrix.java == 'temurin@17' && steps.setup-java-temurin-17.outputs.cache-hit == 'false'
-        run: 'nix develop .#${{ matrix.java }} -c sbt +update'
-
       - name: Install Nix
         uses: cachix/install-nix-action@v17
 
-      - name: Generate site
-        run: 'nix develop .#${{ matrix.java }} -c sbt docs/tlSite'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install website dependencies
+        working-directory: website
+        run: npm ci
+
+      - name: Generate mdoc
+        run: 'nix develop .#${{ matrix.java }} -c sbt docs/mdoc'
+
+      - name: Build Docusaurus site
+        working-directory: website
+        run: npm run build
 
       - name: Publish site
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: site/target/docs/site
-          keep_files: true
+          publish_dir: website/build
+          keep_files: false
