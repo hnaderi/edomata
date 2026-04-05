@@ -6,7 +6,9 @@ pull_request_rules:
 
       - or:
         - "author=hnaderi"
+        - "author=guillaumebadin"
         - "author=scala-steward"
+        - "author=scala-steward[bot]"
     actions:
       merge:
         method: squash

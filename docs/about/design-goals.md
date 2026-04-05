@@ -1,3 +1,8 @@
+---
+sidebar_position: 1
+title: "Design goals"
+---
+
 # Design goals
 
 ## ideas

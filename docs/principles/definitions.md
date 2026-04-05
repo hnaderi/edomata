@@ -1,3 +1,8 @@
+---
+sidebar_position: 2
+title: "Definitions"
+---
+
 # Definitions
 following is a list of useful definitions in the context of DDD/CQRS/ES.  
 I tried to keep them as generic as possible, but some of them are also mapped to this specific library to help better understanding.
