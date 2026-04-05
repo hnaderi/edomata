@@ -20,13 +20,15 @@ import _root_.skunk.Session
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
+import edomata.backend.PGNaming
 import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
 final class SkunkCQRSDriver[F[_]: Async] private (
-    namespace: PGNamespace,
-    pool: Resource[F, Session[F]]
+    naming: PGNaming,
+    pool: Resource[F, Session[F]],
+    autoSetup: Boolean
 ) extends StorageDriver[F, BackendCodec, SkunkHandler[F]] {
 
   override def build[S, N, R](
@@ -37,15 +39,19 @@ final class SkunkCQRSDriver[F[_]: Async] private (
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, N, R]] = {
     def setup = {
-      val nQ = Queries.Outbox(namespace, notifs)
-      val cQ = Queries.Commands(namespace)
-      val sQ = Queries.State(namespace, state)
+      val nQ = Queries.Outbox(naming, notifs)
+      val cQ = Queries.Commands(naming)
+      val sQ = Queries.State(naming, state)
 
-      pool
-        .use(s =>
-          s.execute(nQ.setup) >> s.execute(cQ.setup) >> s.execute(sQ.setup)
-        )
-        .as((nQ, cQ, sQ))
+      val run: F[Unit] =
+        if autoSetup then
+          pool
+            .use(s =>
+              s.execute(nQ.setup) >> s.execute(cQ.setup) >> s.execute(sQ.setup)
+            )
+            .void
+        else Async[F].unit
+      run.as((nQ, cQ, sQ))
     }
 
     Resource.eval(setup).flatMap { case (oQ, cQ, sQ) =>
@@ -76,8 +82,16 @@ object SkunkCQRSDriver {
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Resource[F, Session[F]]
+  ): F[SkunkCQRSDriver[F]] = from(PGNaming.schema(namespace), pool)
+
+  def from[F[_]: Async](
+      naming: PGNaming,
+      pool: Resource[F, Session[F]],
+      skipSetup: Boolean = false
   ): F[SkunkCQRSDriver[F]] =
-    pool
-      .use(_.execute(Queries.setupSchema(namespace)))
-      .as(new SkunkCQRSDriver(namespace, pool))
+    val setup: F[Unit] =
+      if !skipSetup && naming.needsSchemaSetup then
+        pool.use(_.execute(Queries.setupSchema(naming.namespace))).void
+      else Async[F].unit
+    setup.as(new SkunkCQRSDriver(naming, pool, autoSetup = !skipSetup))
 }

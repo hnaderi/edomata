@@ -20,7 +20,7 @@ import _root_.skunk.Session
 import cats.effect.Concurrent
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import edomata.backend.PGNamespace
+import edomata.backend.PGNaming
 import edomata.backend.StreamId
 import edomata.backend.eventsourcing.*
 import fs2.Chunk
@@ -40,8 +40,12 @@ private final class SkunkSnapshotPersistence[F[_]: Concurrent, S](
 private object SkunkSnapshotPersistence {
   def apply[F[_]: Concurrent, S](
       pool: Resource[F, Session[F]],
-      namespace: PGNamespace
+      naming: PGNaming,
+      autoSetup: Boolean = true
   )(using codec: BackendCodec[S]): F[SkunkSnapshotPersistence[F, S]] =
-    val q = Queries.Snapshot[S](namespace, codec)
-    pool.use(_.execute(q.setup)).as(new SkunkSnapshotPersistence(pool, q))
+    val q = Queries.Snapshot[S](naming, codec)
+    val setup =
+      if autoSetup then pool.use(_.execute(q.setup)).void
+      else Concurrent[F].unit
+    setup.as(new SkunkSnapshotPersistence(pool, q))
 }
