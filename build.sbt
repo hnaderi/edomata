@@ -49,7 +49,9 @@ lazy val ghpPublishSettings: Seq[Setting[_]] =
     Seq(
       publishTo := Some(
         "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
-      )
+      ),
+      // Must be at project scope — sbt-gpg sets gpgWarnOnFailure := false per-project
+      gpgWarnOnFailure := true
     )
   else Seq.empty
 
