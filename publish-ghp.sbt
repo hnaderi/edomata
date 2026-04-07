@@ -1,8 +1,14 @@
 // Publish to GitHub Packages when PUBLISH_TO_GITHUB is set.
-// Used by .github/workflows/publish-ghp.yml on every merge to main or v* tag push.
+// Used by .github/workflows/publish-ghp.yml on v* tag push.
+//
+// How it works:
+//   - publishTo is set at PROJECT scope in build.sbt (via ghpPublishSettings in module())
+//     to override sbt-typelevel's TypelevelSonatypePlugin which also sets publishTo per-project.
+//   - credentials are set at ThisBuild scope in build.sbt (works fine — credentials accumulate).
+//   - gpgWarnOnFailure is set here at ThisBuild scope to suppress GPG errors.
 //
 // Versioning (handled by sbt-dynver via sbt-typelevel):
-//   - Tagged commit (v0.12.1)  → "0.12.1"       (release)
+//   - Tagged commit (v0.12.7)  → "0.12.7"       (release)
 //   - Untagged main commit     → "0.12.0+7-abc" (snapshot-like, unique per commit)
 //
 // Consumers add to build.sbt:
@@ -10,18 +16,7 @@
 //   credentials += Credentials("GitHub Package Registry", "maven.pkg.github.com", "_", sys.env("GITHUB_TOKEN"))
 inThisBuild(
   if (sys.env.contains("PUBLISH_TO_GITHUB")) {
-    val ghOwner = "beyond-scale-group"
-    val ghRepo = "edomata"
     List(
-      publishTo := Some(
-        "GitHub Packages" at s"https://maven.pkg.github.com/$ghOwner/$ghRepo"
-      ),
-      credentials += Credentials(
-        "GitHub Package Registry",
-        "maven.pkg.github.com",
-        "_",
-        sys.env.getOrElse("GITHUB_TOKEN", "")
-      ),
       // Disable gpg signing — GitHub Packages does not require it
       gpgWarnOnFailure := true
     )

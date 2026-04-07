@@ -26,14 +26,6 @@ inThisBuild(
         url = url("https://hnaderi.dev")
       )
     ),
-    publishTo := {
-      if (sys.env.getOrElse("PUBLISH_TO_GITHUB", "false").toBoolean)
-        Some(
-          "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
-        )
-      else
-        (ThisBuild / publishTo).value
-    },
     credentials ++= {
       sys.env
         .get("GITHUB_TOKEN")
@@ -50,6 +42,17 @@ inThisBuild(
   )
 )
 
+// GitHub Packages publishTo override — must be at project scope to beat
+// sbt-typelevel's TypelevelSonatypePlugin which sets publishTo per-project.
+lazy val ghpPublishSettings: Seq[Setting[_]] =
+  if (sys.env.contains("PUBLISH_TO_GITHUB"))
+    Seq(
+      publishTo := Some(
+        "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
+      )
+    )
+  else Seq.empty
+
 def module(mname: String): CrossProject => CrossProject =
   _.in(file(s"modules/$mname"))
     .settings(
@@ -60,6 +63,7 @@ def module(mname: String): CrossProject => CrossProject =
       ),
       moduleName := s"edomata-$mname"
     )
+    .settings(ghpPublishSettings)
 
 lazy val modules = List(
   core,
