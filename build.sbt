@@ -106,7 +106,7 @@ lazy val mdocPlantuml = project
 
 lazy val docs = project
   .in(file("site"))
-  .enablePlugins(MdocPlugin)
+  .enablePlugins(MdocPlugin, NoPublishPlugin)
   .disablePlugins(TypelevelSettingsPlugin)
   .settings(
     mdocIn := (ThisBuild / baseDirectory).value / "docs",
@@ -123,7 +123,7 @@ lazy val docs = project
 
 lazy val unidocs = project
   .in(file("unidocs"))
-  .enablePlugins(TypelevelUnidocPlugin)
+  .enablePlugins(TypelevelUnidocPlugin, NoPublishPlugin)
   .settings(
     name := "edomata-docs",
     description := "unified docs for edomata",
