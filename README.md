@@ -39,7 +39,16 @@ resolvers += "GitHub Packages - edomata" at
   "https://maven.pkg.github.com/beyond-scale-group/edomata"
 ```
 
-> No authentication required — this is a public repository.
+> **Authentication required**: GitHub Packages Maven registry requires a token even for public repositories.
+> Add credentials to your build:
+> ```scala
+> credentials += Credentials(
+>   "GitHub Package Registry",
+>   "maven.pkg.github.com",
+>   "_",
+>   sys.env("GITHUB_TOKEN") // needs read:packages scope
+> )
+> ```
 
 ## Documentation
 
