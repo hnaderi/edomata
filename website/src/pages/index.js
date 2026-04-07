@@ -129,6 +129,45 @@ function FeaturesSection() {
   );
 }
 
+function QuickStartSection() {
+  return (
+    <section className="section" style={{ borderTop: "1px solid var(--ifm-color-emphasis-200)" }}>
+      <div className="container">
+        <h2 className="section-title">Add to Your Project in Seconds</h2>
+        <p className="section-subtitle">
+          Pick a module, drop it into your build, and start building event-driven systems
+        </p>
+        <div style={{ maxWidth: 700, margin: "0 auto" }}>
+          <h3>SBT (JVM)</h3>
+          <CodeBlock language="scala">
+            {`// Core library
+libraryDependencies += "dev.bsg" %% "edomata-core" % "0.12.5"
+
+// With Skunk + Circe PostgreSQL backend (recommended)
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.5"`}
+          </CodeBlock>
+          <h3>Scala.js / Scala Native</h3>
+          <CodeBlock language="scala">
+            {`libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.5"`}
+          </CodeBlock>
+          <h3>GitHub Packages (BSG fork)</h3>
+          <CodeBlock language="scala">
+            {`resolvers += "GitHub Packages - edomata" at
+  "https://maven.pkg.github.com/beyond-scale-group/edomata"
+
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.5"`}
+          </CodeBlock>
+          <p style={{ textAlign: "center", marginTop: "1.5rem" }}>
+            <Link className="button button--primary button--md" to="/docs/other/modules">
+              See All Modules
+            </Link>
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function EcosystemSection() {
   return (
     <section className="section" style={{ borderTop: "1px solid var(--ifm-color-emphasis-200)" }}>
@@ -177,6 +216,7 @@ export default function Home() {
       <HeroSection />
       <main>
         <FeaturesSection />
+        <QuickStartSection />
         <EcosystemSection />
       </main>
     </Layout>

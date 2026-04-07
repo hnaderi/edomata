@@ -14,65 +14,54 @@
 
 > This is the [Beyond Scale Group](https://github.com/beyond-scale-group) fork of [hnaderi/edomata](https://github.com/hnaderi/edomata). Artifacts are published under `dev.bsg` to GitHub Packages.
 
-## Getting started
+## Quick Start
 
-Visit the [upstream project site](https://edomata.ir/) for the original tutorials and docs.
+Add to your `build.sbt`:
+
+```scala
+// Core library
+libraryDependencies += "dev.bsg" %% "edomata-core" % "0.12.5"
+
+// With Skunk + Circe PostgreSQL backend (recommended)
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.5"
+```
+
+For **Scala.js** or **Scala Native**, use `%%%`:
+```scala
+libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.5"
+```
+
+### GitHub Packages resolver
+
+This fork publishes under `dev.bsg` to GitHub Packages. Add the resolver:
+```scala
+resolvers += "GitHub Packages - edomata" at
+  "https://maven.pkg.github.com/beyond-scale-group/edomata"
+```
+
+> No authentication required — this is a public repository.
 
 ## Documentation
 
 | Topic | Link |
 |-------|------|
 | Introduction | [docs/introduction.md](docs/introduction.md) |
-| Getting started | [docs/tutorials/0_getting_started.md](docs/tutorials/0_getting_started.md) |
-| Event sourcing | [docs/tutorials/1-1_eventsourcing.md](docs/tutorials/1-1_eventsourcing.md) |
-| CQRS | [docs/tutorials/1-2_cqrs.md](docs/tutorials/1-2_cqrs.md) |
-| Backends | [docs/tutorials/2_backends.md](docs/tutorials/2_backends.md) |
-| Processes | [docs/tutorials/3_processes.md](docs/tutorials/3_processes.md) |
-| SaaS / Multi-tenancy | [docs/tutorials/4_saas.md](docs/tutorials/4_saas.md) |
-| Migrations | [docs/tutorials/5_migrations.md](docs/tutorials/5_migrations.md) |
+| Getting started | [docs/tutorials/getting-started.md](docs/tutorials/getting-started.md) |
+| Event sourcing | [docs/tutorials/eventsourcing.md](docs/tutorials/eventsourcing.md) |
+| CQRS | [docs/tutorials/cqrs.md](docs/tutorials/cqrs.md) |
+| Backends | [docs/tutorials/backends.md](docs/tutorials/backends.md) |
+| Processes | [docs/tutorials/processes.md](docs/tutorials/processes.md) |
+| SaaS / Multi-tenancy | [docs/tutorials/saas.md](docs/tutorials/saas.md) |
+| Migrations | [docs/tutorials/migrations.md](docs/tutorials/migrations.md) |
 | Skunk backend | [docs/backends/skunk.md](docs/backends/skunk.md) |
 | Doobie backend | [docs/backends/doobie.md](docs/backends/doobie.md) |
-| Design goals | [docs/about/design_goals.md](docs/about/design_goals.md) |
+| Design goals | [docs/about/design-goals.md](docs/about/design-goals.md) |
 | Features | [docs/about/features.md](docs/about/features.md) |
 | Definitions | [docs/principles/definitions.md](docs/principles/definitions.md) |
 | Modules list | [docs/other/modules.md](docs/other/modules.md) |
 | FAQ | [docs/other/faq.md](docs/other/faq.md) |
 
-## Add to your build
-
-### From Maven Central (upstream)
-Use latest version from badge above
-```scala
-libraryDependencies += "dev.bsg" %% "edomata-core" % "<last version from badge>"
-```
-or other modules
-```scala
-libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "<last version from badge>"
-```
-See [modules](https://edomata.ir/other/modules.html) for more info.
-
-or for scala.js and or scala native
-```scala
-libraryDependencies += "dev.bsg" %%% "edomata-core" % "<last version from badge>"
-```
-
-### From GitHub Packages (BSG fork)
-
-This fork publishes artifacts under `dev.bsg` to GitHub Packages. A new version is published automatically on every merge to `main`.
-
-Add the resolver and dependency in your `build.sbt`:
-```scala
-resolvers += "GitHub Packages - edomata" at
-  "https://maven.pkg.github.com/beyond-scale-group/edomata"
-
-// JVM
-libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.0"
-
-// Scala.js / Scala Native
-libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.0"
-```
-
-> This is a public repository — no authentication is required to download packages.
+Visit the [documentation site](https://beyond-scale-group.github.io/edomata/) for the full guide.
 
 **Available modules:**
 
