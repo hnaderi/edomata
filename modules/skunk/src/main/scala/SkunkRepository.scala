@@ -76,7 +76,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
           .prepare(journal.append(evs))
           .flatMap(_.execute(evs))
           .assertInserted(evs.size)
-        _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { n =>
+        _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { _ =>
           val ns = notifications.toList
             .map((_, ctx.command.address, now, ctx.command.metadata))
           s.prepare(outbox.insertAll(ns))

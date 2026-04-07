@@ -151,7 +151,6 @@ sealed transparent trait StomatonInstances {
       ): Stomaton[F, Env, S, R, E, A] = fa.handleErrorWith(f)
 
       type G[T] = Stomaton[F, Env, S, R, E, T]
-      type D[T] = DecisionT[F, R, E, T]
       override def pure[A](x: A): G[A] =
         Stomaton.pure(x)
 
@@ -244,7 +243,7 @@ sealed transparent trait StomatonConstructors {
   def decideS[F[_]: Applicative, Env, S, R, E](
       f: S => EitherNec[R, S]
   ): Stomaton[F, Env, S, R, E, S] =
-    Stomaton((env, s0) => ResponseE(f(s0).map(s => (s, s))).pure)
+    Stomaton((_, s0) => ResponseE(f(s0).map(s => (s, s))).pure)
 
   def decide[F[_]: Applicative, Env, S, R, E, T](
       f: => EitherNec[R, T]

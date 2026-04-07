@@ -16,7 +16,6 @@
 
 package edomata.core
 
-import cats.*
 import cats.data.*
 
 /** Representation of programs that decide and emit notifications

@@ -18,7 +18,6 @@ package edomata.core
 
 import cats.*
 import cats.data.*
-import cats.implicits.*
 
 final class CQRSDomainDSL[C, S, R, N](
     private val dummy: Boolean = true

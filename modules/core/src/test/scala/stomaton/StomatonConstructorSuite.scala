@@ -52,7 +52,7 @@ class StomatonConstructorSuite extends FunSuite {
     val a: App[Int] = Stomaton.modifyS(i => Right(i + 2))
     assertEquals(a.run(10, 0), Some(ResponseE(Right((2, 2)))))
 
-    val b: App[Int] = Stomaton.modifyS(i => "".leftNec)
+    val b: App[Int] = Stomaton.modifyS(_ => "".leftNec)
     assertEquals(b.run(10, 0), Some(ResponseE(Left(NonEmptyChain("")))))
   }
 

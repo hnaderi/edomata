@@ -19,7 +19,6 @@ package edomata.core
 import cats.Applicative
 import cats.Monad
 import cats.data.*
-import cats.implicits.*
 
 final class Domain[C, S, E, R, N](
     private val dummy: Boolean = true
