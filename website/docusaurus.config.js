@@ -104,7 +104,7 @@ const config = {
       prism: {
         theme: require("prism-react-renderer").themes.github,
         darkTheme: require("prism-react-renderer").themes.dracula,
-        additionalLanguages: ["java", "sql", "bash"],
+        additionalLanguages: ["java", "scala", "sql", "bash"],
       },
     }),
 };

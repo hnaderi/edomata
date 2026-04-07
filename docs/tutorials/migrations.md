@@ -108,7 +108,7 @@ yield driver
 
 ## How It Works Internally
 
-```
+```text
 Application Startup
   │
   ├── CREATE TABLE IF NOT EXISTS migrations
