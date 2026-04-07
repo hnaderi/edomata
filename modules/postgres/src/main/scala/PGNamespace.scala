@@ -47,4 +47,12 @@ object PGNamespace {
           Right(s)
       case _ => Left(s"Name: \"$s\" does not match ${pat.regex}")
     }
+
+  /** Constructs prefix-based naming with compile-time validation.
+    *
+    * Tables will be named `namespace_table` in the current schema instead of
+    * creating a dedicated PostgreSQL schema.
+    */
+  inline def prefixed(inline ns: String): PGNaming =
+    PGNaming.Prefixed(PGNamespace(ns))
 }

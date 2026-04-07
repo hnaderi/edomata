@@ -30,30 +30,35 @@ import java.time.ZoneOffset
 import java.util.UUID
 
 private[skunk] object Queries {
-  def setupSchema(namespace: PGNamespace): Command[Void] =
-    sql"""create schema if not exists "#$namespace";""".command
+  def setupSchema(ns: PGNamespace): Command[Void] =
+    sql"""create schema if not exists "#$ns";""".command
 
-  final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
-    private val table = sql""""#$namespace".journal"""
+  final class Journal[E](naming: PGNaming, codec: BackendCodec[E]) {
+    private val t = naming.table("journal")
+    private val table = sql"""#$t"""
     private val event = codec.codec
+    private val pk = naming.constraint("journal_pk")
+    private val un = naming.constraint("journal_un")
+    private val seqnrIdx = naming.index("journal_seqnr_idx")
+    private val streamIdx = naming.index("journal_stream_idx")
 
     def setup: Command[Void] = sql"""
 DO $$$$ begin
 
-CREATE TABLE IF NOT EXISTS $table (
+CREATE TABLE IF NOT EXISTS #$t (
   id uuid NOT NULL,
   "time" timestamptz NOT NULL,
   seqnr bigserial NOT NULL,
   "version" int8 NOT NULL,
   stream text NOT NULL,
   payload #${codec.oid.name} NOT NULL,
-  CONSTRAINT journal_pk PRIMARY KEY (id),
-  CONSTRAINT journal_un UNIQUE (stream, version)
+  CONSTRAINT #$pk PRIMARY KEY (id),
+  CONSTRAINT #$un UNIQUE (stream, version)
 );
 
-CREATE INDEX IF NOT EXISTS journal_seqnr_idx ON $table USING btree (seqnr);
+CREATE INDEX IF NOT EXISTS #$seqnrIdx ON #$t USING btree (seqnr);
 
-CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, version);
+CREATE INDEX IF NOT EXISTS #$streamIdx ON #$t USING btree (stream, version);
 
 END $$$$;
 """.command
@@ -105,12 +110,14 @@ END $$$$;
         .query(readCodec)
   }
 
-  final class Outbox[N](namespace: PGNamespace, codec: BackendCodec[N]) {
-    private val table = sql""""#$namespace".outbox"""
+  final class Outbox[N](naming: PGNaming, codec: BackendCodec[N]) {
+    private val t = naming.table("outbox")
+    private val table = sql"""#$t"""
     private val notification = codec.codec
+    private val pk = naming.constraint("outbox_pk")
 
     val setup = sql"""
-CREATE TABLE IF NOT EXISTS $table(
+CREATE TABLE IF NOT EXISTS #$t(
   seqnr bigserial NOT NULL,
   stream text NOT NULL,
   correlation text NULL,
@@ -118,7 +125,7 @@ CREATE TABLE IF NOT EXISTS $table(
   payload #${codec.oid.name} NOT NULL,
   created timestamptz NOT NULL,
   published timestamptz NULL,
-  CONSTRAINT outbox_pk PRIMARY KEY (seqnr)
+  CONSTRAINT #$pk PRIMARY KEY (seqnr)
 );
 """.command
 
@@ -152,18 +159,20 @@ insert into $table (payload, stream, created, correlation, causation) values ${i
   }
 
   final class Snapshot[S](
-      namespace: PGNamespace,
+      naming: PGNaming,
       codec: BackendCodec[S]
   ) {
-    private val table = sql""""#$namespace".snapshots"""
+    private val t = naming.table("snapshots")
+    private val table = sql"""#$t"""
     private val state = codec.codec
+    private val pk = naming.constraint("snapshots_pk")
 
     val setup: Command[Void] = sql"""
-CREATE TABLE IF NOT EXISTS $table (
+CREATE TABLE IF NOT EXISTS #$t (
   id text NOT NULL,
   "version" int8 NOT NULL,
   state #${codec.oid.name} NOT NULL,
-  CONSTRAINT snapshots_pk PRIMARY KEY (id)
+  CONSTRAINT #$pk PRIMARY KEY (id)
 );
 """.command
 
@@ -186,15 +195,17 @@ set version = excluded.version,
       )
   }
 
-  final class Commands(namespace: PGNamespace) {
-    private val table = sql""""#$namespace".commands"""
+  final class Commands(naming: PGNaming) {
+    private val t = naming.table("commands")
+    private val table = sql"""#$t"""
+    private val pk = naming.constraint("commands_pk")
 
     val setup: Command[Void] = sql"""
-CREATE TABLE IF NOT EXISTS $table (
+CREATE TABLE IF NOT EXISTS #$t (
   id text NOT NULL,
   "time" timestamptz NOT NULL,
   address text NOT NULL,
-  CONSTRAINT commands_pk PRIMARY KEY (id)
+  CONSTRAINT #$pk PRIMARY KEY (id)
 );
 """.command
 
@@ -213,18 +224,20 @@ insert into $table (id, address, "time") values ($command);
   }
 
   final class State[S](
-      namespace: PGNamespace,
+      naming: PGNaming,
       codec: BackendCodec[S]
   ) {
-    private val table = sql""""#$namespace".states"""
+    private val t = naming.table("states")
+    private val table = sql"""#$t"""
     private val state = codec.codec
+    private val pk = naming.constraint("states_pk")
 
     val setup: Command[Void] = sql"""
-CREATE TABLE IF NOT EXISTS $table (
+CREATE TABLE IF NOT EXISTS #$t (
   id text NOT NULL,
   "version" int8 NOT NULL,
   state #${codec.oid.name} NOT NULL,
-  CONSTRAINT states_pk PRIMARY KEY (id)
+  CONSTRAINT #$pk PRIMARY KEY (id)
 );
 """.command
 

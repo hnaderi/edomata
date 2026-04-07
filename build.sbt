@@ -43,6 +43,8 @@ def module(mname: String): CrossProject => CrossProject =
 lazy val modules = List(
   core,
   backend,
+  saas,
+  saasSkunk,
   postgres,
   skunkBackend,
   skunkCirceCodecs,
@@ -131,6 +133,24 @@ lazy val backend = module("backend") {
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect % Test,
         "co.fs2" %%% "fs2-core" % Versions.fs2
       )
+    )
+}
+
+lazy val saas = module("saas") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(core, backend, postgres)
+    .settings(
+      description := "Multi-tenant SaaS CRUD abstractions for edomata"
+    )
+}
+
+lazy val saasSkunk = module("saas-skunk") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(saas, skunkBackend)
+    .settings(
+      description := "SaaS-aware Skunk backend for edomata"
     )
 }
 
@@ -307,6 +327,8 @@ lazy val examples =
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(
+      saas,
+      saasSkunk,
       skunkBackend,
       skunkCirceCodecs,
       skunkUpickleCodecs

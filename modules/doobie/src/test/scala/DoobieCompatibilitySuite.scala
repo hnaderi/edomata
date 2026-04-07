@@ -26,6 +26,7 @@ import edomata.doobie.*
 import scodec.bits.ByteVector
 
 import DoobieCompatibilitySuite.*
+import edomata.backend.PGNaming
 import edomata.backend.eventsourcing.SnapshotPersistence
 
 class DoobieJsonCompatibilitySuite
@@ -56,6 +57,12 @@ class DoobiePersistenceKeywordNamespaceSuite
       "doobie"
     )
 
+class DoobiePrefixedPersistenceSuite
+    extends PersistenceSuite(
+      prefixedBackend("doobie_pfx", jsonbCodec),
+      "doobie prefixed"
+    )
+
 class DoobieSnapshotPersistenceSuite
     extends SnapshotPersistenceSuite(
       snapshot("snapshot_compatibility_json", jsonCodec),
@@ -65,6 +72,12 @@ class DoobieSnapshotPersistenceSuite
 class DoobieCQRSSuite
     extends CqrsSuite(
       backendCqrs("doobie_cqrs", jsonCodec),
+      "doobie"
+    )
+
+class DoobiePrefixedCQRSSuite
+    extends CqrsSuite(
+      prefixedBackendCqrs("doobie_pfx_cqrs", jsonCodec),
       "doobie"
     )
 
@@ -110,6 +123,31 @@ object DoobieCompatibilitySuite {
     Backend
       .builder(TestCQRSDomain)
       .use(DoobieCQRSDriver(name, trx))
+      .build
+
+  inline def prefixedBackend(
+      inline name: String,
+      codec: BackendCodec[Int]
+  ): Resource[IO, Backend[IO, Int, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestDomain.given_ModelTC_State_Event_Rejection
+
+    Backend
+      .builder(TestDomainModel)
+      .use(DoobieDriver.from(PGNaming.prefixed(name), trx))
+      .persistedSnapshot(maxInMem = 0, maxBuffer = 1)
+      .build
+
+  inline def prefixedBackendCqrs(
+      inline name: String,
+      codec: BackendCodec[Int]
+  ): Resource[IO, cqrs.Backend[IO, Int, String, Int]] =
+    given BackendCodec[Int] = codec
+    import TestCQRSModel.given_StateModelTC_State
+
+    Backend
+      .builder(TestCQRSDomain)
+      .use(DoobieCQRSDriver.from(PGNaming.prefixed(name), trx))
       .build
 
   inline def snapshot(
