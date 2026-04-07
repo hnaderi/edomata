@@ -1,3 +1,8 @@
+---
+sidebar_position: 1
+title: "Modules"
+---
+
 # Modules
 |                 | jvm | js | native | scala | published |
 |-----------------|-----|----|--------|-------|-----------|
@@ -12,4 +17,3 @@
 | doobie-circe    | ✔   | ❌ | ❌     | 3     | ✔         |
 | doobie-upickle  | ✔   | ❌ | ❌     | 3     | ✔         |
 | doobie-jsoniter | ✔   | ❌ | ❌     | 3     | ✔         |
-

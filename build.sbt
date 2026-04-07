@@ -9,14 +9,14 @@ lazy val scala3 = "3.3.6"
 inThisBuild(
   List(
     tlBaseVersion := "0.12",
+    tlMimaPreviousVersions := Set.empty,
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
-    organization := "dev.hnaderi",
-    organizationName := "Hossein Naderi",
+    organization := "dev.bsg",
+    organizationName := "Beyond Scale Group",
     startYear := Some(2021),
-    tlCiReleaseBranches := Seq("main"),
-    tlSitePublishBranch := Some("main"),
+    tlCiReleaseBranches := Seq(),
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -25,9 +25,35 @@ inThisBuild(
         email = "mail@hnaderi.dev",
         url = url("https://hnaderi.dev")
       )
-    )
+    ),
+    credentials ++= {
+      sys.env
+        .get("GITHUB_TOKEN")
+        .map { token =>
+          Credentials(
+            "GitHub Package Registry",
+            "maven.pkg.github.com",
+            "_",
+            token
+          )
+        }
+        .toSeq
+    }
   )
 )
+
+// GitHub Packages publishTo override — must be at project scope to beat
+// sbt-typelevel's TypelevelSonatypePlugin which sets publishTo per-project.
+lazy val ghpPublishSettings: Seq[Setting[_]] =
+  if (sys.env.contains("PUBLISH_TO_GITHUB"))
+    Seq(
+      publishTo := Some(
+        "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
+      ),
+      // Must be at project scope — sbt-gpg sets gpgWarnOnFailure := false per-project
+      gpgWarnOnFailure := true
+    )
+  else Seq.empty
 
 def module(mname: String): CrossProject => CrossProject =
   _.in(file(s"modules/$mname"))
@@ -39,10 +65,13 @@ def module(mname: String): CrossProject => CrossProject =
       ),
       moduleName := s"edomata-$mname"
     )
+    .settings(ghpPublishSettings)
 
 lazy val modules = List(
   core,
   backend,
+  saas,
+  saasSkunk,
   postgres,
   skunkBackend,
   skunkCirceCodecs,
@@ -77,8 +106,15 @@ lazy val mdocPlantuml = project
 
 lazy val docs = project
   .in(file("site"))
-  .enablePlugins(EdomataSitePlugin)
+  .enablePlugins(MdocPlugin)
   .disablePlugins(TypelevelSettingsPlugin)
+  .settings(
+    mdocIn := (ThisBuild / baseDirectory).value / "docs",
+    mdocOut := (ThisBuild / baseDirectory).value / "website" / "docs",
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    )
+  )
   .dependsOn(
     core.jvm,
     postgres.jvm,
@@ -131,6 +167,24 @@ lazy val backend = module("backend") {
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect % Test,
         "co.fs2" %%% "fs2-core" % Versions.fs2
       )
+    )
+}
+
+lazy val saas = module("saas") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(core, backend, postgres)
+    .settings(
+      description := "Multi-tenant SaaS CRUD abstractions for edomata"
+    )
+}
+
+lazy val saasSkunk = module("saas-skunk") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(saas, skunkBackend)
+    .settings(
+      description := "SaaS-aware Skunk backend for edomata"
     )
 }
 
@@ -307,6 +361,8 @@ lazy val examples =
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(
+      saas,
+      saasSkunk,
       skunkBackend,
       skunkCirceCodecs,
       skunkUpickleCodecs

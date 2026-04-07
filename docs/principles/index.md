@@ -1,7 +1,12 @@
+---
+sidebar_position: 1
+title: "Principles"
+---
+
 # Principles
 
 ## Message passing system
-Systems (usually based on [Actor model]) that communicate through message passing, meaning that interactions are done by sending encapsulated data packets,
+Systems (usually based on [Actor model](#actor-model)) that communicate through message passing, meaning that interactions are done by sending encapsulated data packets,
 which may have any arbitrary intents and semantics.
 this may be used to decouple execution stages both in time and space, so execution can continue on a different machine, or a different time on the same or another machine.
 

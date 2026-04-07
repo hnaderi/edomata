@@ -1,0 +1,38 @@
+name: Auto Tag on Merge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  auto-tag:
+    name: Create next patch tag
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.SCALA_STEWARD_TOKEN }}
+
+      - name: Compute next version tag
+        id: next
+        run: |
+          BASE="0.12"
+          LATEST=$(git tag --list "v${BASE}.*" --sort=-v:refname | head -n1)
+          if [ -z "$LATEST" ]; then
+            NEXT="v${BASE}.0"
+          else
+            PATCH=$(echo "$LATEST" | sed "s/v${BASE}\.\([0-9]*\)/\1/")
+            NEXT="v${BASE}.$((PATCH + 1))"
+          fi
+          echo "tag=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "Next tag: $NEXT"
+
+      - name: Create and push tag
+        run: |
+          git tag "${{ steps.next.outputs.tag }}"
+          git push origin "${{ steps.next.outputs.tag }}"

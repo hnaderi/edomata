@@ -1,3 +1,8 @@
+---
+sidebar_position: 1
+title: "Introduction"
+---
+
 # Introduction
 
 This is a light weight, polymorphic, purely functional library to implement event-driven automatons in scala.  
@@ -57,8 +62,8 @@ Designing DDD systems requires a lot of experience, which is really hard to conv
 This library is meant to help with this problem, so it can be both a way to show how those ideas can be mapped to FP, and also probably a handy toolbox acting like a seed to grow your own home grown toolbox.
 
 ## Next
-- [Getting started](tutorials/0_getting_started.md)
-- [Principles](principles/index.md)
-- [FAQ](other/faq.md)
-- [Design goals](about/design_goals.md)
-- [List of modules](other/modules.md)
+- [Getting started](tutorials/getting-started)
+- [Principles](principles/)
+- [FAQ](other/faq)
+- [Design goals](about/design-goals)
+- [List of modules](other/modules)
