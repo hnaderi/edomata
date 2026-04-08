@@ -181,6 +181,8 @@ jobs:
 
       - name: Generate mdoc
         run: 'nix develop .#${{ matrix.java }} -c sbt docs/mdoc'
+        env:
+          PACKAGES_READ_TOKEN: ${{ vars.PACKAGES_READ_TOKEN }}
 
       - name: Build Docusaurus site
         working-directory: website

@@ -120,7 +120,8 @@ lazy val docs = project
     mdocIn := (ThisBuild / baseDirectory).value / "docs",
     mdocOut := (ThisBuild / baseDirectory).value / "website" / "docs",
     mdocVariables := Map(
-      "VERSION" -> version.value
+      "VERSION" -> version.value,
+      "PACKAGES_READ_TOKEN" -> sys.env.getOrElse("PACKAGES_READ_TOKEN", "YOUR_GITHUB_TOKEN")
     )
   )
   .dependsOn(

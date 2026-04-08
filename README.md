@@ -33,22 +33,66 @@ libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.5"
 
 ### GitHub Packages resolver
 
-This fork publishes under `dev.bsg` to GitHub Packages. Add the resolver:
+This fork publishes under `dev.bsg` to GitHub Packages. Add the resolver and credentials:
+
+<details>
+<summary><b>SBT</b></summary>
+
 ```scala
 resolvers += "GitHub Packages - edomata" at
   "https://maven.pkg.github.com/beyond-scale-group/edomata"
+
+credentials += Credentials(
+  "GitHub Package Registry",
+  "maven.pkg.github.com",
+  "_",
+  "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" // public read-only token
+)
+```
+</details>
+
+<details>
+<summary><b>Maven (pom.xml)</b></summary>
+
+Add the repository:
+```xml
+<repositories>
+  <repository>
+    <id>github-edomata</id>
+    <url>https://maven.pkg.github.com/beyond-scale-group/edomata</url>
+  </repository>
+</repositories>
 ```
 
-> **Authentication required**: GitHub Packages Maven registry requires a token even for public repositories.
-> Add credentials to your build:
-> ```scala
-> credentials += Credentials(
->   "GitHub Package Registry",
->   "maven.pkg.github.com",
->   "_",
->   sys.env("GITHUB_TOKEN") // needs read:packages scope
-> )
-> ```
+Add credentials in `~/.m2/settings.xml`:
+```xml
+<servers>
+  <server>
+    <id>github-edomata</id>
+    <username>_</username>
+    <password>ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</password>
+  </server>
+</servers>
+```
+</details>
+
+<details>
+<summary><b>Gradle (build.gradle)</b></summary>
+
+```groovy
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/beyond-scale-group/edomata")
+        credentials {
+            username = "_"
+            password = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" // public read-only token
+        }
+    }
+}
+```
+</details>
+
+> **Note**: GitHub Packages requires authentication even for public repositories. The token above is a public read-only token with only `read:packages` scope.
 
 ## Documentation
 
@@ -64,6 +108,7 @@ resolvers += "GitHub Packages - edomata" at
 | Migrations | [docs/tutorials/migrations.md](docs/tutorials/migrations.md) |
 | Skunk backend | [docs/backends/skunk.md](docs/backends/skunk.md) |
 | Doobie backend | [docs/backends/doobie.md](docs/backends/doobie.md) |
+| Java API | [docs/backends/java-api.md](docs/backends/java-api.md) |
 | Design goals | [docs/about/design-goals.md](docs/about/design-goals.md) |
 | Features | [docs/about/features.md](docs/about/features.md) |
 | Definitions | [docs/principles/definitions.md](docs/principles/definitions.md) |
@@ -90,6 +135,7 @@ Visit the [documentation site](https://beyond-scale-group.github.io/edomata/) fo
 | saas | `"dev.bsg" %% "edomata-saas"` | JVM, JS, Native | Multi-tenant SaaS abstractions |
 | saas-skunk | `"dev.bsg" %% "edomata-saas-skunk"` | JVM, JS, Native | Skunk-based SaaS backend |
 | munit | `"dev.bsg" %% "edomata-munit"` | JVM, JS, Native | MUnit test framework integration |
+| java-api | `"dev.bsg" %% "edomata-java-api"` | JVM only | Java-friendly API (no Scala needed) |
 
 > For Scala.js or Scala Native, use `%%%` instead of `%%`.
 
