@@ -46,7 +46,7 @@ credentials += Credentials(
   "GitHub Package Registry",
   "maven.pkg.github.com",
   "_",
-  "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" // public read-only token
+  "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" // public read-only token
 )
 ```
 </details>
@@ -70,7 +70,7 @@ Add credentials in `~/.m2/settings.xml`:
   <server>
     <id>github-edomata</id>
     <username>_</username>
-    <password>ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</password>
+    <password>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</password>
   </server>
 </servers>
 ```
@@ -85,7 +85,7 @@ repositories {
         url = uri("https://maven.pkg.github.com/beyond-scale-group/edomata")
         credentials {
             username = "_"
-            password = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" // public read-only token
+            password = "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" // public read-only token
         }
     }
 }
