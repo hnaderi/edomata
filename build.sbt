@@ -4,6 +4,9 @@ import sbtcrossproject.CrossProject
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+// Use native git CLI instead of JGit (JGit does not support git worktrees)
+useReadableConsoleGit
+
 lazy val scala3 = "3.3.7"
 
 ThisBuild / scalacOptions ++= Seq(
@@ -88,6 +91,7 @@ lazy val modules = List(
   driverTests,
   e2eTests,
   munitTestkit,
+  javaApi,
   docs,
   unidocs,
   examples,
@@ -305,6 +309,21 @@ lazy val doobieUpickleCodecs = module("doobie-upickle") {
       )
     )
 }
+
+lazy val javaApi = project
+  .in(file("modules/java-api"))
+  .dependsOn(doobieBackend.jvm)
+  .settings(
+    name := "module-java-api",
+    moduleName := "edomata-java-api",
+    description := "Java-friendly API for edomata with Doobie backend",
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "munit" % Versions.MUnit % Test
+    ),
+    Compile / javacOptions ++= Seq("--release", "11"),
+    Test / javacOptions ++= Seq("--release", "11")
+  )
+  .settings(ghpPublishSettings)
 
 lazy val driverTests = module("backend-tests") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)
