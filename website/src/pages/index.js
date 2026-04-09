@@ -141,21 +141,21 @@ function QuickStartSection() {
           <h3>SBT (JVM)</h3>
           <CodeBlock language="scala">
             {`// Core library
-libraryDependencies += "io.github.beyond-scale-group" %% "edomata-core" % "0.12.5"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-core" % "0.12.20"
 
 // With Skunk + Circe PostgreSQL backend (recommended)
-libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "0.12.5"`}
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "0.12.20"`}
           </CodeBlock>
           <h3>Scala.js / Scala Native</h3>
           <CodeBlock language="scala">
-            {`libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "0.12.5"`}
+            {`libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "0.12.20"`}
           </CodeBlock>
           <h3>Maven</h3>
           <CodeBlock language="xml">
             {`<dependency>
   <groupId>io.github.beyond-scale-group</groupId>
   <artifactId>edomata-core_3</artifactId>
-  <version>0.12.5</version>
+  <version>0.12.20</version>
 </dependency>`}
           </CodeBlock>
           <p style={{ textAlign: "center", marginTop: "1.5rem" }}>

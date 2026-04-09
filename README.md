@@ -7,6 +7,7 @@
 
 <a href="https://typelevel.org/cats/"><img src="https://typelevel.org/cats/img/cats-badge.svg" height="40px" align="right" alt="Cats friendly" /></a>
 
+<a href="https://central.sonatype.com/namespace/io.github.beyond-scale-group"><img alt="Maven Central" src="https://img.shields.io/maven-central/v/io.github.beyond-scale-group/edomata-core_3?style=flat-square" /></a>
 <img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/beyond-scale-group/edomata/ci.yml?style=flat-square">
 <img alt="GitHub" src="https://img.shields.io/github/license/beyond-scale-group/edomata?style=flat-square">  
 <img alt="Typelevel Affiliate Project" src="https://img.shields.io/badge/typelevel-affiliate%20project-FFB4B5.svg?style=flat-square">
@@ -20,15 +21,15 @@ Add to your `build.sbt`:
 
 ```scala
 // Core library
-libraryDependencies += "io.github.beyond-scale-group" %% "edomata-core" % "0.12.5"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-core" % "0.12.20"
 
 // With Skunk + Circe PostgreSQL backend (recommended)
-libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "0.12.5"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "0.12.20"
 ```
 
 For **Scala.js** or **Scala Native**, use `%%%`:
 ```scala
-libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "0.12.5"
+libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "0.12.20"
 ```
 
 ## Documentation
