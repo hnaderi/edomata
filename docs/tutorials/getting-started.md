@@ -21,12 +21,12 @@ Traditional applications store data by overwriting the current state. When you u
 ## Add to your build
 
 ```scala
-libraryDependencies += "dev.bsg" %% "edomata-core" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-core" % "@VERSION@"
 ```
 
 or for scala.js
 ```scala
-libraryDependencies += "dev.bsg" %%% "edomata-core" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "@VERSION@"
 ```
 
 ## Layers of abstraction

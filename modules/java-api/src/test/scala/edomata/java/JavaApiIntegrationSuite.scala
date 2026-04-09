@@ -18,8 +18,8 @@ package edomata.java
 
 import munit.FunSuite
 
-/** Runs the Java integration test from MUnit to ensure Java code
-  * compiles and executes correctly within the test harness.
+/** Runs the Java integration test from MUnit to ensure Java code compiles and
+  * executes correctly within the test harness.
   */
 class JavaApiIntegrationSuite extends FunSuite {
   test("Java API integration test - all Java tests pass") {

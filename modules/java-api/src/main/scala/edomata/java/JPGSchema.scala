@@ -32,10 +32,14 @@ object JPGSchema {
   /** Generate DDL for event sourcing tables (journal, outbox, commands,
     * snapshots).
     *
-    * @param namespace the namespace (used as table prefix)
-    * @param eventType PostgreSQL payload type: "json", "jsonb", or "bytea"
-    * @param notificationType PostgreSQL payload type for notifications
-    * @param snapshotType PostgreSQL payload type for snapshots
+    * @param namespace
+    *   the namespace (used as table prefix)
+    * @param eventType
+    *   PostgreSQL payload type: "json", "jsonb", or "bytea"
+    * @param notificationType
+    *   PostgreSQL payload type for notifications
+    * @param snapshotType
+    *   PostgreSQL payload type for snapshots
     */
   def eventsourcing(
       namespace: String,
@@ -52,15 +56,19 @@ object JPGSchema {
       )
       .asJava
 
-  /** Generate DDL for event sourcing tables with default jsonb payload types. */
+  /** Generate DDL for event sourcing tables with default jsonb payload types.
+    */
   def eventsourcing(namespace: String): java.util.List[String] =
     PGSchema.eventsourcing(naming(namespace)).asJava
 
   /** Generate DDL for CQRS tables (states, outbox, commands).
     *
-    * @param namespace the namespace (used as table prefix)
-    * @param stateType PostgreSQL payload type for state
-    * @param notificationType PostgreSQL payload type for notifications
+    * @param namespace
+    *   the namespace (used as table prefix)
+    * @param stateType
+    *   PostgreSQL payload type for state
+    * @param notificationType
+    *   PostgreSQL payload type for notifications
     */
   def cqrs(
       namespace: String,
@@ -75,7 +83,8 @@ object JPGSchema {
   def cqrs(namespace: String): java.util.List[String] =
     PGSchema.cqrs(naming(namespace)).asJava
 
-  /** Generate DDL using schema naming strategy (creates a PostgreSQL schema). */
+  /** Generate DDL using schema naming strategy (creates a PostgreSQL schema).
+    */
   def eventsourcingWithSchema(
       namespace: String
   ): java.util.List[String] =

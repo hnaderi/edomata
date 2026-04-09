@@ -11,70 +11,29 @@ The `edomata-java-api` module provides a Java-friendly facade over Edomata's Sca
 
 ### Maven
 
-Add the repository and dependency to your `pom.xml`:
-
 ```xml
-<repositories>
-  <repository>
-    <id>github-edomata</id>
-    <url>https://maven.pkg.github.com/beyond-scale-group/edomata</url>
-  </repository>
-</repositories>
-
 <dependencies>
   <dependency>
-    <groupId>dev.bsg</groupId>
+    <groupId>io.github.beyond-scale-group</groupId>
     <artifactId>edomata-java-api_3</artifactId>
     <version>@VERSION@</version>
   </dependency>
 </dependencies>
 ```
 
-Add credentials to `~/.m2/settings.xml` (GitHub Packages requires authentication even for public repos):
-
-```xml
-<servers>
-  <server>
-    <id>github-edomata</id>
-    <username>_</username>
-    <password>@PACKAGES_READ_TOKEN@</password>
-  </server>
-</servers>
-```
-
 ### Gradle
 
 ```groovy
-repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/beyond-scale-group/edomata")
-        credentials {
-            username = "_"
-            password = "@PACKAGES_READ_TOKEN@"
-        }
-    }
-}
-
 dependencies {
-    implementation 'dev.bsg:edomata-java-api_3:@VERSION@'
+    implementation 'io.github.beyond-scale-group:edomata-java-api_3:@VERSION@'
 }
 ```
 
 ### SBT (mixed Scala/Java projects)
 
 ```scala
-resolvers += "GitHub Packages - edomata" at
-  "https://maven.pkg.github.com/beyond-scale-group/edomata"
-
-credentials += Credentials(
-  "GitHub Package Registry", "maven.pkg.github.com",
-  "_", "@PACKAGES_READ_TOKEN@"
-)
-
-libraryDependencies += "dev.bsg" %% "edomata-java-api" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-java-api" % "@VERSION@"
 ```
-
-> The token above is a **public read-only** token with only `read:packages` scope. No additional setup is needed.
 
 The module depends on the Doobie backend. You do **not** need to add separate Doobie or Circe dependencies.
 

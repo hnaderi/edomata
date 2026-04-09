@@ -22,7 +22,9 @@ class JAppResultSuite extends FunSuite {
 
   test("decide creates result with decision and no notifications") {
     val result =
-      JAppResult.decide[String, String, String](JDecision.accept[String, String]("e1"))
+      JAppResult.decide[String, String, String](
+        JDecision.accept[String, String]("e1")
+      )
     assert(result.decision.isAccepted)
     assertEquals(result.notifications.size(), 0)
   }

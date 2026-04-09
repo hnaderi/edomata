@@ -8,18 +8,18 @@ title: "Skunk"
 ## Install 
 
 ```scala
-libraryDependencies += "dev.bsg" %% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk" % "@VERSION@"
 ```
 
 or for integrated modules:
 ```scala
-libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "@VERSION@"
-libraryDependencies += "dev.bsg" %% "edomata-skunk-upickle" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-upickle" % "@VERSION@"
 ```
 
 or for scala.js
 ```scala
-libraryDependencies += "dev.bsg" %%% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-skunk" % "@VERSION@"
 ```
 
 ## Imports

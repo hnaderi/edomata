@@ -16,7 +16,7 @@ Authorization is **pluggable**: you define your own auth type (JWT claims, API k
 Add the SaaS module to your project. Do **not** add `edomata-core` directly -- it comes transitively:
 
 ```scala
-libraryDependencies += "dev.bsg" %% "edomata-saas" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-saas" % "@VERSION@"
 ```
 
 Import everything from `edomata.saas`:
@@ -480,7 +480,7 @@ For maximum enforcement, your external project should depend **only** on `edomat
 
 ```scala
 // build.sbt
-libraryDependencies += "dev.bsg" %% "edomata-saas" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-saas" % "@VERSION@"
 // Do NOT add edomata-core -- use edomata.saas.* imports only
 ```
 

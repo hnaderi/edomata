@@ -8,13 +8,13 @@ title: "Doobie"
 ## Install 
 
 ```scala
-libraryDependencies += "dev.bsg" %% "edomata-doobie" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie" % "@VERSION@"
 ```
 
 or for integrated modules:
 ```scala
-libraryDependencies += "dev.bsg" %% "edomata-doobie-circe" % "@VERSION@"
-libraryDependencies += "dev.bsg" %% "edomata-doobie-upickle" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie-circe" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie-upickle" % "@VERSION@"
 ```
 
 Note that doobie is built on top of JDBC which can't be used in javascript obviously, and this packages are available for JVM only.

@@ -39,13 +39,13 @@ sealed abstract class JEither[+L, +R] {
 
   def getRight: R = this match {
     case JEither.Right(value) => value
-    case JEither.Left(_) =>
+    case JEither.Left(_)      =>
       throw new java.util.NoSuchElementException("JEither.getRight on Left")
   }
 
   def getLeft: L = this match {
     case JEither.Left(value) => value
-    case JEither.Right(_) =>
+    case JEither.Right(_)    =>
       throw new java.util.NoSuchElementException("JEither.getLeft on Right")
   }
 }

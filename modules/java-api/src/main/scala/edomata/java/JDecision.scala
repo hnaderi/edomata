@@ -58,7 +58,10 @@ sealed abstract class JDecision[+R, +E, +A] {
         f.apply(result)
     }
 
-  def toEither: JEither[java.util.List[? <: R @scala.annotation.unchecked.uncheckedVariance], A] =
+  def toEither: JEither[
+    java.util.List[? <: R @scala.annotation.unchecked.uncheckedVariance],
+    A
+  ] =
     this match {
       case JDecision.Accepted(_, result) => JEither.Right(result)
       case JDecision.Rejected(reasons)   => JEither.Left(reasons)
@@ -68,7 +71,9 @@ sealed abstract class JDecision[+R, +E, +A] {
 
 object JDecision {
   final case class Accepted[+E, +A](
-      events: java.util.List[? <: E @scala.annotation.unchecked.uncheckedVariance],
+      events: java.util.List[
+        ? <: E @scala.annotation.unchecked.uncheckedVariance
+      ],
       result: A
   ) extends JDecision[Nothing, E, A] {
     def isAccepted: Boolean = true
@@ -77,7 +82,9 @@ object JDecision {
   }
 
   final case class Rejected[+R](
-      reasons: java.util.List[? <: R @scala.annotation.unchecked.uncheckedVariance]
+      reasons: java.util.List[
+        ? <: R @scala.annotation.unchecked.uncheckedVariance
+      ]
   ) extends JDecision[R, Nothing, Nothing] {
     def isAccepted: Boolean = false
     def isRejected: Boolean = true
@@ -100,7 +107,11 @@ object JDecision {
   }
 
   @scala.annotation.varargs
-  def acceptReturn[R, E, A](result: A, event: E, events: E*): JDecision[R, E, A] = {
+  def acceptReturn[R, E, A](
+      result: A,
+      event: E,
+      events: E*
+  ): JDecision[R, E, A] = {
     val list = new java.util.ArrayList[E](1 + events.size)
     list.add(event)
     events.foreach(list.add)

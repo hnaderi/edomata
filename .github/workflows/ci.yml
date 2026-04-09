@@ -1,5 +1,5 @@
 # Forked from the upstream sbt-github-actions generated workflow.
-# Publish is handled separately by publish-ghp.yml (GitHub Packages).
+# Publish is handled separately by publish.yml (Maven Central).
 
 name: Continuous Integration
 
@@ -181,8 +181,6 @@ jobs:
 
       - name: Generate mdoc
         run: 'nix develop .#${{ matrix.java }} -c sbt docs/mdoc'
-        env:
-          PACKAGES_READ_TOKEN: ${{ vars.PACKAGES_READ_TOKEN }}
 
       - name: Build Docusaurus site
         working-directory: website

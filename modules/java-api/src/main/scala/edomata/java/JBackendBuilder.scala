@@ -110,7 +110,8 @@ final class JBackendBuilder[S, E, R, N] private (
     *
     * The returned JBackend implements AutoCloseable — use try-with-resources.
     *
-    * @throws IllegalStateException if required configuration is missing
+    * @throws IllegalStateException
+    *   if required configuration is missing
     */
   def build(runtime: EdomataRuntime): JBackend[S, E, R, N] = {
     val naming = namingOpt.getOrElse(
@@ -130,10 +131,12 @@ final class JBackendBuilder[S, E, R, N] private (
     given BackendCodec[E] = eventCodec
     given BackendCodec[N] = notifCodec
 
-    val transactor = Transactor.fromDataSource[IO](ds, scala.concurrent.ExecutionContext.global)
+    val transactor = Transactor
+      .fromDataSource[IO](ds, scala.concurrent.ExecutionContext.global)
     val domain = Domain[Nothing, S, E, R, N]()
 
-    val resource: Resource[IO, edomata.backend.eventsourcing.Backend[IO, S, E, R, N]] =
+    val resource
+        : Resource[IO, edomata.backend.eventsourcing.Backend[IO, S, E, R, N]] =
       Resource
         .eval(DoobieDriver.from[IO](naming, transactor, skipSetup))
         .flatMap { driver =>

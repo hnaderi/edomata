@@ -58,7 +58,7 @@ private[java] object Converters {
     case JDecision.Rejected(reasons) =>
       toNonEmptyChain(reasons) match {
         case Some(nec) => Decision.Rejected(nec)
-        case None =>
+        case None      =>
           throw new IllegalArgumentException(
             "Rejected must have at least one reason"
           )

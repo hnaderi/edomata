@@ -141,21 +141,22 @@ function QuickStartSection() {
           <h3>SBT (JVM)</h3>
           <CodeBlock language="scala">
             {`// Core library
-libraryDependencies += "dev.bsg" %% "edomata-core" % "0.12.5"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-core" % "0.12.5"
 
 // With Skunk + Circe PostgreSQL backend (recommended)
-libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.5"`}
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "0.12.5"`}
           </CodeBlock>
           <h3>Scala.js / Scala Native</h3>
           <CodeBlock language="scala">
-            {`libraryDependencies += "dev.bsg" %%% "edomata-core" % "0.12.5"`}
+            {`libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "0.12.5"`}
           </CodeBlock>
-          <h3>GitHub Packages (BSG fork)</h3>
-          <CodeBlock language="scala">
-            {`resolvers += "GitHub Packages - edomata" at
-  "https://maven.pkg.github.com/beyond-scale-group/edomata"
-
-libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "0.12.5"`}
+          <h3>Maven</h3>
+          <CodeBlock language="xml">
+            {`<dependency>
+  <groupId>io.github.beyond-scale-group</groupId>
+  <artifactId>edomata-core_3</artifactId>
+  <version>0.12.5</version>
+</dependency>`}
           </CodeBlock>
           <p style={{ textAlign: "center", marginTop: "1.5rem" }}>
             <Link className="button button--primary button--md" to="/docs/other/modules">

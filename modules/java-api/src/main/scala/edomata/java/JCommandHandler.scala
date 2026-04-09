@@ -30,14 +30,22 @@ final class JRequestContext[C, S](
 
 /** Java-friendly command handler wrapping a function from context to result.
   *
-  * @tparam C command type
-  * @tparam S state type
-  * @tparam E event type
-  * @tparam R rejection type
-  * @tparam N notification type
+  * @tparam C
+  *   command type
+  * @tparam S
+  *   state type
+  * @tparam E
+  *   event type
+  * @tparam R
+  *   rejection type
+  * @tparam N
+  *   notification type
   */
 final class JCommandHandler[C, S, E, R, N] private (
-    private[java] val handler: JFunction[JRequestContext[C, S], JAppResult[R, E, N]]
+    private[java] val handler: JFunction[
+      JRequestContext[C, S],
+      JAppResult[R, E, N]
+    ]
 ) {
   def apply(ctx: JRequestContext[C, S]): JAppResult[R, E, N] =
     handler.apply(ctx)

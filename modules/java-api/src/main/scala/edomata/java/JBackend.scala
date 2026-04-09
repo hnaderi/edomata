@@ -30,10 +30,14 @@ import scala.jdk.CollectionConverters.*
   *
   * Implements AutoCloseable — use with try-with-resources.
   *
-  * @tparam S state type
-  * @tparam E event type
-  * @tparam R rejection type
-  * @tparam N notification type
+  * @tparam S
+  *   state type
+  * @tparam E
+  *   event type
+  * @tparam R
+  *   rejection type
+  * @tparam N
+  *   notification type
   */
 final class JBackend[S, E, R, N] private[java] (
     private val backend: Backend[IO, S, E, R, N],
@@ -44,7 +48,8 @@ final class JBackend[S, E, R, N] private[java] (
 
   /** Handle a command using the given handler.
     *
-    * @return a future that completes with either rejection reasons or success
+    * @return
+    *   a future that completes with either rejection reasons or success
     */
   def handle[C](
       handler: JCommandHandler[C, S, E, R, N],

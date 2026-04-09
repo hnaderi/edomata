@@ -25,10 +25,19 @@ class JPGSchemaSuite extends FunSuite {
     assert(ddl.size() > 0)
     // Should contain journal, outbox, commands, snapshots tables
     val allDDL = ddl.toString
-    assert(allDDL.contains("myapp_journal"), s"Missing journal table in: $allDDL")
+    assert(
+      allDDL.contains("myapp_journal"),
+      s"Missing journal table in: $allDDL"
+    )
     assert(allDDL.contains("myapp_outbox"), s"Missing outbox table in: $allDDL")
-    assert(allDDL.contains("myapp_commands"), s"Missing commands table in: $allDDL")
-    assert(allDDL.contains("myapp_snapshots"), s"Missing snapshots table in: $allDDL")
+    assert(
+      allDDL.contains("myapp_commands"),
+      s"Missing commands table in: $allDDL"
+    )
+    assert(
+      allDDL.contains("myapp_snapshots"),
+      s"Missing snapshots table in: $allDDL"
+    )
   }
 
   test("eventsourcing with custom types") {
@@ -44,14 +53,23 @@ class JPGSchemaSuite extends FunSuite {
     val allDDL = ddl.toString
     assert(allDDL.contains("myapp_states"), s"Missing states table in: $allDDL")
     assert(allDDL.contains("myapp_outbox"), s"Missing outbox table in: $allDDL")
-    assert(allDDL.contains("myapp_commands"), s"Missing commands table in: $allDDL")
+    assert(
+      allDDL.contains("myapp_commands"),
+      s"Missing commands table in: $allDDL"
+    )
   }
 
   test("eventsourcingWithSchema generates schema DDL") {
     val ddl = JPGSchema.eventsourcingWithSchema("auth")
     val allDDL = ddl.toString
-    assert(allDDL.contains("CREATE SCHEMA"), s"Missing CREATE SCHEMA in: $allDDL")
-    assert(allDDL.contains(""""auth".journal"""), s"Missing schema-qualified table in: $allDDL")
+    assert(
+      allDDL.contains("CREATE SCHEMA"),
+      s"Missing CREATE SCHEMA in: $allDDL"
+    )
+    assert(
+      allDDL.contains(""""auth".journal"""),
+      s"Missing schema-qualified table in: $allDDL"
+    )
   }
 
   test("cqrsWithSchema generates schema DDL") {

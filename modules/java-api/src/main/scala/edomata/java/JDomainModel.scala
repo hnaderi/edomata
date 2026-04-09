@@ -30,7 +30,10 @@ abstract class JDomainModel[State, Event, Rejection] {
   /** Transition function: given an event and the current state, produce either
     * the new state or a list of rejections.
     */
-  def transition(event: Event, state: State): JEither[java.util.List[Rejection], State]
+  def transition(
+      event: Event,
+      state: State
+  ): JEither[java.util.List[Rejection], State]
 
   private[java] lazy val toModelTC: ModelTC[State, Event, Rejection] = {
     val self = this
@@ -64,7 +67,11 @@ abstract class JDomainModel[State, Event, Rejection] {
 object JDomainModel {
   def create[State, Event, Rejection](
       initialState: State,
-      transitionFn: BiFunction[Event, State, JEither[java.util.List[Rejection], State]]
+      transitionFn: BiFunction[
+        Event,
+        State,
+        JEither[java.util.List[Rejection], State]
+      ]
   ): JDomainModel[State, Event, Rejection] =
     new JDomainModel[State, Event, Rejection] {
       def initial: State = initialState

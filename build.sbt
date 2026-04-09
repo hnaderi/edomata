@@ -9,6 +9,11 @@ useReadableConsoleGit
 
 lazy val scala3 = "3.3.7"
 
+val javaMajorVersion =
+  scala.util
+    .Try(System.getProperty("java.specification.version").toDouble.toInt)
+    .getOrElse(8)
+
 ThisBuild / scalacOptions ++= Seq(
   "-Wconf:msg=unused:s"
 )
@@ -20,10 +25,10 @@ inThisBuild(
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
-    organization := "dev.bsg",
+    organization := "io.github.beyond-scale-group",
     organizationName := "Beyond Scale Group",
     startYear := Some(2021),
-    tlCiReleaseBranches := Seq(),
+    tlCiReleaseBranches := Seq("main"),
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -32,35 +37,9 @@ inThisBuild(
         email = "mail@hnaderi.dev",
         url = url("https://hnaderi.dev")
       )
-    ),
-    credentials ++= {
-      sys.env
-        .get("GITHUB_TOKEN")
-        .map { token =>
-          Credentials(
-            "GitHub Package Registry",
-            "maven.pkg.github.com",
-            "_",
-            token
-          )
-        }
-        .toSeq
-    }
+    )
   )
 )
-
-// GitHub Packages publishTo override — must be at project scope to beat
-// sbt-typelevel's TypelevelSonatypePlugin which sets publishTo per-project.
-lazy val ghpPublishSettings: Seq[Setting[_]] =
-  if (sys.env.contains("PUBLISH_TO_GITHUB"))
-    Seq(
-      publishTo := Some(
-        "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
-      ),
-      // Must be at project scope — sbt-gpg sets gpgWarnOnFailure := false per-project
-      gpgWarnOnFailure := true
-    )
-  else Seq.empty
 
 def module(mname: String): CrossProject => CrossProject =
   _.in(file(s"modules/$mname"))
@@ -72,7 +51,6 @@ def module(mname: String): CrossProject => CrossProject =
       ),
       moduleName := s"edomata-$mname"
     )
-    .settings(ghpPublishSettings)
 
 lazy val modules = List(
   core,
@@ -121,7 +99,7 @@ lazy val docs = project
     mdocOut := (ThisBuild / baseDirectory).value / "website" / "docs",
     mdocVariables := Map(
       "VERSION" -> version.value,
-      "PACKAGES_READ_TOKEN" -> sys.env.getOrElse("PACKAGES_READ_TOKEN", "YOUR_GITHUB_TOKEN")
+      "ORG" -> organization.value
     )
   )
   .dependsOn(
@@ -321,10 +299,12 @@ lazy val javaApi = project
     libraryDependencies ++= Seq(
       "org.scalameta" %% "munit" % Versions.MUnit % Test
     ),
-    Compile / javacOptions ++= Seq("--release", "11"),
-    Test / javacOptions ++= Seq("--release", "11")
+    Compile / javacOptions ++= (if (javaMajorVersion >= 9)
+                                  Seq("--release", "11")
+                                else Nil),
+    Test / javacOptions ++= (if (javaMajorVersion >= 9) Seq("--release", "11")
+                             else Nil)
   )
-  .settings(ghpPublishSettings)
 
 lazy val driverTests = module("backend-tests") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)

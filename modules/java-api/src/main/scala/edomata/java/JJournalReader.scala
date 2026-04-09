@@ -29,7 +29,9 @@ final class JJournalReader[E] private[java] (
 ) {
 
   /** Read all events for a given stream (aggregate). */
-  def readStream(streamId: String): CompletableFuture[java.util.List[JEventMessage[E]]] =
+  def readStream(
+      streamId: String
+  ): CompletableFuture[java.util.List[JEventMessage[E]]] =
     runtime.unsafeRunAsync(
       underlying
         .readStream(streamId)

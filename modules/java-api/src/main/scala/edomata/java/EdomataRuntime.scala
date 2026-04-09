@@ -33,7 +33,9 @@ final class EdomataRuntime private (
   def close(): Unit =
     if (ownsRuntime) runtime.shutdown()
 
-  private[java] def unsafeRunAsync[A](io: IO[A]): java.util.concurrent.CompletableFuture[A] =
+  private[java] def unsafeRunAsync[A](
+      io: IO[A]
+  ): java.util.concurrent.CompletableFuture[A] =
     io.unsafeToCompletableFuture()(using runtime)
 }
 
