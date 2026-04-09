@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
-    name: Publish (${{ matrix.project }})
+  test:
+    name: Test (${{ matrix.project }})
     strategy:
       matrix:
         os: [ubuntu-22.04]
@@ -30,11 +30,6 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
 
-      - name: Import PGP key
-        run: echo "$PGP_SECRET" | base64 -d | gpg --import --batch --yes
-        env:
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-
       - name: Start up Postgres
         run: docker compose up -d
 
@@ -45,10 +40,31 @@ jobs:
           '++ 3'
           test
 
+  publish:
+    name: Publish all platforms
+    needs: [test]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Import PGP key
+        run: echo "$PGP_SECRET" | base64 -d | gpg --import --batch --yes
+        env:
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+
       - name: Publish to Maven Central
         run: >-
-          nix develop .#${{ matrix.java }} -c sbt
-          'project ${{ matrix.project }}'
+          nix develop .#temurin@8 -c sbt
           '++ 3'
           tlRelease
         env:
