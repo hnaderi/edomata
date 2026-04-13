@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hossein Naderi
+ * Copyright 2021 Beyond Scale Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ private final class SkunkRepository[F[_], S, E, R, N](
           .prepare(journal.append(evs))
           .flatMap(_.execute(evs))
           .assertInserted(evs.size)
-        _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { n =>
+        _ <- NonEmptyChain.fromChain(notifications).fold(F.unit) { _ =>
           val ns = notifications.toList
             .map((_, ctx.command.address, now, ctx.command.metadata))
           s.prepare(outbox.insertAll(ns))

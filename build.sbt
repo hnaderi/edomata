@@ -4,19 +4,26 @@ import sbtcrossproject.CrossProject
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-lazy val scala3 = "3.3.6"
+// Use native git CLI instead of JGit (JGit does not support git worktrees)
+useReadableConsoleGit
+
+lazy val scala3 = "3.3.7"
+
+ThisBuild / scalacOptions ++= Seq(
+  "-Wconf:msg=unused:s"
+)
 
 inThisBuild(
   List(
     tlBaseVersion := "0.12",
+    tlMimaPreviousVersions := Set.empty,
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
-    organization := "dev.hnaderi",
-    organizationName := "Hossein Naderi",
+    organization := "dev.bsg",
+    organizationName := "Beyond Scale Group",
     startYear := Some(2021),
-    tlCiReleaseBranches := Seq("main"),
-    tlSitePublishBranch := Some("main"),
+    tlCiReleaseBranches := Seq(),
     licenses := Seq(License.Apache2),
     developers := List(
       Developer(
@@ -25,9 +32,35 @@ inThisBuild(
         email = "mail@hnaderi.dev",
         url = url("https://hnaderi.dev")
       )
-    )
+    ),
+    credentials ++= {
+      sys.env
+        .get("GITHUB_TOKEN")
+        .map { token =>
+          Credentials(
+            "GitHub Package Registry",
+            "maven.pkg.github.com",
+            "_",
+            token
+          )
+        }
+        .toSeq
+    }
   )
 )
+
+// GitHub Packages publishTo override — must be at project scope to beat
+// sbt-typelevel's TypelevelSonatypePlugin which sets publishTo per-project.
+lazy val ghpPublishSettings: Seq[Setting[_]] =
+  if (sys.env.contains("PUBLISH_TO_GITHUB"))
+    Seq(
+      publishTo := Some(
+        "GitHub Packages" at "https://maven.pkg.github.com/beyond-scale-group/edomata"
+      ),
+      // Must be at project scope — sbt-gpg sets gpgWarnOnFailure := false per-project
+      gpgWarnOnFailure := true
+    )
+  else Seq.empty
 
 def module(mname: String): CrossProject => CrossProject =
   _.in(file(s"modules/$mname"))
@@ -39,10 +72,13 @@ def module(mname: String): CrossProject => CrossProject =
       ),
       moduleName := s"edomata-$mname"
     )
+    .settings(ghpPublishSettings)
 
 lazy val modules = List(
   core,
   backend,
+  saas,
+  saasSkunk,
   postgres,
   skunkBackend,
   skunkCirceCodecs,
@@ -55,6 +91,7 @@ lazy val modules = List(
   driverTests,
   e2eTests,
   munitTestkit,
+  javaApi,
   docs,
   unidocs,
   examples,
@@ -77,8 +114,16 @@ lazy val mdocPlantuml = project
 
 lazy val docs = project
   .in(file("site"))
-  .enablePlugins(EdomataSitePlugin)
+  .enablePlugins(MdocPlugin, NoPublishPlugin)
   .disablePlugins(TypelevelSettingsPlugin)
+  .settings(
+    mdocIn := (ThisBuild / baseDirectory).value / "docs",
+    mdocOut := (ThisBuild / baseDirectory).value / "website" / "docs",
+    mdocVariables := Map(
+      "VERSION" -> version.value,
+      "PACKAGES_READ_TOKEN" -> sys.env.getOrElse("PACKAGES_READ_TOKEN", "YOUR_GITHUB_TOKEN")
+    )
+  )
   .dependsOn(
     core.jvm,
     postgres.jvm,
@@ -87,7 +132,7 @@ lazy val docs = project
 
 lazy val unidocs = project
   .in(file("unidocs"))
-  .enablePlugins(TypelevelUnidocPlugin)
+  .enablePlugins(TypelevelUnidocPlugin, NoPublishPlugin)
   .settings(
     name := "edomata-docs",
     description := "unified docs for edomata",
@@ -131,6 +176,24 @@ lazy val backend = module("backend") {
         "org.typelevel" %%% "cats-effect-testkit" % Versions.catsEffect % Test,
         "co.fs2" %%% "fs2-core" % Versions.fs2
       )
+    )
+}
+
+lazy val saas = module("saas") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(core, backend, postgres)
+    .settings(
+      description := "Multi-tenant SaaS CRUD abstractions for edomata"
+    )
+}
+
+lazy val saasSkunk = module("saas-skunk") {
+  crossProject(JVMPlatform, JSPlatform, NativePlatform)
+    .crossType(CrossType.Pure)
+    .dependsOn(saas, skunkBackend)
+    .settings(
+      description := "SaaS-aware Skunk backend for edomata"
     )
 }
 
@@ -248,6 +311,21 @@ lazy val doobieUpickleCodecs = module("doobie-upickle") {
     )
 }
 
+lazy val javaApi = project
+  .in(file("modules/java-api"))
+  .dependsOn(doobieBackend.jvm)
+  .settings(
+    name := "module-java-api",
+    moduleName := "edomata-java-api",
+    description := "Java-friendly API for edomata with Doobie backend",
+    libraryDependencies ++= Seq(
+      "org.scalameta" %% "munit" % Versions.MUnit % Test
+    ),
+    Compile / javacOptions ++= Seq("--release", "11"),
+    Test / javacOptions ++= Seq("--release", "11")
+  )
+  .settings(ghpPublishSettings)
+
 lazy val driverTests = module("backend-tests") {
   crossProject(JVMPlatform, JSPlatform, NativePlatform)
     .crossType(CrossType.Full)
@@ -307,6 +385,8 @@ lazy val examples =
   crossProject(JVMPlatform, JSPlatform)
     .crossType(CrossType.Pure)
     .dependsOn(
+      saas,
+      saasSkunk,
       skunkBackend,
       skunkCirceCodecs,
       skunkUpickleCodecs

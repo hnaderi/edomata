@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hossein Naderi
+ * Copyright 2021 Beyond Scale Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ class StomatonConstructorSuite extends FunSuite {
     val a: App[Int] = Stomaton.modifyS(i => Right(i + 2))
     assertEquals(a.run(10, 0), Some(ResponseE(Right((2, 2)))))
 
-    val b: App[Int] = Stomaton.modifyS(i => "".leftNec)
+    val b: App[Int] = Stomaton.modifyS(_ => "".leftNec)
     assertEquals(b.run(10, 0), Some(ResponseE(Left(NonEmptyChain("")))))
   }
 

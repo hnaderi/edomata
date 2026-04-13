@@ -3,14 +3,13 @@ val LTSJava = JavaSpec.temurin("17")
 
 inThisBuild(
   List(
-    tlSiteJavaVersion := LTSJava,
     githubWorkflowJavaVersions := Seq(PrimaryJava, LTSJava),
     githubWorkflowBuildPreamble ++= dockerComposeUp,
     githubWorkflowJobSetup ~= {
       _.filterNot(_.name.exists(_.matches("(Download|Setup) Java .+")))
     },
     githubWorkflowJobSetup += WorkflowStep.Use(
-      UseRef.Public("cachix", "install-nix-action", "v17"),
+      UseRef.Public("cachix", "install-nix-action", "v31"),
       name = Some("Install Nix")
     ),
     githubWorkflowSbtCommand := "nix develop .#${{ matrix.java }} -c sbt",

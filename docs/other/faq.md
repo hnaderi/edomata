@@ -1,3 +1,8 @@
+---
+sidebar_position: 2
+title: "FAQ"
+---
+
 # FAQ
 
 ## Should I use it?
@@ -15,7 +20,7 @@ While this library is designed to be as general as possible, but ideas and commu
 If you are familiar, then Welcome! :)
 
 ## Why yet another lib?
-I discussed it in [rationale](../introduction.md#rationale).
+I discussed it in [rationale](../introduction#rationale).
 
 ## Can I use a different backend?
 Absolutely! backends are just simple interpreters for you programs, you can implement them as easily as creating a function that takes an app and returns an effect, as simple as that.  

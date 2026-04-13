@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hossein Naderi
+ * Copyright 2021 Beyond Scale Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import cats.effect.kernel.Resource
 import cats.implicits.*
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
+import edomata.backend.PGNaming
 import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
 
 final class DoobieCQRSDriver[F[_]: Async] private (
-    namespace: PGNamespace,
-    pool: Transactor[F]
+    naming: PGNaming,
+    pool: Transactor[F],
+    autoSetup: Boolean
 ) extends StorageDriver[F, BackendCodec, DoobieHandler] {
 
   override def build[S, N, R](handler: DoobieHandler[N])(using
@@ -35,14 +37,16 @@ final class DoobieCQRSDriver[F[_]: Async] private (
       state: BackendCodec[S],
       notifs: BackendCodec[N]
   ): Resource[F, Storage[F, S, N, R]] = {
-    val sQ = Queries.State(namespace, state)
-    val nQ = Queries.Outbox(namespace, notifs)
-    val cQ = Queries.Commands(namespace)
+    val sQ = Queries.State(naming, state)
+    val nQ = Queries.Outbox(naming, notifs)
+    val cQ = Queries.Commands(naming)
 
     def setup =
-      (sQ.setup.run >> nQ.setup.run >> cQ.setup.run)
-        .as((sQ, nQ, cQ))
-        .transact(pool)
+      if autoSetup then
+        (sQ.setup.run >> nQ.setup.run >> cQ.setup.run)
+          .as((sQ, nQ, cQ))
+          .transact(pool)
+      else Async[F].pure((sQ, nQ, cQ))
 
     Resource.eval {
       for {
@@ -72,10 +76,16 @@ object DoobieCQRSDriver {
   def from[F[_]: Async](
       namespace: PGNamespace,
       pool: Transactor[F]
+  ): F[DoobieCQRSDriver[F]] = from(PGNaming.schema(namespace), pool)
+
+  def from[F[_]: Async](
+      naming: PGNaming,
+      pool: Transactor[F],
+      skipSetup: Boolean = false
   ): F[DoobieCQRSDriver[F]] =
-    Queries
-      .setupSchema(namespace)
-      .run
-      .transact(pool)
-      .as(new DoobieCQRSDriver(namespace, pool))
+    val setup: F[Unit] =
+      if !skipSetup && naming.needsSchemaSetup then
+        Queries.setupSchema(naming.namespace).run.transact(pool).void
+      else Async[F].unit
+    setup.as(new DoobieCQRSDriver(naming, pool, autoSetup = !skipSetup))
 }
