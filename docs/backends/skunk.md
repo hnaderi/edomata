@@ -1,20 +1,25 @@
+---
+sidebar_position: 1
+title: "Skunk"
+---
+
 # Skunk
 
 ## Install 
 
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-skunk" % "@VERSION@"
 ```
 
 or for integrated modules:
 ```scala
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk-circe" % "@VERSION@"
-libraryDependencies += "dev.hnaderi" %% "edomata-skunk-upickle" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-skunk-circe" % "@VERSION@"
+libraryDependencies += "dev.bsg" %% "edomata-skunk-upickle" % "@VERSION@"
 ```
 
 or for scala.js
 ```scala
-libraryDependencies += "dev.hnaderi" %%% "edomata-skunk" % "@VERSION@"
+libraryDependencies += "dev.bsg" %%% "edomata-skunk" % "@VERSION@"
 ```
 
 ## Imports
@@ -74,3 +79,76 @@ val application = buildBackend.use { backend =>
 1. use your domain as described in previous chapter. 
 2. `domainname` is used as schema name in postgres.
 3. feel free to navigate available options in backend builder.
+
+## Table prefix mode
+
+By default, each aggregate gets its own PostgreSQL schema (e.g. `"domainname".journal`).
+If you prefer to keep all tables in a single schema (e.g. when using Flyway migrations), you can use prefix-based naming instead:
+
+```scala
+import edomata.backend.PGNamespace
+
+val buildBackend = Backend
+  .builder(AccountService)
+  .use(SkunkDriver.from(PGNamespace.prefixed("domainname"), pool))
+  .inMemSnapshot(200)
+  .build
+```
+
+This creates tables named `domainname_journal`, `domainname_outbox`, etc. in the current schema, and skips the `CREATE SCHEMA` statement.
+
+You can also use `PGNaming` directly for more control:
+
+```scala
+import edomata.backend.PGNaming
+
+// Schema mode (default behavior)
+SkunkDriver.from(PGNaming.schema("domainname"), pool)
+
+// Prefix mode
+SkunkDriver.from(PGNaming.prefixed("domainname"), pool)
+```
+
+## Using with Flyway
+
+If you manage your database schema with Flyway (or another migration tool), you can extract the DDL and disable automatic table creation:
+
+### 1. Generate migration SQL
+
+Use `PGSchema` to generate DDL statements for your migration files:
+
+```scala
+import edomata.backend.{PGNaming, PGSchema}
+
+// For event sourcing
+val ddl = PGSchema.eventsourcing(
+  PGNaming.prefixed("accounts"),
+  eventType = "jsonb",
+  notificationType = "jsonb",
+  snapshotType = "jsonb"
+)
+ddl.foreach(println)
+
+// For CQRS
+val cqrsDdl = PGSchema.cqrs(
+  PGNaming.prefixed("accounts"),
+  stateType = "jsonb",
+  notificationType = "jsonb"
+)
+```
+
+Copy the output into a Flyway migration file (e.g. `V1__create_accounts_tables.sql`).
+
+### 2. Disable automatic setup
+
+Pass `skipSetup = true` to prevent the driver from executing any DDL:
+
+```scala
+val buildBackend = Backend
+  .builder(AccountService)
+  .use(SkunkDriver.from(PGNaming.prefixed("accounts"), pool, skipSetup = true))
+  .inMemSnapshot(200)
+  .build
+```
+
+This ensures Flyway has full control over your database schema.

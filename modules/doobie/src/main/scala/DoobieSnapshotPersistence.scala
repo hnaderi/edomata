@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hossein Naderi
+ * Copyright 2021 Beyond Scale Group
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import _root_.doobie.Transactor
 import _root_.doobie.implicits.*
 import cats.effect.Concurrent
 import cats.implicits.*
-import edomata.backend.PGNamespace
+import edomata.backend.PGNaming
 import edomata.backend.StreamId
 import edomata.backend.eventsourcing.*
 import fs2.Chunk
@@ -38,8 +38,12 @@ private final class DoobieSnapshotPersistence[F[_]: Concurrent, S](
 private object DoobieSnapshotPersistence {
   def apply[F[_]: Concurrent, S](
       pool: Transactor[F],
-      namespace: PGNamespace
+      naming: PGNaming,
+      autoSetup: Boolean = true
   )(using codec: BackendCodec[S]): F[DoobieSnapshotPersistence[F, S]] =
-    val q = Queries.Snapshot[S](namespace, codec)
-    q.setup.run.transact(pool).as(new DoobieSnapshotPersistence(pool, q))
+    val q = Queries.Snapshot[S](naming, codec)
+    val setup =
+      if autoSetup then q.setup.run.transact(pool).void
+      else Concurrent[F].unit
+    setup.as(new DoobieSnapshotPersistence(pool, q))
 }

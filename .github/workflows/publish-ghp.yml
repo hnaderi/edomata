@@ -1,0 +1,54 @@
+name: Publish to GitHub Packages
+
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: publish-ghp
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish (${{ matrix.project }})
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: [temurin@8]
+        project: [rootJVM, rootJS, rootNative]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v17
+
+      - name: Start up Postgres
+        run: docker compose up -d
+
+      - name: Build and test
+        run: >-
+          nix develop .#${{ matrix.java }} -c sbt
+          'project ${{ matrix.project }}'
+          '++ 3'
+          test
+
+      - name: Publish to GitHub Packages
+        run: >-
+          nix develop .#${{ matrix.java }} -c sbt
+          'project ${{ matrix.project }}'
+          '++ 3'
+          publish
+        env:
+          PUBLISH_TO_GITHUB: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
