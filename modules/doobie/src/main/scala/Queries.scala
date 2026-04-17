@@ -37,11 +37,15 @@ private[doobie] object Queries {
   def setupSchema(namespace: PGNamespace): Update0 =
     sql"""create schema if not exists ${escape(namespace)};""".update
 
-  final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
-    private val table = sql"${escape(namespace)}.journal"
-    private val tableStr = s"${escapeStr(namespace)}.journal"
+  final class Journal[E](naming: PGNaming, codec: BackendCodec[E]) {
+    private val table = Fragment.const(naming.table("journal"))
+    private val tableStr = naming.table("journal")
     private val payloadOid = Fragment.const(codec.tpe)
     private given Meta[E] = codec.codec
+    private val pk = Fragment.const(naming.constraint("journal_pk"))
+    private val un = Fragment.const(naming.constraint("journal_un"))
+    private val seqnrIdx = Fragment.const(naming.index("journal_seqnr_idx"))
+    private val streamIdx = Fragment.const(naming.index("journal_stream_idx"))
 
     def setup = sql"""
 DO $$$$ begin
@@ -53,13 +57,13 @@ CREATE TABLE IF NOT EXISTS $table (
   "version" int8 NOT NULL,
   stream text NOT NULL,
   payload $payloadOid NOT NULL,
-  CONSTRAINT journal_pk PRIMARY KEY (id),
-  CONSTRAINT journal_un UNIQUE (stream, version)
+  CONSTRAINT $pk PRIMARY KEY (id),
+  CONSTRAINT $un UNIQUE (stream, version)
 );
 
-CREATE INDEX IF NOT EXISTS journal_seqnr_idx ON $table USING btree (seqnr);
+CREATE INDEX IF NOT EXISTS $seqnrIdx ON $table USING btree (seqnr);
 
-CREATE INDEX IF NOT EXISTS journal_stream_idx ON $table USING btree (stream, version);
+CREATE INDEX IF NOT EXISTS $streamIdx ON $table USING btree (stream, version);
 
 END $$$$;
 """.update
@@ -106,10 +110,11 @@ END $$$$;
       sql"select $readFields from $table where stream = $stream and version < $version order by version asc".query
   }
 
-  final class Outbox[N](namespace: PGNamespace, codec: BackendCodec[N]) {
-    private val table = sql"${escape(namespace)}.outbox"
-    private val tableStr = s"${escapeStr(namespace)}.outbox"
+  final class Outbox[N](naming: PGNaming, codec: BackendCodec[N]) {
+    private val table = Fragment.const(naming.table("outbox"))
+    private val tableStr = naming.table("outbox")
     private given Meta[N] = codec.codec
+    private val pk = Fragment.const(naming.constraint("outbox_pk"))
 
     val setup: Update0 = sql"""
 CREATE TABLE IF NOT EXISTS $table(
@@ -120,7 +125,7 @@ CREATE TABLE IF NOT EXISTS $table(
   payload ${Fragment.const(codec.tpe)} NOT NULL,
   created timestamptz NOT NULL,
   published timestamptz NULL,
-  CONSTRAINT outbox_pk PRIMARY KEY (seqnr)
+  CONSTRAINT $pk PRIMARY KEY (seqnr)
 );
 """.update
 
@@ -148,19 +153,20 @@ insert into $tableStr (payload, stream, created, correlation, causation) values 
   }
 
   final class Snapshot[S](
-      namespace: PGNamespace,
+      naming: PGNaming,
       codec: BackendCodec[S]
   ) {
-    private val table = sql"${escape(namespace)}.snapshots"
-    private val tableStr = s"${escapeStr(namespace)}.snapshots"
+    private val table = Fragment.const(naming.table("snapshots"))
+    private val tableStr = naming.table("snapshots")
     private given Meta[S] = codec.codec
+    private val pk = Fragment.const(naming.constraint("snapshots_pk"))
 
     val setup: Update0 = sql"""
 CREATE TABLE IF NOT EXISTS $table (
   id text NOT NULL,
   "version" int8 NOT NULL,
   state ${Fragment.const(codec.tpe)} NOT NULL,
-  CONSTRAINT snapshots_pk PRIMARY KEY (id)
+  CONSTRAINT $pk PRIMARY KEY (id)
 );
 """.update
 
@@ -178,15 +184,16 @@ set version = excluded.version,
       sql"""select state , version from $table where id = $id""".query
   }
 
-  final class Commands(namespace: PGNamespace) {
-    private val table = sql"${escape(namespace)}.commands"
+  final class Commands(naming: PGNaming) {
+    private val table = Fragment.const(naming.table("commands"))
+    private val pk = Fragment.const(naming.constraint("commands_pk"))
 
     val setup: Update0 = sql"""
 CREATE TABLE IF NOT EXISTS $table (
   id text NOT NULL,
   "time" timestamptz NOT NULL,
   address text NOT NULL,
-  CONSTRAINT commands_pk PRIMARY KEY (id)
+  CONSTRAINT $pk PRIMARY KEY (id)
 );
 """.update
 
@@ -199,18 +206,19 @@ insert into $table (id, address, "time") values (${cmd.id}, ${cmd.address}, ${cm
   }
 
   final class State[S](
-      namespace: PGNamespace,
+      naming: PGNaming,
       codec: BackendCodec[S]
   ) {
-    private val table = sql"${escape(namespace)}.states"
+    private val table = Fragment.const(naming.table("states"))
     private given Meta[S] = codec.codec
+    private val pk = Fragment.const(naming.constraint("states_pk"))
 
     val setup: Update0 = sql"""
 CREATE TABLE IF NOT EXISTS $table (
   id text NOT NULL,
   "version" int8 NOT NULL,
   state ${Fragment.const(codec.tpe)} NOT NULL,
-  CONSTRAINT states_pk PRIMARY KEY (id)
+  CONSTRAINT $pk PRIMARY KEY (id)
 );
 """.update
 
