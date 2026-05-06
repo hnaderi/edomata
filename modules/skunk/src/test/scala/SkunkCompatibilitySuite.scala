@@ -86,14 +86,10 @@ object SkunkCompatibilitySuite {
     a => Either.catchNonFatal(ByteVector(a).toHex.toInt).leftMap(_.getMessage)
   )
   private def database(name: String) = Session
-    .pooled[IO](
-      host = "localhost",
-      port = 5432,
-      user = "postgres",
-      database = name.toLowerCase(),
-      password = Some("postgres"),
-      4
-    )
+    .Builder[IO]
+    .withDatabase(name.toLowerCase())
+    .withUserAndPassword("postgres", "postgres")
+    .pooled(4)
 
   inline def backend(
       inline name: String,
