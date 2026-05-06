@@ -8,11 +8,12 @@ lazy val scala3 = "3.3.6"
 
 inThisBuild(
   List(
-    tlBaseVersion := "0.12",
+    tlBaseVersion := "0.13",
     scalaVersion := scala3,
     fork := true,
     Test / fork := false,
     organization := "dev.hnaderi",
+    libraryDependencySchemes += "org.scala-native" % "test-interface_native0.5_3" % VersionScheme.Always,
     organizationName := "Hossein Naderi",
     startYear := Some(2021),
     tlCiReleaseBranches := Seq("main"),
@@ -108,7 +109,7 @@ lazy val core = module("core") {
       libraryDependencies ++= Seq(
         "org.typelevel" %%% "cats-core" % Versions.cats,
         "org.typelevel" %%% "cats-laws" % Versions.cats % Test,
-        "org.typelevel" %%% "discipline-munit" % Versions.CatsEffectMunit % Test
+        "org.typelevel" %%% "discipline-munit" % "2.0.0" % Test
       )
     )
     .jsSettings(
@@ -268,7 +269,6 @@ lazy val driverTests = module("backend-tests") {
       )
     )
     .nativeSettings(
-      libraryDependencies += "com.armanbilge" %%% "epollcat" % "0.1.7",
       Test / envVars ++= Map("S2N_DONT_MLOCK" -> "1")
     )
 }

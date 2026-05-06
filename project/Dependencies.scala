@@ -2,17 +2,17 @@ import sbt._
 
 object Dependencies {
   object Versions {
-    val cats = "2.10.0"
-    val catsEffect = "3.6.3"
-    val fs2 = "3.12.2"
-    val skunk = "0.6.5"
-    val scalaCheck = "1.15.4"
-    val MUnit = "1.0.0-M8"
-    val CatsEffectMunit = "2.0.0-M3"
-    val scalacheckEffectVersion = "2.0.0-M2"
+    val cats = "2.13.0"
+    val catsEffect = "3.7.0"
+    val fs2 = "3.13.0"
+    val skunk = "1.0.0"
+    val scalaCheck = "1.19.0"
+    val MUnit = "1.3.0"
+    val CatsEffectMunit = "2.2.0"
+    val scalacheckEffectVersion = "2.1.0"
     val doobie = "1.0.0-RC12"
     val circe = "0.14.15"
-    val upickle = "3.2.0"
-    val jsoniter = "2.30.1"
+    val upickle = "4.4.3"
+    val jsoniter = "2.38.9"
   }
 }

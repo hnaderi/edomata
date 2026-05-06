@@ -26,7 +26,8 @@ import edomata.core.*
 import edomata.skunk.*
 import edomata.syntax.all.*
 import io.circe.generic.auto.*
-import natchez.Trace.Implicits.noop
+import org.typelevel.otel4s.trace.Tracer.Implicits.noop
+import org.typelevel.otel4s.metrics.Meter.Implicits.noop
 import skunk.Session
 
 import java.time.Instant
@@ -98,7 +99,10 @@ object Application extends IOApp.Simple {
     .build
 
   val database = Session
-    .pooled[IO]("localhost", 5432, "postgres", "postgres", Some("postgres"), 10)
+    .Builder[IO]
+    .withDatabase("postgres")
+    .withUserAndPassword("postgres", "postgres")
+    .pooled(10)
 
   val application = database.flatMap(backendRes).use { backend =>
     val service = backend.compile(app)

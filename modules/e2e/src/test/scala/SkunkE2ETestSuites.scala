@@ -24,21 +24,17 @@ import edomata.skunk.BackendCodec
 import edomata.skunk.CirceCodec
 import edomata.skunk.SkunkDriver
 import io.circe.generic.auto.*
-import natchez.Trace.Implicits.noop
+import org.typelevel.otel4s.trace.Tracer.Implicits.noop
+import org.typelevel.otel4s.metrics.Meter.Implicits.noop
 
 private given BackendCodec[Event] = CirceCodec.jsonb
 private given BackendCodec[Notification] = CirceCodec.jsonb
 private given BackendCodec[Account] = CirceCodec.jsonb
 
 private def driver = Session
-  .pooled[IO](
-    host = "localhost",
-    port = 5432,
-    user = "postgres",
-    password = Some("postgres"),
-    database = "postgres",
-    4
-  )
+  .Builder[IO]
+  .withUserAndPassword("postgres", "postgres")
+  .pooled(4)
   .evalMap(SkunkDriver("skunk_e2e", _))
 
 class SkunkE2ETestSuites extends e2e(driver)
