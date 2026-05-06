@@ -35,7 +35,8 @@ private[skunk] object Queries {
 
   final class Journal[E](namespace: PGNamespace, codec: BackendCodec[E]) {
     private val table = sql""""#$namespace".journal"""
-    private val event = codec.codec
+    private val event: Codec[E *: EmptyTuple] =
+      codec.codec.imap(_ *: EmptyTuple)(_.head)
 
     def setup: Command[Void] = sql"""
 DO $$$$ begin

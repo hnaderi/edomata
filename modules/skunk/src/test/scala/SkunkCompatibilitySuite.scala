@@ -23,7 +23,8 @@ import cats.implicits.*
 import edomata.backend.*
 import edomata.backend.eventsourcing.Backend
 import edomata.skunk.*
-import natchez.Trace.Implicits.noop
+import org.typelevel.otel4s.trace.Tracer.Implicits.noop
+import org.typelevel.otel4s.metrics.Meter.Implicits.noop
 import scodec.bits.ByteVector
 
 import scala.concurrent.duration.*
