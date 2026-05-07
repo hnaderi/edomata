@@ -13,7 +13,6 @@ inThisBuild(
     fork := true,
     Test / fork := false,
     organization := "dev.hnaderi",
-    libraryDependencySchemes += "org.scala-native" % "test-interface_native0.5_3" % VersionScheme.Always,
     organizationName := "Hossein Naderi",
     startYear := Some(2021),
     tlCiReleaseBranches := Seq("main"),
@@ -26,7 +25,8 @@ inThisBuild(
         email = "mail@hnaderi.dev",
         url = url("https://hnaderi.dev")
       )
-    )
+    ),
+    libraryDependencySchemes += "org.scala-native" % "test-interface_native0.5_3" % VersionScheme.Always
   )
 )
 
