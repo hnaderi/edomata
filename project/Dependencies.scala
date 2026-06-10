@@ -7,7 +7,7 @@ object Dependencies {
     val fs2 = "3.13.0"
     val skunk = "1.0.0"
     val scalaCheck = "1.19.0"
-    val MUnit = "1.3.0"
+    val MUnit = "1.3.3"
     val CatsEffectMunit = "2.2.0"
     val scalacheckEffectVersion = "2.1.0"
     val doobie = "1.0.0-RC12"
