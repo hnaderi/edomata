@@ -11,7 +11,7 @@ object Dependencies {
     val CatsEffectMunit = "2.2.0"
     val scalacheckEffectVersion = "2.1.0"
     val doobie = "1.0.0-RC12"
-    val circe = "0.14.15"
+    val circe = "0.14.16"
     val upickle = "4.4.3"
     val jsoniter = "2.38.15"
   }
