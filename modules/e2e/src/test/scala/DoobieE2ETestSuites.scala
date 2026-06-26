@@ -15,7 +15,7 @@
  */
 
 package tests
-package doobie
+package org.typelevel.doobie
 
 import _root_.doobie.util.transactor.Transactor
 import cats.effect.IO
