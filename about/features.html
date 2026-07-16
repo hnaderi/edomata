@@ -75,8 +75,8 @@
   <ul class="nav-list">
     <li class="level1 nav-leaf"><a href="../introduction.html">Introduction</a></li>
     <li class="level1 nav-header">about</li>
-    <li class="level2 active nav-leaf"><a href="#">Features</a></li>
     <li class="level2 nav-leaf"><a href="design_goals.html">Design goals</a></li>
+    <li class="level2 active nav-leaf"><a href="#">Features</a></li>
     <li class="level1 nav-header">tutorials</li>
     <li class="level2 nav-leaf"><a href="../tutorials/0_getting_started.html">Getting started</a></li>
     <li class="level2 nav-leaf"><a href="../tutorials/1-1_eventsourcing.html">Event sourcing</a></li>
@@ -127,7 +127,7 @@
         <ul>
           <li><a class="api" href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.13.0/edomata/core/Decision.html">Decision</a> a state machine which represent decisions and has <code>MonadError</code> and is also traversable.</li>
           <li><a class="api" href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.13.0/edomata/core/DecisionT.html">DecisionT</a> a transformer that runs an effect that yields a <code>Decision</code></li>
-          <li><a class="api" href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.13.0/edomata/core/Response.html">Response</a> a state machine which consists of a <code>Decision</code> and has publishing capability like a writer monad.</li>
+          <li><a class="api" href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.13.0/edomata/core/ResponseT.html">ResponseT</a> a state machine which consists of a <code>Decision</code> and has publishing capability like a writer monad.</li>
           <li><a class="api" href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.13.0/edomata/core/Action.html">Action</a> a transformer which runs an effect that yields a <code>Response</code></li>
           <li><a class="api" href="https://www.javadoc.io/doc/dev.hnaderi/edomata-docs_3/0.13.0/edomata/core/Edomaton.html">Edomaton</a> a program that reads a value, runs an effect and yields a <code>Response</code></li>
         </ul>
