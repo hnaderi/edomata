@@ -7,7 +7,7 @@ the list consists of:
 
 - @:api(edomata.core.Decision) a state machine which represent decisions and has `MonadError` and is also traversable.
 - @:api(edomata.core.DecisionT) a transformer that runs an effect that yields a `Decision`
-- @:api(edomata.core.Response) a state machine which consists of a `Decision` and has publishing capability like a writer monad.
+- @:api(edomata.core.ResponseT) a state machine which consists of a `Decision` and has publishing capability like a writer monad.
 - @:api(edomata.core.Action) a transformer which runs an effect that yields a `Response`
 - @:api(edomata.core.Edomaton) a program that reads a value, runs an effect and yields a `Response`
 
