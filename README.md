@@ -49,3 +49,4 @@ libraryDependencies += "dev.hnaderi" %%% "edomata-core" % "<last version from ba
 Here's a (non-exhaustive) list of companies that use edomata in production. Don't see yours? You can add it in a PR!
 
 - [eveince capital](https://eveince.com/) uses edomata in its trading platform and order management systems.
+- [expert-flow.ai](https://expert-flow.ai/) uses edomata in its SaaS platform automating forensic expertise workflows for French legal professionals.
