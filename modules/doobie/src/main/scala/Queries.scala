@@ -16,7 +16,7 @@
 
 package edomata.doobie
 
-import _root_.doobie.*
+import org.typelevel.doobie.*
 import _root_.doobie.free.connection.ConnectionIO
 import _root_.doobie.implicits.*
 import _root_.doobie.postgres.implicits.*

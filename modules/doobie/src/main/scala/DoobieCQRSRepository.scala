@@ -21,9 +21,9 @@ import cats.data.*
 import cats.effect.kernel.Clock
 import cats.effect.kernel.Concurrent
 import cats.implicits.*
-import doobie.*
-import doobie.implicits.*
-import doobie.util.transactor.Transactor
+import org.typelevel.doobie.*
+import org.typelevel.doobie.implicits.*
+import org.typelevel.doobie.util.transactor.Transactor
 import edomata.backend.BackendError
 import edomata.backend.CommandState.Redundant
 import edomata.backend.SeqNr
