@@ -171,8 +171,8 @@ lazy val doobieBackend = module("doobie") {
     .settings(
       description := "Doobie based backend for edomata",
       libraryDependencies ++= Seq(
-        "org.tpolecat" %% "doobie-core" % Versions.doobie,
-        "org.tpolecat" %% "doobie-postgres" % Versions.doobie
+        "org.typelevel" %% "doobie-core" % Versions.doobie,
+        "org.typelevel" %% "doobie-postgres" % Versions.doobie
       )
     )
 }
