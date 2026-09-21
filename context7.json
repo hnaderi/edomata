@@ -1,0 +1,22 @@
+{
+  "projectTitle": "Edomata",
+  "description": "Lightweight, purely functional Scala 3 library for event-driven automata, event sourcing, and CQRS patterns built on the Typelevel ecosystem (Cats, Cats Effect, FS2)",
+  "folders": [
+    "docs",
+    "modules/core/src/main/scala",
+    "modules/backend/src/main/scala",
+    "modules/examples/src/main/scala"
+  ],
+  "excludeFolders": [
+    "**/target",
+    "**/test",
+    "node_modules",
+    ".metals",
+    ".bloop",
+    ".bsp"
+  ],
+  "excludeFiles": [
+    "*.class",
+    "*.jar"
+  ]
+}
