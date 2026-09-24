@@ -70,6 +70,7 @@ Each aggregate type has its own namespace that contains all the required tables.
 | `commands` | Processed command IDs (for idempotency) | Both |
 | `snapshots` | Cached state (performance optimization) | Event sourced apps |
 | `states` | Current state | CQRS apps (Stomaton) |
+| `migrations` | Applied event migrations | Event sourced apps |
 
 > **What is an Outbox?** A pattern for reliable message publishing. Instead of sending notifications directly (which might fail), we store them in the database atomically with the state change. A separate process then publishes them. This ensures we never lose notifications or send duplicates.
 
@@ -79,33 +80,45 @@ Each aggregate type has its own namespace that contains all the required tables.
 erDiagram
     JOURNAL {
         uuid id PK
-        string stream
-        int version
-        jsonb event
-        timestamp time
+        timestamptz time
+        bigserial seqnr
+        int8 version
+        text stream
+        jsonb payload
     }
 
     OUTBOX {
-        uuid id PK
-        jsonb data
-        timestamp created
+        bigserial seqnr PK
+        text stream
+        text correlation
+        text causation
+        jsonb payload
+        timestamptz created
+        timestamptz published
     }
 
     COMMANDS {
-        uuid id PK
-        timestamp time
+        text id PK
+        timestamptz time
+        text address
     }
 
     SNAPSHOTS {
-        string stream PK
-        int version
+        text id PK
+        int8 version
         jsonb state
     }
 
     STATES {
-        string stream PK
+        text id PK
+        int8 version
         jsonb state
-        int version
+    }
+
+    MIGRATIONS {
+        text version PK
+        text description
+        timestamptz applied_at
     }
 ```
 
@@ -122,7 +135,7 @@ These 2 backends are completely compatible with each other's data, so you can ch
 #### Serialization
 
 Both backends support `json`, `jsonb`, `bytea` types in Postgres, so you can use the one which is more appropriate.
-Integrations with `Circe` and `uPickle` are provided in separate modules which you can use, or otherwise you can create your own codecs easily.
+Integrations with `Circe`, `jsoniter-scala` and `uPickle` are provided in separate modules which you can use, or otherwise you can create your own codecs easily.
 
 | Format | Postgres Type | Pros | Cons |
 |--------|---------------|------|------|
@@ -138,9 +151,11 @@ Here's a complete example showing how to wire up a backend:
 
 ```scala
 import cats.effect.*
-import edomata.backend.*
-import edomata.backend.eventsourcing.Backend
-import edomata.skunk.* // or edomata.doobie.*
+import edomata.backend.Backend
+import edomata.core.*
+import edomata.skunk.*
+import io.circe.generic.auto.*
+import natchez.Trace.Implicits.noop
 import skunk.Session
 
 // Your domain from previous chapters
@@ -149,7 +164,7 @@ import skunk.Session
 object Main extends IOApp.Simple {
   def run: IO[Unit] = {
     // 1. Create database connection pool
-    val pool: Resource[IO, Session[IO]] = Session.pooled(
+    val pool: Resource[IO, Session[IO]] = Session.pooled[IO](
       host = "localhost",
       port = 5432,
       user = "postgres",
@@ -158,7 +173,12 @@ object Main extends IOApp.Simple {
       max = 10
     )
 
-    // 2. Create backend
+    // 2. Define how events, notifications and snapshots are stored
+    given BackendCodec[Event] = CirceCodec.jsonb
+    given BackendCodec[Notification] = CirceCodec.jsonb
+    given BackendCodec[Account] = CirceCodec.jsonb
+
+    // 3. Create backend
     val buildBackend = Backend
       .builder(AccountService)                    // 1
       .use(SkunkDriver("account", pool))          // 2
@@ -166,10 +186,10 @@ object Main extends IOApp.Simple {
       .build
 
     buildBackend.use { backend =>
-      // 3. Compile your service
+      // 4. Compile your service
       val service = backend.compile(AccountService[IO])
 
-      // 4. Use it!
+      // 5. Use it!
       for {
         result <- service(
           CommandMessage(

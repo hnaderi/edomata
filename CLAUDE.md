@@ -12,8 +12,8 @@ Edomata is a lightweight, purely functional Scala 3 library for implementing eve
 
 ## Build System
 
-- **Build tool**: SBT 1.12.8
-- **Scala version**: 3.3.6
+- **Build tool**: SBT 1.12.9
+- **Scala version**: 3.3.7
 - **Cross-compilation**: JVM, JS, Native platforms
 
 ### Common Commands
@@ -60,23 +60,24 @@ modules/
 ├── e2e/               # End-to-end tests
 ├── munit/             # MUnit test framework integration
 ├── saas/              # Multi-tenant SaaS abstractions
-└── saas-skunk/        # Skunk-based SaaS backend
+├── saas-skunk/        # Skunk-based SaaS backend
+└── java-api/          # Java-friendly facade (JVM only, backed by Doobie)
 
 examples/              # Example implementations
 docs/                  # Documentation (Markdown)
-site/                  # Documentation site generator
+website/               # Docusaurus documentation site
 ```
 
 ## Core Abstractions
 
 | Type | Purpose |
 |------|---------|
-| `Decision[R, E, A]` | State machine with Accept/Reject/Indecisive outcomes |
-| `Response[E, A]` | Decision combined with event publishing |
-| `Edomaton[M, C, E, R, S]` | Event-driven automaton (full event sourcing) |
-| `Stomaton[M, C, R, S]` | State-only automaton (CQRS without event sourcing) |
+| `Decision[R, E, A]` | State machine with Accepted/Rejected/InDecisive outcomes |
+| `Response[R, E, N, A]` | Decision combined with notification publishing (alias of `ResponseD`) |
+| `Edomaton[F, Env, R, E, N, A]` | Event-driven automaton (full event sourcing) |
+| `Stomaton[F, Env, S, R, E, A]` | State-only automaton (CQRS without event sourcing) |
 | `DecisionT[F, R, E, A]` | Effectful decision transformer |
-| `Action[F, E, R, A]` | Effect runner yielding responses |
+| `Action[F, R, E, N, A]` | Effect runner yielding responses |
 
 ## Key Dependencies
 
@@ -86,7 +87,10 @@ site/                  # Documentation site generator
 - **Skunk** 0.6.5 - Async PostgreSQL client
 - **Doobie** 1.0.0-RC12 - JDBC-based database layer
 - **Circe** 0.14.15 - JSON serialization
+- **jsoniter-scala** 2.30.1 - High-performance JSON serialization
+- **uPickle** 3.2.0 - JSON / MessagePack serialization
 - **MUnit** 1.0.0-M8 - Testing framework
+- **ScalaCheck** 1.15.4 - Property-based testing
 
 ## Testing
 
@@ -99,16 +103,16 @@ docker-compose up -d
 This starts PostgreSQL 14 on port 5432 with:
 - User: `postgres`
 - Password: `postgres`
-- Databases created by init scripts: `postgres` (default), `Skunk_JVMPlatform`, `Skunk_JSPlatform`, `Skunk_NativePlatform`, `Doobie`
+- Databases created by init scripts: `postgres` (default), `skunk_jvmplatform`, `skunk_jsplatform`, `skunk_nativeplatform`, `doobie` (unquoted in `testdbs.sql`, so PostgreSQL folds them to lowercase)
 
 Run tests with:
 
 ```bash
 sbt test                    # All tests
 sbt coreJVM/test           # Core module only (JVM)
-sbt skunkJVM/test          # Skunk backend tests
-sbt doobieJVM/test         # Doobie backend tests
-sbt e2eJVM/test            # End-to-end tests
+sbt skunkBackendJVM/test   # Skunk backend tests
+sbt doobieBackendJVM/test  # Doobie backend tests
+sbt e2eTestsJVM/test       # End-to-end tests
 ```
 
 ## Code Style
@@ -137,16 +141,22 @@ This provides JDK and SBT automatically.
 
 ```
 core
+ ├── munit
  └── backend
       └── postgres
+           ├── saas
            ├── skunk (cross-platform)
            │    ├── skunk-circe
            │    ├── skunk-jsoniter
-           │    └── skunk-upickle
+           │    ├── skunk-upickle
+           │    └── saas-skunk (+ saas)
            └── doobie (JVM only)
                 ├── doobie-circe
                 ├── doobie-jsoniter
-                └── doobie-upickle
+                ├── doobie-upickle
+                └── java-api (JVM only)
+
+backend-tests and e2e are test-only modules built on the drivers.
 ```
 
 ## PostgreSQL Naming & DDL
@@ -176,7 +186,7 @@ In prefixed mode, constraint and index names are also prefixed (e.g. `auth_journ
 ```scala
 import edomata.backend.{PGNaming, PGSchema}
 
-// Event sourcing tables: journal, outbox, commands, snapshots
+// Event sourcing tables: journal, outbox, commands, snapshots, migrations
 PGSchema.eventsourcing(PGNaming.prefixed("accounts"), eventType = "jsonb")
 
 // CQRS tables: states, outbox, commands
@@ -188,13 +198,15 @@ Payload type parameters accept `"json"`, `"jsonb"`, or `"bytea"`.
 
 ### Disabling Automatic Setup (`skipSetup`)
 
-All driver `.from()` methods accept `skipSetup: Boolean = false`:
+The `from(naming: PGNaming, ...)` overload of every driver accepts `skipSetup: Boolean = false`
+(the `from(namespace: PGNamespace, ...)` overload and `apply` don't):
 
 ```scala
 SkunkDriver.from(naming, pool, skipSetup = true)    // no DDL at all
 DoobieDriver.from(naming, trx, skipSetup = true)
 SkunkCQRSDriver.from(naming, pool, skipSetup = true)
 DoobieCQRSDriver.from(naming, trx, skipSetup = true)
+SaaSSkunkCQRSDriver.from(naming, pool, skipSetup = true)
 ```
 
 When `skipSetup = true`:
@@ -278,7 +290,7 @@ Do not ask for confirmation — go straight to reading the ticket and implementi
 > - Verify import paths are correct
 > - Verify `PGSchema` and `skipSetup` examples match actual method signatures
 >
-> **3. docs/tutorials/2_backends.md**
+> **3. docs/tutorials/backends.md**
 > - Verify the minimal example uses the actual Backend builder API
 > - Verify connection parameters match docker-compose defaults
 > - Verify table descriptions match actual SQL in Queries.scala

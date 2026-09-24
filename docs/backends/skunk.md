@@ -14,6 +14,7 @@ libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk" % "@VER
 or for integrated modules:
 ```scala
 libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-circe" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-jsoniter" % "@VERSION@"
 libraryDependencies += "io.github.beyond-scale-group" %% "edomata-skunk-upickle" % "@VERSION@"
 ```
 
@@ -24,6 +25,7 @@ libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-skunk" % "@VE
 
 ## Imports
 ```scala
+import edomata.backend.Backend
 import edomata.skunk.*
 ```
 

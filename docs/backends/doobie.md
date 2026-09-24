@@ -14,6 +14,7 @@ libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie" % "@VE
 or for integrated modules:
 ```scala
 libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie-circe" % "@VERSION@"
+libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie-jsoniter" % "@VERSION@"
 libraryDependencies += "io.github.beyond-scale-group" %% "edomata-doobie-upickle" % "@VERSION@"
 ```
 
@@ -21,6 +22,7 @@ Note that doobie is built on top of JDBC which can't be used in javascript obvio
 
 ## Imports
 ```scala
+import edomata.backend.Backend
 import edomata.doobie.*
 ```
 
