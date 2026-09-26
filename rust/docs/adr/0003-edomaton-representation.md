@@ -22,14 +22,14 @@ The plan requires composition without macros.
    the type parameters to be `Clone`).
 
 2. `Env` is taken **by value** on every run. Constructors that only read part
-   of the input (`state()`, `command()`, ...) therefore never clone. Only
+   of the input (the DSL's `state()`, `command()`, ...) therefore never clone. Only
    `and_then` (which runs two programs on the same input) requires
    `Env: Clone`. Closures passed to combinators are `Fn + Send + Sync +
    'static` and are wrapped in `Arc` internally.
 
 3. Closure-based constructors mirror Scala's: `new` (async function of the
    input), `from_fn` (pure function), `eval` / `run_with` (effects),
-   `lift` / `decide` / `reject` / `pure` (constants, which must be `Clone`
+   `lift` (`Edomaton` only) / `decide` / `reject` / `pure` (constants, which must be `Clone`
    since a program can be run many times).
 
 4. Scala's zero-cost `DomainDSL[C, S, E, R, N]` becomes `DomainDsl<C, S, E,

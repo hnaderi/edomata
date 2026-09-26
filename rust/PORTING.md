@@ -11,7 +11,7 @@ port is complete when no row is left *planned*.
 |---|--------------|------------|--------|
 | 1 | `core` | `edomata-core` | ported (milestone 1) |
 | 2 | `backend` | `edomata-backend` | ported (milestone 2) |
-| 3 | `postgres` | `edomata-postgres` | planned (milestone 3) |
+| 3 | `postgres` | `edomata-postgres` | ported (milestone 3) |
 | 4 | `skunk` | `edomata-sqlx` | planned (milestone 5) |
 | 5 | `doobie` | `edomata-sqlx` | planned (milestone 5) |
 | 6 | `skunk-circe` | `edomata-serde` | planned (milestone 4) |
@@ -87,6 +87,19 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `SkunkHandler` (CQRS notification hook) | `StorageDriver::Handler<N>` (`InMemoryNotificationHandler<N>` in memory) |
 | *(none)* | `inmemory::InMemoryDriver`, `InMemoryEventStore`, `InMemoryStateStore`, `InMemorySnapshotPersistence` |
 
+## Type mapping (postgres)
+
+| Scala | Rust |
+|-------|------|
+| `PGNamespace` (opaque type, inline macro `PGNamespace("x")`, `fromString`) | `PGNamespace` newtype, `TryFrom<&str>` / `FromStr` / `from_string` (runtime validation, same messages), `PGNamespaceError` |
+| `PGNaming` (`Schema`, `Prefixed`, `schema`, `prefixed`, `table`, `constraint`, `index`, `needsSchemaSetup`) | `PGNaming` enum with the same methods (`needs_schema_setup`), plus `schema_str` / `prefixed_str` |
+| `PGNamespace.prefixed("x")` | `PGNamespace::prefixed(self)` / `PGNaming::prefixed_str` |
+| `PGSchema.eventsourcing(naming, eventType, notificationType, snapshotType)` | `PGSchema::eventsourcing(&naming)` (all `jsonb`) / `PGSchema::eventsourcing_with(&naming, ...)` |
+| `PGSchema.cqrs(naming, stateType, notificationType)` | `PGSchema::cqrs(&naming)` / `PGSchema::cqrs_with(&naming, ...)` |
+| private DDL helpers | `edomata_postgres::ddl::schema_statement` and `ddl::*_statements` (public, reused by drivers) |
+| `EventMigration(version, description, run)`, `EventMigration[A, B](...)`, `andThen` | `EventMigration::new`, `EventMigration::typed`, `and_then`, `run` |
+| `MigrationResult(applied, skipped)` | `MigrationResult { applied, skipped }` |
+
 ## Test suites
 
 ### `modules/core/src/test`
@@ -143,11 +156,14 @@ against the in-memory driver; milestone 5 adds the PostgreSQL runner.
 | `shared/TestDomain.scala`, `shared/Utils.scala` | `src/lib.rs` (`TestDomain`, `TestCqrsModel`, `random_string`) |
 | `{jvm,js,native}/StorageSuite.scala` | `tests/inmemory.rs` (one `#[tokio::test]` per check; a single Rust variant replaces the three platform variants) |
 
-### `modules/postgres/src/test` — planned (milestone 3)
+### `modules/postgres/src/test`
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `PGNamespaceSuite.scala` | planned (+ golden DDL tests under `rust/tests/golden/`) |
+| Scala suite | Rust test | Notes |
+|-------------|-----------|-------|
+| `PGNamespaceSuite.scala` (`PGNamespaceSuite`) | `crates/edomata-postgres/tests/naming.rs` | the compile-time macro check becomes a runtime `TryFrom` check with the same message |
+| `PGNamespaceSuite.scala` (`PGSchemaSuite`) | `crates/edomata-postgres/tests/naming.rs` | |
+| `GoldenDDL.scala` (new generator, test scope) | `crates/edomata-postgres/tests/golden.rs` + `rust/tests/golden/*.sql` | byte-for-byte DDL comparison for `Schema`/`Prefixed` × `jsonb`/`json`/`bytea`/mixed (32 files) |
+| *(none in Scala)* | `crates/edomata-postgres/tests/migration.rs` | pins `EventMigration` semantics |
 
 ### `modules/skunk` and `modules/doobie` tests — planned (milestone 5)
 

@@ -249,7 +249,7 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions)
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL)
 - **MSRV**: 1.85 (edition 2024); every crate has `#![forbid(unsafe_code)]`
 - **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
 
@@ -263,6 +263,14 @@ cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 
 Do not modify the Scala modules for the port, except to add golden-DDL tooling and the Scala
 side of the cross-language compatibility test.
+
+- **Golden DDL**: `rust/tests/golden/*.sql` is generated from the Scala `PGSchema` by
+  `modules/postgres/src/test/scala/GoldenDDL.scala` and asserted byte-for-byte by
+  `rust/crates/edomata-postgres/tests/golden.rs`. Regenerate after changing `PGSchema.scala`:
+
+```bash
+sbt "postgresJVM/Test/runMain edomata.backend.GoldenDDL rust/tests/golden"
+```
 
 ## CI/CD
 

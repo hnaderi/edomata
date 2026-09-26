@@ -17,6 +17,7 @@ keywords = ["event-sourcing", "cqrs", "ddd", "state-machine"]
 edomata-core = { path = "crates/edomata-core", version = "0.1.0" }
 edomata-backend = { path = "crates/edomata-backend", version = "0.1.0" }
 edomata-backend-tests = { path = "crates/edomata-backend-tests", version = "0.1.0" }
+edomata-postgres = { path = "crates/edomata-postgres", version = "0.1.0" }
 
 async-trait = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["std"] }
