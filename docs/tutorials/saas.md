@@ -445,7 +445,7 @@ CREATE INDEX IF NOT EXISTS products_read_tenant_status_idx
 3. Wire the driver with `skipSetup = true`:
 
 ```scala
-SkunkCQRSDriver[IO](PGNaming.prefixed("catalog"), pool, skipSetup = true)
+SkunkCQRSDriver.from[IO](PGNaming.prefixed("catalog"), pool, skipSetup = true)
 ```
 
 ### Testing Domain Logic (Pure, No Database)

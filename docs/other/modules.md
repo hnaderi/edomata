@@ -17,3 +17,7 @@ title: "Modules"
 | doobie-circe    | ✔   | ❌ | ❌     | 3     | ✔         |
 | doobie-upickle  | ✔   | ❌ | ❌     | 3     | ✔         |
 | doobie-jsoniter | ✔   | ❌ | ❌     | 3     | ✔         |
+| postgres        | ✔   | ✔  | ✔      | 3     | ✔         |
+| saas            | ✔   | ✔  | ✔      | 3     | ✔         |
+| saas-skunk      | ✔   | ✔  | ✔      | 3     | ✔         |
+| java-api        | ✔   | ❌ | ❌     | 3     | ✔         |

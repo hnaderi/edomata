@@ -164,7 +164,8 @@ import skunk.Session
 object Main extends IOApp.Simple {
   def run: IO[Unit] = {
     // 1. Create database connection pool
-    val pool: Resource[IO, Session[IO]] = Session.pooled[IO](
+    //    (Session.pooled yields a pool resource that itself yields sessions)
+    val pool: Resource[IO, Resource[IO, Session[IO]]] = Session.pooled[IO](
       host = "localhost",
       port = 5432,
       user = "postgres",
@@ -179,11 +180,13 @@ object Main extends IOApp.Simple {
     given BackendCodec[Account] = CirceCodec.jsonb
 
     // 3. Create backend
-    val buildBackend = Backend
-      .builder(AccountService)                    // 1
-      .use(SkunkDriver("account", pool))          // 2
-      .persistedSnapshot(maxInMem = 200)          // 3
-      .build
+    val buildBackend = pool.flatMap { sessions =>
+      Backend
+        .builder(AccountService)                    // 1
+        .use(SkunkDriver("account", sessions))      // 2
+        .persistedSnapshot(maxInMem = 200)          // 3
+        .build
+    }
 
     buildBackend.use { backend =>
       // 4. Compile your service

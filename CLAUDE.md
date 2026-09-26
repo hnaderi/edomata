@@ -193,8 +193,10 @@ PGSchema.eventsourcing(PGNaming.prefixed("accounts"), eventType = "jsonb")
 PGSchema.cqrs(PGNaming.prefixed("accounts"), stateType = "jsonb")
 ```
 
-Returns `List[String]` — each element is a standalone SQL statement (CREATE TABLE, CREATE INDEX).
-Payload type parameters accept `"json"`, `"jsonb"`, or `"bytea"`.
+Returns `List[String]` — each element is a standalone SQL statement (`CREATE SCHEMA IF NOT EXISTS`
+first in schema mode only, then CREATE TABLE, CREATE INDEX).
+Payload type parameters are plain SQL type names spliced into the DDL without validation; the
+intended values are `"json"`, `"jsonb"` (default), or `"bytea"`.
 
 ### Disabling Automatic Setup (`skipSetup`)
 
@@ -211,8 +213,10 @@ SaaSSkunkCQRSDriver.from(naming, pool, skipSetup = true)
 
 When `skipSetup = true`:
 - No `CREATE SCHEMA` is executed
-- No `CREATE TABLE` / `CREATE INDEX` is executed
+- No `CREATE TABLE` / `CREATE INDEX` is executed by the driver
 - The driver assumes tables already exist (created by Flyway or manually)
+- `SkunkMigrations.run` / `DoobieMigrations.run` are unaffected: they always run
+  `CREATE TABLE IF NOT EXISTS` for the `migrations` table
 
 ### Typical Flyway Workflow
 
@@ -237,6 +241,28 @@ If a new table is needed:
 2. Add the DDL to `PGSchema` (private helper method + include in `eventsourcing`/`cqrs`)
 3. Add tests in `PGNamespaceSuite.scala` (PGSchemaSuite section)
 4. Prefix constraint/index names using `naming.constraint()` / `naming.index()`
+
+## Rust Port (`rust/`)
+
+A Cargo workspace under `rust/` ports the library to Rust, milestone by milestone, following
+`docs/plans/rust-port.md` (the source of truth for scope and quality bar).
+
+- **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
+- **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`)
+- **MSRV**: 1.85 (edition 2024); every crate has `#![forbid(unsafe_code)]`
+- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`)
+
+```bash
+cd rust
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo build -p edomata-core --target wasm32-unknown-unknown
+```
+
+Do not modify the Scala modules for the port, except to add golden-DDL tooling and the Scala
+side of the cross-language compatibility test.
 
 ## CI/CD
 
@@ -286,7 +312,7 @@ Do not ask for confirmation — go straight to reading the ticket and implementi
 > - Verify driver method signatures (`from`, `apply`, `skipSetup`) match skunk and doobie driver source files
 >
 > **2. docs/backends/skunk.md and docs/backends/doobie.md**
-> - Verify all code examples use existing classes and methods (no `SkunkBackend`, no `.withSnapshot()`)
+> - Verify all code examples use existing classes and methods (e.g. no `SkunkBackend`; note that `BackendBuilder.withSnapshot(Resource[F, SnapshotStore[F, S]])` does exist, but `.withSnapshot()` with no argument does not)
 > - Verify import paths are correct
 > - Verify `PGSchema` and `skipSetup` examples match actual method signatures
 >
