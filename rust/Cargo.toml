@@ -5,7 +5,7 @@ members = ["crates/*"]
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 license = "Apache-2.0"
 authors = ["Hossein Naderi", "Beyond Scale Group"]
 repository = "https://github.com/beyond-scale-group/edomata"
@@ -18,6 +18,9 @@ edomata-core = { path = "crates/edomata-core", version = "0.1.0" }
 edomata-backend = { path = "crates/edomata-backend", version = "0.1.0" }
 edomata-backend-tests = { path = "crates/edomata-backend-tests", version = "0.1.0" }
 edomata-postgres = { path = "crates/edomata-postgres", version = "0.1.0" }
+edomata-serde = { path = "crates/edomata-serde", version = "0.1.0" }
+
+sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "uuid"] }
 
 async-trait = "0.1"
 chrono = { version = "0.4", default-features = false, features = ["std"] }

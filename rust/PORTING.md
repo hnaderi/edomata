@@ -14,12 +14,12 @@ port is complete when no row is left *planned*.
 | 3 | `postgres` | `edomata-postgres` | ported (milestone 3) |
 | 4 | `skunk` | `edomata-sqlx` | planned (milestone 5) |
 | 5 | `doobie` | `edomata-sqlx` | planned (milestone 5) |
-| 6 | `skunk-circe` | `edomata-serde` | planned (milestone 4) |
-| 7 | `skunk-jsoniter` | `edomata-serde` | planned (milestone 4) |
-| 8 | `skunk-upickle` | `edomata-serde` | planned (milestone 4) |
-| 9 | `doobie-circe` | `edomata-serde` | planned (milestone 4) |
-| 10 | `doobie-jsoniter` | `edomata-serde` | planned (milestone 4) |
-| 11 | `doobie-upickle` | `edomata-serde` | planned (milestone 4) |
+| 6 | `skunk-circe` | `edomata-serde` | ported (milestone 4) |
+| 7 | `skunk-jsoniter` | `edomata-serde` | ported (milestone 4) |
+| 8 | `skunk-upickle` | `edomata-serde` | ported (milestone 4; `msgpack` payloads are a documented limitation) |
+| 9 | `doobie-circe` | `edomata-serde` | ported (milestone 4) |
+| 10 | `doobie-jsoniter` | `edomata-serde` | ported (milestone 4) |
+| 11 | `doobie-upickle` | `edomata-serde` | ported (milestone 4; `msgpack` payloads are a documented limitation) |
 | 12 | `backend-tests` | `edomata-backend-tests` | ported (milestone 2, in-memory); run against `sqlx` in milestone 5 |
 | 13 | `e2e` | `edomata-e2e` | planned (milestone 8) |
 | 14 | `munit` | `edomata-testkit` | planned (milestone 6) |
@@ -100,6 +100,17 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `EventMigration(version, description, run)`, `EventMigration[A, B](...)`, `andThen` | `EventMigration::new`, `EventMigration::typed`, `and_then`, `run` |
 | `MigrationResult(applied, skipped)` | `MigrationResult { applied, skipped }` |
 
+## Type mapping (codecs)
+
+| Scala | Rust |
+|-------|------|
+| `BackendCodec[T]` (`Json`, `JsonB`, `Binary`; skunk and doobie variants) | `edomata_backend::Codec<T>` + `PayloadFormat` (`Json`, `Jsonb`, `Bytea`) |
+| `CirceCodec.json` / `.jsonb` | `SerdeCodec::<T>::json()` / `::jsonb()` (default) |
+| `JsoniterCodec.json` / `.jsonb` / `.msgpack` | `SerdeCodec::<T>::json()` / `::jsonb()` / `::bytea()` (jsoniter's `msgpack` writes JSON bytes) |
+| `UpickleCodec.json` / `.jsonb` | `SerdeCodec::<T>::json()` / `::jsonb()` with `#[serde(tag = "$type")]` and `compat::upickle_option` |
+| `UpickleCodec.msgpack` | not portable: real MessagePack, unreadable with `serde_json` (documented limitation) |
+| skunk `Codec[T]` / doobie `Meta[T]` wire encoding | `edomata_serde::pg::{JsonbPayload, JsonPayload, ByteaPayload, PgPayload}` (`sqlx` `Encode` / `Decode` / `Type`) |
+
 ## Test suites
 
 ### `modules/core/src/test`
@@ -164,6 +175,17 @@ against the in-memory driver; milestone 5 adds the PostgreSQL runner.
 | `PGNamespaceSuite.scala` (`PGSchemaSuite`) | `crates/edomata-postgres/tests/naming.rs` | |
 | `GoldenDDL.scala` (new generator, test scope) | `crates/edomata-postgres/tests/golden.rs` + `rust/tests/golden/*.sql` | byte-for-byte DDL comparison for `Schema`/`Prefixed` × `jsonb`/`json`/`bytea`/mixed (32 files) |
 | *(none in Scala)* | `crates/edomata-postgres/tests/migration.rs` | pins `EventMigration` semantics |
+
+### Codec modules (`skunk-circe`, `skunk-jsoniter`, `skunk-upickle`, `doobie-circe`, `doobie-jsoniter`, `doobie-upickle`)
+
+These modules have no Scala test suites. The Rust crate adds:
+
+| Rust test | Purpose |
+|-----------|---------|
+| `crates/edomata-serde/tests/round_trip.rs` | round trips for every format, wire-format bytes of the sqlx wrappers |
+| `crates/edomata-serde/tests/golden_payloads.rs` + `rust/tests/golden/payloads/` | payloads written by Circe, jsoniter (JSON and `msgpack`) and uPickle (JSON) are readable and re-encoded byte-for-byte; uPickle `msgpack` is asserted unreadable |
+| `crates/edomata-serde/tests/sql.rs` | stored `jsonb` / `json` / `bytea` payloads queried with `->>` and `@>` on the docker-compose PostgreSQL |
+| `examples/src/test/scala/GoldenPayloads.scala` (new generator, test scope) | produces the golden payload files |
 
 ### `modules/skunk` and `modules/doobie` tests — planned (milestone 5)
 

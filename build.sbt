@@ -373,7 +373,10 @@ lazy val examples =
     )
     .settings(
       libraryDependencies ++= Seq(
-        "io.circe" %%% "circe-generic" % Versions.circe
+        "io.circe" %%% "circe-generic" % Versions.circe,
+        // Test-only: used by GoldenPayloads to produce the jsoniter golden payloads for the Rust port
+        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-core" % Versions.jsoniter % Test,
+        "com.github.plokhotnyuk.jsoniter-scala" %%% "jsoniter-scala-macros" % Versions.jsoniter % Test
       )
     )
     .enablePlugins(NoPublishPlugin)

@@ -1,0 +1,33 @@
+[package]
+name = "edomata-serde"
+description = "serde_json codecs for Edomata payloads (jsonb by default, json and bytea supported), with a sqlx bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[features]
+default = ["sqlx"]
+# PostgreSQL wire types (`JsonbPayload`, `JsonPayload`, `ByteaPayload`, `PgPayload`) implementing sqlx Encode/Decode/Type.
+sqlx = ["dep:sqlx"]
+
+[dependencies]
+edomata-backend = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
+
+[lints]
+workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
