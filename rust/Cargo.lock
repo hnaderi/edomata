@@ -282,6 +282,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "edomata-saas"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "edomata-core",
+ "edomata-postgres",
+ "futures",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "edomata-saas-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "edomata-backend",
+ "edomata-core",
+ "edomata-postgres",
+ "edomata-saas",
+ "edomata-serde",
+ "edomata-sqlx",
+ "futures",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "edomata-serde"
 version = "0.1.0"
 dependencies = [
@@ -310,6 +342,15 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "edomata-testkit"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "edomata-core",
+ "futures",
 ]
 
 [[package]]

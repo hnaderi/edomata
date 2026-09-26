@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! SQL statements, mirroring `Queries.scala` of the Skunk and Doobie
 //! drivers: same tables, columns, constraints, index names and ordering.
 //! Setup DDL comes from `edomata_postgres::ddl`, so the tables created by the
@@ -6,7 +7,7 @@
 use edomata_postgres::{PGNaming, ddl};
 
 /// Journal table statements.
-pub(crate) struct JournalQueries {
+pub struct JournalQueries {
     pub setup: Vec<String>,
     pub insert: String,
     pub read_all: String,
@@ -48,7 +49,7 @@ impl JournalQueries {
 }
 
 /// Outbox table statements.
-pub(crate) struct OutboxQueries {
+pub struct OutboxQueries {
     pub setup: Vec<String>,
     pub insert: String,
     pub read: String,
@@ -72,7 +73,7 @@ impl OutboxQueries {
 }
 
 /// Snapshots table statements.
-pub(crate) struct SnapshotQueries {
+pub struct SnapshotQueries {
     pub setup: Vec<String>,
     pub get: String,
     pub put: String,
@@ -92,7 +93,7 @@ impl SnapshotQueries {
 }
 
 /// Commands table statements.
-pub(crate) struct CommandQueries {
+pub struct CommandQueries {
     pub setup: Vec<String>,
     pub count: String,
     pub insert: String,
@@ -110,7 +111,7 @@ impl CommandQueries {
 }
 
 /// CQRS states table statements.
-pub(crate) struct StateQueries {
+pub struct StateQueries {
     pub setup: Vec<String>,
     pub get: String,
     pub put: String,
@@ -130,7 +131,7 @@ impl StateQueries {
 }
 
 /// Migrations table and journal rewrite statements.
-pub(crate) struct MigrationQueries {
+pub struct MigrationQueries {
     pub create_table: Vec<String>,
     pub select_applied: String,
     pub read_payloads: String,
@@ -158,6 +159,6 @@ impl MigrationQueries {
 }
 
 /// `CREATE SCHEMA` for schema-mode naming.
-pub(crate) fn setup_schema(naming: &PGNaming) -> Vec<String> {
+pub fn setup_schema(naming: &PGNaming) -> Vec<String> {
     ddl::schema_statement(naming)
 }

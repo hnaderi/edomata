@@ -19,8 +19,9 @@ Cats: each abstraction is mapped to its idiomatic Rust equivalent (see
 | [`edomata-postgres`](crates/edomata-postgres) | `postgres` | available (`PGNaming`, `PGNamespace`, `PGSchema` with golden DDL tests, `EventMigration`) |
 | [`edomata-serde`](crates/edomata-serde) | `*-circe`, `*-jsoniter`, `*-upickle` | available (`SerdeCodec`, `jsonb` by default; sqlx wire types; golden payload tests) |
 | [`edomata-sqlx`](crates/edomata-sqlx) | `skunk`, `doobie` | available (event-sourcing and CQRS drivers, journal/outbox readers, snapshots, migrations, `skip_setup`) |
-| `edomata-testkit` | `munit` | planned |
-| `edomata-saas`, `edomata-saas-sqlx` | `saas`, `saas-skunk` | planned |
+| [`edomata-testkit`](crates/edomata-testkit) | `munit` | available (`TestCommand`, `EdomatonAssertions`, `StomatonAssertions`) |
+| [`edomata-saas`](crates/edomata-saas) | `saas` | available (tenancy types, `AuthPolicy`, `SaaSGuard`, guarded DSLs and services, tenant-scoped readers, `SaaSPGSchema` with RLS and golden DDL tests) |
+| [`edomata-saas-sqlx`](crates/edomata-saas-sqlx) | `saas-skunk` | available (tenant-aware CQRS driver, `SaaSCodec`, `TenantStateLister`) |
 | `edomata-simple` | `java-api` | planned |
 | `edomata-e2e` | `e2e` | planned (test-only) |
 | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | *(new)* | planned |
@@ -76,8 +77,8 @@ cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 The minimum supported Rust version is **1.88** (edition 2024) and is checked
 in CI. Every crate has `#![forbid(unsafe_code)]`.
 
-Integration tests (the `edomata-serde` SQL tests and the `edomata-sqlx`
-storage tests) use the PostgreSQL instance started by the repository's
+Integration tests (the `edomata-serde` SQL tests and the `edomata-sqlx` /
+`edomata-saas-sqlx` storage tests) use the PostgreSQL instance started by the repository's
 `docker-compose.yml`, which also loads the `compatibility_*` fixtures of
 `testdata.sql` that the compatibility suites read. They connect to `DATABASE_URL`, defaulting to
 `postgres://postgres:postgres@localhost:5432/postgres`. If another PostgreSQL

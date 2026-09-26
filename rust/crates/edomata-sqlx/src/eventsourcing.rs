@@ -87,7 +87,8 @@ impl SqlxDriver {
     }
 }
 
-pub(crate) fn invalid_namespace(e: PGNamespaceError) -> BackendError {
+/// Maps a namespace validation error to a backend error.
+pub fn invalid_namespace(e: PGNamespaceError) -> BackendError {
     BackendError::persistence(e.to_string())
 }
 
@@ -99,7 +100,7 @@ const DDL_LOCK_KEY: &str = "edomata-ddl";
 
 /// Runs DDL statements in one transaction, under a transaction-scoped
 /// advisory lock shared by every Edomata driver.
-pub(crate) async fn execute_all(pool: &PgPool, statements: &[String]) -> Result<(), BackendError> {
+pub async fn execute_all(pool: &PgPool, statements: &[String]) -> Result<(), BackendError> {
     if statements.is_empty() {
         return Ok(());
     }
@@ -118,7 +119,8 @@ pub(crate) async fn execute_all(pool: &PgPool, statements: &[String]) -> Result<
     tx.commit().await.map_err(map_sqlx)
 }
 
-pub(crate) fn now() -> DateTime<Utc> {
+/// The current time, as written in `time` / `created` columns.
+pub fn now() -> DateTime<Utc> {
     Utc::now()
 }
 
@@ -219,7 +221,7 @@ struct SqlxRepository<S, E, R, N> {
 }
 
 /// Inserts outbox rows inside `tx`.
-pub(crate) async fn insert_outbox<N>(
+pub async fn insert_outbox<N>(
     tx: &mut sqlx::PgConnection,
     q: &OutboxQueries,
     codec: &SqlxCodec<N>,
@@ -245,7 +247,7 @@ pub(crate) async fn insert_outbox<N>(
 }
 
 /// Records a handled command inside `tx`.
-pub(crate) async fn insert_command(
+pub async fn insert_command(
     tx: &mut sqlx::PgConnection,
     q: &CommandQueries,
     cmd: CommandRef<'_>,
@@ -262,7 +264,7 @@ pub(crate) async fn insert_command(
 }
 
 /// Whether a command id was already recorded.
-pub(crate) async fn command_exists(
+pub async fn command_exists(
     executor: impl sqlx::PgExecutor<'_>,
     q: &CommandQueries,
     id: &str,
@@ -436,10 +438,15 @@ impl<E: Payload> JournalReader<E> for SqlxJournalReader<E> {
 // Outbox reader
 // ---------------------------------------------------------------------------
 
-pub(crate) struct SqlxOutboxReader<N> {
-    pub(crate) pool: PgPool,
-    pub(crate) q: Arc<OutboxQueries>,
-    pub(crate) codec: SqlxCodec<N>,
+/// Outbox reader over a pool and an outbox query catalogue; shared with
+/// derived drivers whose outbox table has extra columns.
+pub struct SqlxOutboxReader<N> {
+    /// Connection pool.
+    pub pool: PgPool,
+    /// Outbox statements (only `read` and `mark_published` are used).
+    pub q: Arc<OutboxQueries>,
+    /// Notification codec.
+    pub codec: SqlxCodec<N>,
 }
 
 impl<N: Payload> SqlxOutboxReader<N> {

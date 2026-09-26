@@ -51,7 +51,7 @@ mod cqrs;
 mod error;
 mod eventsourcing;
 mod migrations;
-mod queries;
+pub mod queries;
 
 pub use codec::SqlxCodec;
 pub use cqrs::{SqlxCqrsDriver, SqlxHandler};
@@ -59,3 +59,12 @@ pub use edomata_postgres::{EventMigration, MigrationResult, PGNamespace, PGNamin
 pub use eventsourcing::SqlxDriver;
 pub use migrations::{DEFAULT_MIGRATION_BATCH_SIZE, SqlxMigrations};
 pub use sqlx::PgPool;
+
+/// Building blocks for derived drivers (used by `edomata-saas-sqlx`).
+pub mod shared {
+    pub use crate::error::{assert_inserted, is_unique_violation, map_sqlx, map_write};
+    pub use crate::eventsourcing::{
+        SqlxOutboxReader, command_exists, execute_all, insert_command, insert_outbox,
+        invalid_namespace, now,
+    };
+}

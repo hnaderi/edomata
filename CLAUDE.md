@@ -251,7 +251,7 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver)
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
 - **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
 
@@ -272,6 +272,14 @@ side of the cross-language compatibility test.
 
 ```bash
 sbt "postgresJVM/Test/runMain edomata.backend.GoldenDDL rust/tests/golden"
+```
+
+- **Golden SaaS DDL**: `rust/tests/golden/saas_cqrs_*.sql` is generated from the Scala `SaaSPGSchema` by
+  `modules/saas/src/test/scala/edomata/saas/GoldenSaaSDDL.scala` and asserted by
+  `rust/crates/edomata-saas/tests/schema.rs`. Regenerate after changing `SaaSPGSchema.scala`:
+
+```bash
+sbt "saasJVM/Test/runMain edomata.saas.GoldenSaaSDDL rust/tests/golden"
 ```
 
 - **Golden payloads**: `rust/tests/golden/payloads/` holds the JSON/MessagePack bytes written by the

@@ -22,9 +22,9 @@ port is complete when no row is left *planned*.
 | 11 | `doobie-upickle` | `edomata-serde` | ported (milestone 4; `msgpack` payloads are a documented limitation) |
 | 12 | `backend-tests` | `edomata-backend-tests` | ported (milestone 2, in-memory; milestone 5, PostgreSQL through `edomata-sqlx`) |
 | 13 | `e2e` | `edomata-e2e` | planned (milestone 8) |
-| 14 | `munit` | `edomata-testkit` | planned (milestone 6) |
-| 15 | `saas` | `edomata-saas` | planned (milestone 6) |
-| 16 | `saas-skunk` | `edomata-saas-sqlx` | planned (milestone 6) |
+| 14 | `munit` | `edomata-testkit` | ported (milestone 6) |
+| 15 | `saas` | `edomata-saas` | ported (milestone 6) |
+| 16 | `saas-skunk` | `edomata-saas-sqlx` | ported (milestone 6) |
 | 17 | `java-api` | `edomata-simple` | planned (milestone 7) |
 | — | `examples/` | `rust/examples/` | planned (milestone 8) |
 | — | *(new)* | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | planned (milestone 9) |
@@ -125,6 +125,41 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `SkunkMigrations.run` / `DoobieMigrations.run(naming, pool, migrations, batchSize)` | `SqlxMigrations::run(&naming, &pool, &migrations)` / `run_with_batch_size` |
 | `SqlState.UniqueViolation` → `VersionConflict` | SQLSTATE `23505` → `BackendError::VersionConflict` |
 
+## Type mapping (test kit)
+
+| Scala (`munit` module) | Rust (`edomata-testkit`) |
+|------------------------|--------------------------|
+| `trait DomainSuite(msgId, address)` (MUnit base trait with an `extension [F[_], C, S, E, R, N]` on `Edomaton[F, RequestContext[C, S], R, E, N, Unit]`) | `EdomatonAssertions` extension trait on `Edomaton<RequestContext<C, S>, R, E, N, T>` (works with any test runner) |
+| `DomainSuite` constructor defaults (`msgId = "1"`, `address = "sut"`; commands timestamped `Instant.MIN`) | `TestCommand` (same defaults, `DateTime::<Utc>::MIN_UTC`; `TestCommand::new(id, address)`, `message(payload)`) |
+| `app.runWith(command, state)` | `app.run_with(&model, command, state)`, `app.run_with_command(&model, &TestCommand, command, state)` |
+| `expect`, `expectAll`, `expectRejection`, `expectRejectionWith(command, state)(err1, errs*)`, `expectRejectionWith(command, state)(expectedErrors, expectedNotifications)`, `expectRejectionNotify`, `expectThat` | `expect`, `expect_all`, `expect_rejection`, `expect_rejection_with`, `expect_rejection_and_notify`, `expect_rejection_notify`, `expect_that` |
+| *(none)* | `StomatonAssertions` (`run_with`, `expect`, `expect_rejection_with`) for CQRS programs |
+
+## Type mapping (SaaS)
+
+| Scala (`saas`, `saas-skunk`) | Rust (`edomata-saas`, `edomata-saas-sqlx`) |
+|------------------------------|--------------------------------------------|
+| `TenantId`, `UserId` (opaque strings) | `TenantId`, `UserId` newtypes (`new`, `value`, `into_string`, `From<&str>` / `From<String>`) |
+| `CrudAction` | `CrudAction` (+ `CrudAction::ALL`) |
+| `CrudState[+A]` (`NonExistent`, `Active`, `Deleted`) | `CrudState<A>` (same variants; `active`, `deleted`, `tenant_id`, `owner_id`, `data`, `is_active`, `map`) |
+| `SaaSCommand[Auth, +C]` | `SaaSCommand<Auth, C>` |
+| `AuthPolicy[Auth]` (typeclass, `given`) | `AuthPolicy<Auth>` trait, passed as a value (ADR 0009) |
+| `CallerIdentity` + its default `given AuthPolicy` | `CallerIdentity` + `PermissivePolicy` |
+| `RoleBasedPolicy(rolesFor)` | `RoleBasedPolicy::new(roles_for)`, `RoleBasedPolicy::none()` |
+| `SaaSGuard.checkTenant`, `checkAuthorization` | `SaaSGuard::check_tenant`, `check_authorization`, `check` |
+| `SaaSDomainDSL[Auth, C, A, E, R, N](mkRejection)` (`App[F, T]`) | `SaaSDomainDsl<Auth, C, A, E, R, N>::new(policy, mk_rejection)` (`SaaSEsApp<..., T>`) |
+| `SaaSCQRSDomainDSL[Auth, C, A, R, N](mkRejection)` | `SaaSCqrsDsl<Auth, C, A, R, N>::new(policy, mk_rejection)` (`SaaSCqrsApp<..., T>`) |
+| `guardedRouter`, `unsafeUnguardedRouter`, `guarded`, `unsafeUnguarded`, `auth`, `command`, `entityState`, `set`, `modifyS`, `decideS`, ... | `guarded_router`, `unsafe_unguarded_router`, `guarded`, `unsafe_unguarded`, `auth`, `command`, `entity_state`, `set`, `modify_s`, `decide_s`, ... (+ `guard(action)` and `policy()`) |
+| `SaaSEventSourcedService`, `SaaSCQRSService` (`SaaS`, `domain`) | `SaaSEventSourcedService`, `SaaSCqrsService` (`saas()`, `domain()`) |
+| `TenantAwareReader[F, Auth, A]`, `TenantScopedQuery[F, Auth, A, Q]`, `UnsafeCrossTenantQuery[F, A, Q]` | same names (`async_trait`); `TenantScopedQuery.apply` → `ScopedQueryFn::new(policy, run)`, `UnsafeCrossTenantQuery.apply` → `CrossTenantQueryFn::new(run)` |
+| `TenantExtractor[S]` (typeclass) | `TenantExtractor` trait implemented by `CrudState<A>` (`tenant_and_owner`) |
+| `SaaSPGSchema.cqrs(naming, stateType, notificationType, rls)`, `SaaSPGSchema.RLSConfig` | `SaaSPGSchema::cqrs(&naming)` / `cqrs_with(&naming, state_type, notification_type, rls)`, `RlsConfig`; statements in `edomata_saas::ddl` |
+| `edomata.saas` package re-exports (`CommandMessage`, `MessageMetadata`, `Decision`, `Backend`) | `edomata_saas` re-exports `CommandMessage`, `MessageMetadata`, `Decision`, `NonEmpty`, `PGNaming`, `PGNamespace` (no `Backend`: the SaaS crate does not depend on `edomata-backend`) |
+| `SaaSSkunkCQRSDriver` (`apply`, `from`, `from(naming, pool, skipSetup)`) | `SaaSSqlxCqrsDriver::for_namespace`, `new`, `new_with(naming, pool, skip_setup)` |
+| `BackendCodec[S]` + `TenantExtractor[S]` (driver requirements) | `SaaSCodec<T>` (`state`, `with_extractor`, `notification`, `jsonb_state`, `jsonb_notification`) |
+| `SaaSQueries` (`listByTenant`, tenant-aware `put` / outbox insert) | private `SaaSStateQueries` / `SaaSOutboxQueries`; `TenantStateLister::list_by_tenant` |
+| `SaaSSkunkCQRSRepository`, `SaaSSkunkOutboxReader` | private `SaaSRepository`; `edomata_sqlx::shared::SqlxOutboxReader` reused |
+
 ## Test suites
 
 ### `modules/core/src/test`
@@ -216,17 +251,29 @@ single `edomata-sqlx` driver runs them once, under
 | *(none in Scala)* | `migrations.rs` | pins `SkunkMigrations` / `DoobieMigrations` behaviour (apply, skip, rewrite, truncate snapshots, atomic failure) |
 | *(none in Scala)* | `driver.rs` | `skip_setup`, Flyway workflow with `PGSchema`, prefixed catalog names, namespace validation, transactional CQRS handler, duplicate-command race |
 
-### `modules/saas/src/test` — planned (milestone 6)
+### `modules/saas/src/test`
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `SaaSGuardSuite.scala` | planned |
-| `SaaSDomainDSLSuite.scala` | planned |
-| `SaaSCQRSDSLSuite.scala` | planned |
-| `SaaSServiceSuite.scala` | planned |
-| `SaaSPGSchemaSuite.scala` | planned |
-| `TenantAwareReaderSuite.scala` | planned |
-| `ProductCatalogSuite.scala` | planned |
+All under `crates/edomata-saas/tests/`.
+
+| Scala suite | Rust test | Notes |
+|-------------|-----------|-------|
+| `SaaSGuardSuite.scala` | `guard.rs` | includes the custom `AuthPolicy` (API key) checks |
+| `SaaSDomainDSLSuite.scala` | `domain_dsl.rs` | |
+| `SaaSCQRSDSLSuite.scala` | `cqrs_dsl.rs` | |
+| `SaaSServiceSuite.scala` | `service.rs` | services, `CrudState`, `types.rs`, re-exports; the covariance test has no Rust equivalent (invariant generics), the `serde` shape is pinned instead |
+| `SaaSPGSchemaSuite.scala` (`TenantExtractorSuite`, `SaaSPGSchemaSuite`) | `schema.rs` | |
+| `GoldenSaaSDDL.scala` (new generator, test scope) | `schema.rs` (`saas_ddl_matches_scala_golden_files`) + `rust/tests/golden/saas_cqrs_*.sql` | 24 files: schema/prefixed/quoted namespace × `jsonb`/`json`/`bytea`/mixed × with/without RLS |
+| `TenantAwareReaderSuite.scala` | `reader.rs` | |
+| `ProductCatalogSuite.scala` | `product_catalog.rs` | |
+
+### `modules/saas-skunk`
+
+The Scala module has no test suite. `crates/edomata-saas-sqlx/tests/postgres.rs`
+adds PostgreSQL tests for: `tenant_id` / `owner_id` population on save,
+empty tenant on `notify`, catalog objects created by setup, `skip_setup` with
+RLS DDL from `SaaSPGSchema` enforced as a non-superuser role, the
+transactional handler, namespace validation, `TenantStateLister` and
+`SaaSCodec`.
 
 ### `modules/java-api/src/test` — planned (milestone 7)
 
@@ -250,11 +297,11 @@ single `edomata-sqlx` driver runs them once, under
 | `DoobieE2ETestSuites.scala` | planned |
 | `main/accounts/*.scala`, `main/e2e.scala` | planned (e2e domain) |
 
-### `modules/munit` — planned (milestone 6)
+### `modules/munit`
 
 | Scala | Rust |
 |-------|------|
-| `DomainSuite.scala` | `edomata-testkit` (planned) |
+| `DomainSuite.scala` (no test suite of its own) | `edomata-testkit`; `crates/edomata-testkit/tests/assertions.rs` pins every helper |
 
 ### `examples/` — planned (milestone 8)
 
