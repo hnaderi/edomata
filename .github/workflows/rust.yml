@@ -1,11 +1,28 @@
 name: Rust
 
+# The Scala paths are included because the cross-language compatibility
+# test (rust/crates/edomata-e2e/tests/cross_language.rs) runs the Scala build
+# as its oracle.
 on:
   push:
     branches: [main]
-    paths: ["rust/**", ".github/workflows/rust.yml"]
+    paths:
+      - "rust/**"
+      - ".github/workflows/rust.yml"
+      - "modules/**"
+      - "build.sbt"
+      - "project/**"
+      - "testdbs.sql"
+      - "testdata.sql"
   pull_request:
-    paths: ["rust/**", ".github/workflows/rust.yml"]
+    paths:
+      - "rust/**"
+      - ".github/workflows/rust.yml"
+      - "modules/**"
+      - "build.sbt"
+      - "project/**"
+      - "testdbs.sql"
+      - "testdata.sql"
 
 env:
   CARGO_TERM_COLOR: always
@@ -60,6 +77,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
+      # The Scala build is the external oracle of the cross-language
+      # compatibility test (crates/edomata-e2e/tests/cross_language.rs).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
       - name: Create test databases
         working-directory: .
         run: psql "$DATABASE_URL" -f testdbs.sql && psql "$DATABASE_URL" -f testdata.sql

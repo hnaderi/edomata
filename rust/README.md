@@ -23,8 +23,9 @@ Cats: each abstraction is mapped to its idiomatic Rust equivalent (see
 | [`edomata-saas`](crates/edomata-saas) | `saas` | available (tenancy types, `AuthPolicy`, `SaaSGuard`, guarded DSLs and services, tenant-scoped readers, `SaaSPGSchema` with RLS and golden DDL tests) |
 | [`edomata-saas-sqlx`](crates/edomata-saas-sqlx) | `saas-skunk` | available (tenant-aware CQRS driver, `SaaSCodec`, `TenantStateLister`) |
 | [`edomata-simple`](crates/edomata-simple) | `java-api` | available (closure-based facade: `SimpleDomainModel`, `SimpleDecision`, `CommandHandler`, `SimpleBackend::builder`, blocking runtime, `SimplePGSchema`) |
-| `edomata-e2e` | `e2e` | planned (test-only) |
+| [`edomata-e2e`](crates/edomata-e2e) | `e2e` | available (test-only: end-to-end suite and the Scala/Rust cross-language compatibility test) |
 | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | *(new)* | planned |
+| [`edomata-examples`](examples) | `examples/` | available (`cargo run -p edomata-examples --bin <name>` with `counter`, `stomaton`, `migration`, `saas_todo` or `product_catalog`) |
 
 The full roadmap is in [`docs/plans/rust-port.md`](../docs/plans/rust-port.md).
 
@@ -84,3 +85,19 @@ Integration tests (the `edomata-serde` SQL tests and the `edomata-sqlx` /
 `postgres://postgres:postgres@localhost:5432/postgres`. If another PostgreSQL
 already listens on `localhost:5432` (a Homebrew install, for example), point
 `DATABASE_URL` at the container through your machine's LAN address instead.
+
+The cross-language compatibility test (`crates/edomata-e2e/tests/cross_language.rs`)
+also needs a JDK and `sbt`: it runs the Scala side
+(`modules/e2e/src/test/scala/CrossLanguage.scala`) as an external oracle,
+passing the `DATABASE_URL` connection to Scala through the libpq environment
+variables. Set `EDOMATA_SBT` to point at a specific `sbt` binary.
+
+## Examples
+
+`rust/examples` holds one binary per Scala example (`counter`, `stomaton`,
+`migration`, `saas_todo`, `product_catalog`). They connect to the same
+PostgreSQL instance:
+
+```bash
+cargo run -p edomata-examples --bin saas_todo
+```

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/*"]
+members = ["crates/*", "examples"]
 
 [workspace.package]
 version = "0.1.0"
@@ -24,6 +24,7 @@ edomata-testkit = { path = "crates/edomata-testkit", version = "0.1.0" }
 edomata-saas = { path = "crates/edomata-saas", version = "0.1.0" }
 edomata-saas-sqlx = { path = "crates/edomata-saas-sqlx", version = "0.1.0" }
 edomata-simple = { path = "crates/edomata-simple", version = "0.1.0" }
+edomata-e2e = { path = "crates/edomata-e2e", version = "0.1.0" }
 
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "uuid"] }
 
@@ -32,6 +33,7 @@ chrono = { version = "0.4", default-features = false, features = ["std"] }
 futures = "0.3"
 proptest = "1"
 rand = "0.9"
+rust_decimal = { version = "1", default-features = false, features = ["std", "serde", "serde-with-float"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"

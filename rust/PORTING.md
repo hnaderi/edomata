@@ -21,12 +21,12 @@ port is complete when no row is left *planned*.
 | 10 | `doobie-jsoniter` | `edomata-serde` | ported (milestone 4) |
 | 11 | `doobie-upickle` | `edomata-serde` | ported (milestone 4; `msgpack` payloads are a documented limitation) |
 | 12 | `backend-tests` | `edomata-backend-tests` | ported (milestone 2, in-memory; milestone 5, PostgreSQL through `edomata-sqlx`) |
-| 13 | `e2e` | `edomata-e2e` | planned (milestone 8) |
+| 13 | `e2e` | `edomata-e2e` | ported (milestone 8, test-only) |
 | 14 | `munit` | `edomata-testkit` | ported (milestone 6) |
 | 15 | `saas` | `edomata-saas` | ported (milestone 6) |
 | 16 | `saas-skunk` | `edomata-saas-sqlx` | ported (milestone 6) |
 | 17 | `java-api` | `edomata-simple` | ported (milestone 7) |
-| — | `examples/` | `rust/examples/` | planned (milestone 8) |
+| — | `examples/` | `rust/examples/` (`edomata-examples`, one binary per example) | ported (milestone 8); Kafka and RabbitMQ examples planned (milestone 9) |
 | — | *(new)* | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | planned (milestone 9) |
 
 ## Type mapping (core)
@@ -314,13 +314,13 @@ All under `crates/edomata-simple/tests/`.
 | `JavaApiIntegrationSuite.scala` (runs `src/test/java/.../JavaApiTest.java`) | `integration.rs` | the 17 Java checks |
 | *(none in Scala)* | `backend.rs` | `SimpleBackend` on PostgreSQL: builder validation, commands, journal, outbox, `skip_setup`, blocking backend |
 
-### `modules/e2e` — planned (milestone 8)
+### `modules/e2e`
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `SkunkE2ETestSuites.scala` | planned |
-| `DoobieE2ETestSuites.scala` | planned |
-| `main/accounts/*.scala`, `main/e2e.scala` | planned (e2e domain) |
+| Scala | Rust | Notes |
+|-------|------|-------|
+| `main/accounts/Domain.scala`, `main/accounts/Service.scala` | `crates/edomata-e2e/src/lib.rs` | `BigDecimal` → `rust_decimal::Decimal`; JSON shapes match Circe (ADR 0011) |
+| `main/e2e.scala` + `SkunkE2ETestSuites.scala` + `DoobieE2ETestSuites.scala` | `crates/edomata-e2e/tests/e2e.rs` | one sqlx variant replaces the Skunk and Doobie variants |
+| `CrossLanguage.scala` (new, test scope: the Scala side of the cross-language test) | `crates/edomata-e2e/tests/cross_language.rs` | Scala writes, Rust reads and appends, Scala verifies; needs `sbt` (see `rust/README.md`) |
 
 ### `modules/munit`
 
@@ -328,13 +328,15 @@ All under `crates/edomata-simple/tests/`.
 |-------|------|
 | `DomainSuite.scala` (no test suite of its own) | `edomata-testkit`; `crates/edomata-testkit/tests/assertions.rs` pins every helper |
 
-### `examples/` — planned (milestone 8)
+### `examples/`
 
-| Scala example | Rust example |
-|---------------|--------------|
-| `Example1.scala` | planned |
-| `StomatonExample.scala` | planned |
-| `MigrationExample.scala` | planned |
-| `SaaSExample.scala` | planned |
-| `ProductCatalogExample.scala` | planned |
-| *(new)* | Kafka and RabbitMQ examples (planned, milestone 9) |
+All under `rust/examples/src/bin/`; run with `cargo run -p edomata-examples --bin <name>`.
+
+| Scala example | Rust example | Notes |
+|---------------|--------------|-------|
+| `Example1.scala` | `counter.rs` | the counter's transition really counts (ADR 0011) |
+| `StomatonExample.scala` | `stomaton.rs` | runnable (the Scala one has `???` placeholders) |
+| `MigrationExample.scala` | `migration.rs` | also seeds a V1 journal and reads it back as V3 |
+| `SaaSExample.scala` | `saas_todo.rs` | tenant-scoped read queries run real SQL |
+| `ProductCatalogExample.scala` | `product_catalog.rs` | the unimplemented `ProductQueries` read queries are replaced by `TenantStateLister::list_by_tenant` |
+| *(new)* | Kafka and RabbitMQ examples (planned, milestone 9) | |

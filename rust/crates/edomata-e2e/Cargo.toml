@@ -1,0 +1,33 @@
+[package]
+name = "edomata-e2e"
+description = "End-to-end tests of the Edomata Rust port on PostgreSQL, including the Scala/Rust cross-language compatibility test"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+edomata-core = { workspace = true }
+edomata-backend = { workspace = true }
+edomata-serde = { workspace = true }
+edomata-sqlx = { workspace = true }
+
+chrono = { workspace = true, features = ["clock"] }
+futures = { workspace = true }
+rust_decimal = { workspace = true }
+serde = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

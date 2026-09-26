@@ -251,9 +251,9 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade)
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
-- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
+- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
 
 ```bash
 cd rust
@@ -290,6 +290,19 @@ sbt "saasJVM/Test/runMain edomata.saas.GoldenSaaSDDL rust/tests/golden"
 ```bash
 sbt "examplesJVM/Test/runMain golden.GoldenPayloads rust/tests/golden/payloads"
 ```
+
+- **Cross-language test**: `rust/crates/edomata-e2e/tests/cross_language.rs` runs the Scala side
+  (`modules/e2e/src/test/scala/CrossLanguage.scala`, a test-scope main) through `sbt` (`EDOMATA_SBT`
+  overrides the binary), so `cargo test --workspace` needs a JDK and `sbt`. Run the Scala phases by hand
+  with:
+
+```bash
+sbt "e2eTestsJVM/Test/runMain crosslang.CrossLanguage write cross_language"
+sbt "e2eTestsJVM/Test/runMain crosslang.CrossLanguage verify cross_language"
+```
+
+- **Examples**: `rust/examples/src/bin/*.rs` (`cargo run -p edomata-examples --bin <name>`), one per Scala
+  example.
 
 - **Database for Rust tests**: the SQL tests read `DATABASE_URL` (default
   `postgres://postgres:postgres@localhost:5432/postgres`, the docker-compose instance). If a local
