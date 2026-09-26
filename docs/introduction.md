@@ -55,7 +55,7 @@ While this is not a direct alternative, it tries to do some of things this libra
 ### Your home grown toolbox
 Event sourcing does not require any framework and almost always they mess up the work, as mentioned by Greg Young and other pioneers of ES/CQRS, and it does not need a long way to go in order to reach this conclusion, it is sufficient to use one of the available frameworks for a real project and you will reach the same conclusion (if you care for simplicity); so it is almost always better to develop your home grown toolbox and utilities, right?!  
 IMO yes actually, and you are asking so what's the point of this library if you think so?!!!  
-that seems like a paradox, but I'll explain it in [Rationale]
+that seems like a paradox, but I'll explain it in [Rationale](#rationale)
 
 ## Rationale
 Designing DDD systems requires a lot of experience, which is really hard to convey in text books, as the problems that DDD solves are problems that we face when deepen in a specific domain, and try to discover it; which is a hard and time consuming process that can't be simulated in a comprehensive way in a book; and most development efforts rely on using opinionated frameworks which will lead to problems mentioned above, and worst of all, most of the literature for this are written with OOP in mind and does not transfer to FP easily and requires way more experience in both area. also there are a lot of spread misconception about what is event sourcing and how and when to use it all over the internet, which will lead to increasing this gap.  

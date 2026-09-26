@@ -50,7 +50,7 @@ impl DomainCompiler {
         ctx: RequestContext<C, M::State>,
     ) -> impl Future<Output = EdomatonResult<M::State, M::Event, M::Rejection, N>> + Send
     where
-        M: DomainModel + Sync,
+        M: DomainModel + Sync + ?Sized,
         M::State: Clone + Send + 'static,
         M::Event: Send + 'static,
         M::Rejection: Send + 'static,
@@ -64,7 +64,7 @@ impl DomainCompiler {
             let response = fut.await;
             let rejected = response.result.is_rejected();
             let notifications = response.notifications;
-            match model.perform(state, response.result) {
+            match model.perform(state, response.result.void()) {
                 Decision::Accepted { events, result } => EdomatonResult::Accepted {
                     new_state: result,
                     events,
@@ -98,7 +98,7 @@ where
         ctx: RequestContext<C, S>,
     ) -> impl Future<Output = EdomatonResult<S, E, R, N>> + Send
     where
-        M: DomainModel<State = S, Event = E, Rejection = R> + Sync,
+        M: DomainModel<State = S, Event = E, Rejection = R> + Sync + ?Sized,
     {
         DomainCompiler::execute(model, self, ctx)
     }

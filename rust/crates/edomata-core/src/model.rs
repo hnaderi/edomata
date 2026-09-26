@@ -62,18 +62,32 @@ pub trait DomainModel {
 
     /// Applies all events in order, returning the new state or the first
     /// rejection.
-    fn apply_all<'a, I>(
+    fn apply_all(
         &self,
         state: Self::State,
-        events: I,
-    ) -> Result<Self::State, NonEmpty<Self::Rejection>>
-    where
-        Self::Event: 'a,
-        I: IntoIterator<Item = &'a Self::Event>,
-    {
-        events
-            .into_iter()
-            .try_fold(state, |s, e| self.transition(e, s))
+        events: &[Self::Event],
+    ) -> Result<Self::State, NonEmpty<Self::Rejection>> {
+        events.iter().try_fold(state, |s, e| self.transition(e, s))
+    }
+
+    /// Returns a decision that has applied this decision and folded the
+    /// state, so the output is the new state.
+    ///
+    /// This method is object-safe, so it can be called through
+    /// `dyn DomainModel`; use [`DomainModel::handle`] to keep an output.
+    fn perform(
+        &self,
+        state: Self::State,
+        decision: Decision<Self::Rejection, Self::Event, ()>,
+    ) -> Decision<Self::Rejection, Self::Event, Self::State> {
+        match decision {
+            Decision::Accepted { events, result: () } => match self.apply_all(state, &events) {
+                Ok(s) => Decision::Accepted { events, result: s },
+                Err(reasons) => Decision::Rejected(reasons),
+            },
+            Decision::InDecisive(()) => Decision::pure(state),
+            Decision::Rejected(reasons) => Decision::Rejected(reasons),
+        }
     }
 
     /// Like [`DomainModel::perform`], but also returns the decision output.
@@ -81,9 +95,12 @@ pub trait DomainModel {
         &self,
         state: Self::State,
         decision: Decision<Self::Rejection, Self::Event, T>,
-    ) -> Decision<Self::Rejection, Self::Event, (Self::State, T)> {
+    ) -> Decision<Self::Rejection, Self::Event, (Self::State, T)>
+    where
+        Self: Sized,
+    {
         match decision {
-            Decision::Accepted { events, result } => match self.apply_all(state, events.iter()) {
+            Decision::Accepted { events, result } => match self.apply_all(state, &events) {
                 Ok(s) => Decision::Accepted {
                     events,
                     result: (s, result),
@@ -95,16 +112,6 @@ pub trait DomainModel {
         }
     }
 
-    /// Returns a decision that has applied this decision and folded the
-    /// state, so the output is the new state.
-    fn perform<T>(
-        &self,
-        state: Self::State,
-        decision: Decision<Self::Rejection, Self::Event, T>,
-    ) -> Decision<Self::Rejection, Self::Event, Self::State> {
-        self.handle(state, decision.void()).map(|(s, ())| s)
-    }
-
     /// Helps with deciding based on the state and then applying the
     /// decision.
     fn decide<T, F>(
@@ -113,10 +120,11 @@ pub trait DomainModel {
         f: F,
     ) -> Decision<Self::Rejection, Self::Event, Self::State>
     where
+        Self: Sized,
         F: FnOnce(&Self::State) -> Decision<Self::Rejection, Self::Event, T>,
     {
         let decision = f(&state);
-        self.perform(state, decision)
+        self.perform(state, decision.void())
     }
 
     /// Helps with deciding based on the state and then applying the
@@ -127,6 +135,7 @@ pub trait DomainModel {
         f: F,
     ) -> Decision<Self::Rejection, Self::Event, (Self::State, T)>
     where
+        Self: Sized,
         F: FnOnce(&Self::State) -> Decision<Self::Rejection, Self::Event, T>,
     {
         let decision = f(&state);
@@ -138,13 +147,19 @@ pub trait DomainModel {
         &self,
         state: Self::State,
         events: impl Into<NonEmpty<Self::Event>>,
-    ) -> Decision<Self::Rejection, Self::Event, Self::State> {
+    ) -> Decision<Self::Rejection, Self::Event, Self::State>
+    where
+        Self: Sized,
+    {
         self.perform(state, Decision::accept(events))
     }
 
     /// A DSL for writing programs on this model with commands `C` and
     /// notifications `N`.
-    fn dsl<C, N>(&self) -> DomainDsl<C, Self::State, Self::Event, Self::Rejection, N> {
+    fn dsl<C, N>(&self) -> DomainDsl<C, Self::State, Self::Event, Self::Rejection, N>
+    where
+        Self: Sized,
+    {
         DomainDsl::new()
     }
 }
@@ -164,7 +179,10 @@ pub trait CqrsModel {
 
     /// A DSL for writing programs on this model with commands `C` and
     /// notifications `N`.
-    fn dsl<C, N>(&self) -> CqrsDomainDsl<C, Self::State, Self::Rejection, N> {
+    fn dsl<C, N>(&self) -> CqrsDomainDsl<C, Self::State, Self::Rejection, N>
+    where
+        Self: Sized,
+    {
         CqrsDomainDsl::new()
     }
 }

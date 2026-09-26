@@ -14,13 +14,15 @@ Cats: each abstraction is mapped to its idiomatic Rust equivalent (see
 | Crate | Scala module(s) | Status |
 |-------|-----------------|--------|
 | [`edomata-core`](crates/edomata-core) | `core` | available |
-| `edomata-backend` | `backend` | planned |
+| [`edomata-backend`](crates/edomata-backend) | `backend` | available (traits, in-memory driver, command handling, caching, snapshots, outbox) |
+| [`edomata-backend-tests`](crates/edomata-backend-tests) | `backend-tests` | available (shared suites, run in-memory) |
 | `edomata-postgres` | `postgres` | planned |
 | `edomata-serde` | `*-circe`, `*-jsoniter`, `*-upickle` | planned |
 | `edomata-sqlx` | `skunk`, `doobie` | planned |
 | `edomata-testkit` | `munit` | planned |
 | `edomata-saas`, `edomata-saas-sqlx` | `saas`, `saas-skunk` | planned |
 | `edomata-simple` | `java-api` | planned |
+| `edomata-e2e` | `e2e` | planned (test-only) |
 | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | *(new)* | planned |
 
 The full roadmap is in [`docs/plans/rust-port.md`](../docs/plans/rust-port.md).
@@ -68,7 +70,7 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
-cargo build -p edomata-core --target wasm32-unknown-unknown
+cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 ```
 
 The minimum supported Rust version is **1.85** (edition 2024) and is checked

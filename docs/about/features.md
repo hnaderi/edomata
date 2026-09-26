@@ -15,6 +15,7 @@ the list consists of:
 - `Response` a state machine which consists of a `Decision` and has publishing capability like a writer monad.
 - `Action` a transformer which runs an effect that yields a `Response`
 - `Edomaton` a program that reads a value, runs an effect and yields a `Response`
+- `Stomaton` a program that reads a value and the current state, runs an effect and yields a new state (for CQRS without event sourcing)
 
 ## Convenient syntax and friendly type inference
 

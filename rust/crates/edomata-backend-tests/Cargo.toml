@@ -1,0 +1,26 @@
+[package]
+name = "edomata-backend-tests"
+description = "Shared behavioural test suites for Edomata storages (in-memory and PostgreSQL)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish = false
+
+[dependencies]
+edomata-core = { workspace = true }
+edomata-backend = { workspace = true }
+
+chrono = { workspace = true, features = ["clock"] }
+futures = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "test-util"] }
+
+[lints]
+workspace = true

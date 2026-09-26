@@ -249,16 +249,16 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`)
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions)
 - **MSRV**: 1.85 (edition 2024); every crate has `#![forbid(unsafe_code)]`
-- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`)
+- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
 
 ```bash
 cd rust
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
-cargo build -p edomata-core --target wasm32-unknown-unknown
+cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 ```
 
 Do not modify the Scala modules for the port, except to add golden-DDL tooling and the Scala
@@ -327,5 +327,12 @@ Do not ask for confirmation — go straight to reading the ticket and implementi
 > **5. Cross-reference**
 > - For every public method mentioned in any doc, grep the codebase to confirm it exists
 > - For every file path mentioned in CLAUDE.md, verify the file exists
+>
+> **6. Rust workspace (`rust/`)**
+> - Verify the "Rust Port" section of CLAUDE.md: every path exists and every command is valid for the workspace
+> - `rust/README.md`: crate table statuses, commands and MSRV match `rust/Cargo.toml`, `rust/crates/*` and `.github/workflows/rust.yml`
+> - `rust/PORTING.md`: every Rust path exists under `rust/crates/`, every Scala path exists under `modules/`, and every Rust type or function named in the type-mapping tables exists in the Rust sources
+> - `rust/docs/adr/*.md`: types, functions and modules they mention exist in the Rust sources
+> - Crate-level docs (`src/lib.rs` of each crate): every intra-doc link target exists and is exported
 >
 > Report findings as a list: `[file:line] issue description — expected X, found Y`

@@ -10,7 +10,7 @@ port is complete when no row is left *planned*.
 | # | Scala module | Rust crate | Status |
 |---|--------------|------------|--------|
 | 1 | `core` | `edomata-core` | ported (milestone 1) |
-| 2 | `backend` | `edomata-backend` | planned (milestone 2) |
+| 2 | `backend` | `edomata-backend` | ported (milestone 2) |
 | 3 | `postgres` | `edomata-postgres` | planned (milestone 3) |
 | 4 | `skunk` | `edomata-sqlx` | planned (milestone 5) |
 | 5 | `doobie` | `edomata-sqlx` | planned (milestone 5) |
@@ -20,7 +20,7 @@ port is complete when no row is left *planned*.
 | 9 | `doobie-circe` | `edomata-serde` | planned (milestone 4) |
 | 10 | `doobie-jsoniter` | `edomata-serde` | planned (milestone 4) |
 | 11 | `doobie-upickle` | `edomata-serde` | planned (milestone 4) |
-| 12 | `backend-tests` | `edomata-backend-tests` | planned (milestone 2, run against `sqlx` in milestone 5) |
+| 12 | `backend-tests` | `edomata-backend-tests` | ported (milestone 2, in-memory); run against `sqlx` in milestone 5 |
 | 13 | `e2e` | `edomata-e2e` | planned (milestone 8) |
 | 14 | `munit` | `edomata-testkit` | planned (milestone 6) |
 | 15 | `saas` | `edomata-saas` | planned (milestone 6) |
@@ -60,6 +60,33 @@ Method naming: Scala overloads become distinct names (`validate` /
 `and_then` (with `flat_map` as an alias); `>>` is `then`; `as` is `replace`;
 `tailRecM` is `tail_rec` with `std::ops::ControlFlow`.
 
+## Type mapping (backend)
+
+| Scala | Rust |
+|-------|------|
+| `SeqNr`, `EventVersion`, `StreamId` | same names (`i64`, `i64`, `String`) |
+| `EventMetadata`, `EventMessage[T]` | same names (`uuid::Uuid`, `chrono::DateTime<Utc>`) |
+| `BackendError` (`VersionConflict`, `MaxRetryExceeded`, `PersistenceError`, `UnknownError`) | `BackendError` enum (`thiserror`) |
+| `CommandState.Redundant` | `eventsourcing::CommandState::Redundant`, `cqrs::CommandState::Redundant` |
+| `AggregateState.Valid` / `Conflicted` | `eventsourcing::ValidState`, `eventsourcing::AggregateState` |
+| `cqrs.AggregateState` | `cqrs::AggregateState` |
+| `Cache`, `LRUCache` | `Cache` trait, `LruCache` |
+| `CommandStore`, `CommandStore.inMem` | `CommandStore` trait, `InMemoryCommandStore` |
+| `Repository`, `RepositoryReader`, `CachedRepository` | same names in `eventsourcing` / `cqrs` |
+| `JournalReader`, `OutboxReader`, `OutboxItem` | same names |
+| `OutboxConsumer` | `OutboxConsumer` (batched, `run` / `consume_once`) |
+| `SnapshotReader`, `SnapshotStore`, `SnapshotPersistence`, `SnapshotStore.inMem` / `persisted` | same traits, `InMemorySnapshotStore`, `PersistedSnapshotStore` (+ `PersistedSnapshotConfig`) |
+| `Notifications`, `NotificationsConsumer`, `NotificationsPublisher` | same names (built on `Signal` / `tokio::sync::Notify`, ADR 0005) |
+| `CommandHandler`, `CommandHandler.withRetry` | `CommandHandler::new` / `with_retry` + `RetryConfig` |
+| `retry` | `retry`, `retry_with` |
+| `Storage`, `StorageDriver[F, Codec[_]]` | `Storage`, `StorageDriver` with GAT `Codec<T>` (and `Handler<N>` for CQRS) |
+| `Backend`, `BackendBuilder`, `PartialBackendBuilder` | same names; `Backend::builder(model, dsl).driver(d)...build(...)` |
+| `DomainService[F, C, R]` | `DomainService<C, R>` (`Arc<dyn Fn(CommandMessage<C>) -> BoxFuture<CommandResult<R>>>`) |
+| `CommandMessage[?]` (payload-erased) | `CommandRef<'_>` |
+| `StateModelTC[S]` | `cqrs::StateModel<S>` |
+| `SkunkHandler` (CQRS notification hook) | `StorageDriver::Handler<N>` (`InMemoryNotificationHandler<N>` in memory) |
+| *(none)* | `inmemory::InMemoryDriver`, `InMemoryEventStore`, `InMemoryStateStore`, `InMemorySnapshotPersistence` |
+
 ## Test suites
 
 ### `modules/core/src/test`
@@ -79,36 +106,42 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `ModelSyntaxSuite.scala` | `crates/edomata-core/tests/model_syntax.rs` | |
 | *(none in Scala)* | `crates/edomata-core/tests/compiler.rs` | pins `DomainCompiler` / DSL behaviour |
 
-### `modules/backend/src/test` — planned (milestone 2)
+### `modules/backend/src/test`
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `LRUCacheSuite.scala` | planned |
-| `InMemoryCommandStoreSuite.scala` | planned |
-| `OutboxConsumerSuite.scala` | planned |
-| `FakeOutboxReader.scala`, `Doubles.scala` | planned (test doubles) |
-| `eventsourcing/CachedRepositorySuite.scala` | planned |
-| `eventsourcing/CommandHandlerSuite.scala` | planned |
-| `eventsourcing/NotificationsSuite.scala` | planned |
-| `eventsourcing/RepositoryReaderSuite.scala` | planned |
-| `eventsourcing/PersistedSnapshotStoreSuite.scala` | planned |
-| `eventsourcing/InMemorySnapshotSuite.scala` | planned |
-| `eventsourcing/FakeRepository.scala`, `eventsourcing/Doubles.scala` | planned (test doubles) |
-| `cqrs/CachedRepositorySuite.scala` | planned |
-| `cqrs/CommandHandlerSuite.scala` | planned |
-| `cqrs/NotificationsSuite.scala` | planned |
-| `cqrs/FakeRepository.scala` | planned (test double) |
+All under `crates/edomata-backend/tests/`.
 
-### `modules/backend-tests` — planned (milestone 2, PostgreSQL in milestone 5)
+| Scala suite | Rust test | Notes |
+|-------------|-----------|-------|
+| `LRUCacheSuite.scala` | `lru_cache.rs` | |
+| `InMemoryCommandStoreSuite.scala` | `command_store.rs` | |
+| `OutboxConsumerSuite.scala` | `outbox_consumer.rs` | "mark each chunk" uses the consumer's batch size instead of fs2 chunk boundaries |
+| `FakeOutboxReader.scala`, `Doubles.scala` | `common/mod.rs` | test doubles |
+| `eventsourcing/CachedRepositorySuite.scala` | `es_cached_repository.rs` | |
+| `eventsourcing/CommandHandlerSuite.scala` | `es_command_handler.rs` | "raised errors" / "retry" use failing repositories (programs have no error channel, ADR 0005) |
+| `eventsourcing/NotificationsSuite.scala` | `notifications.rs` | Tokio paused clock replaces `TestControl` |
+| `eventsourcing/RepositoryReaderSuite.scala` | `es_repository_reader.rs` | |
+| `eventsourcing/PersistedSnapshotStoreSuite.scala` | `es_snapshot_stores.rs` | Tokio paused clock replaces `TestControl` |
+| `eventsourcing/InMemorySnapshotSuite.scala` | `es_snapshot_stores.rs` | |
+| `eventsourcing/FakeRepository.scala`, `eventsourcing/Doubles.scala` | `common/mod.rs` | test doubles |
+| `cqrs/CachedRepositorySuite.scala` | `cqrs_cached_repository.rs` | |
+| `cqrs/CommandHandlerSuite.scala` | `cqrs_command_handler.rs` | same adaptation as the event-sourcing handler suite |
+| `cqrs/NotificationsSuite.scala` | `notifications.rs` | |
+| `cqrs/FakeRepository.scala` | `common/mod.rs` | test double |
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `shared/BackendCompatibilitySuite.scala` | planned |
-| `shared/CqrsSuite.scala` | planned |
-| `shared/PersistenceSuite.scala` | planned |
-| `shared/SnapshotPersistenceSuite.scala` | planned |
-| `shared/TestDomain.scala`, `shared/Utils.scala` | planned (shared fixtures) |
-| `{jvm,js,native}/StorageSuite.scala` | planned (single Rust variant) |
+### `modules/backend-tests`
+
+The suites are a library crate, `crates/edomata-backend-tests`, so that the
+same checks run against every storage. `tests/inmemory.rs` runs them
+against the in-memory driver; milestone 5 adds the PostgreSQL runner.
+
+| Scala suite | Rust |
+|-------------|------|
+| `shared/BackendCompatibilitySuite.scala` | `src/eventsourcing.rs` (`prepared_data` module) |
+| `shared/CqrsSuite.scala` | `src/cqrs.rs` |
+| `shared/PersistenceSuite.scala` | `src/eventsourcing.rs` |
+| `shared/SnapshotPersistenceSuite.scala` | `src/eventsourcing.rs` (`snapshot_*` checks) |
+| `shared/TestDomain.scala`, `shared/Utils.scala` | `src/lib.rs` (`TestDomain`, `TestCqrsModel`, `random_string`) |
+| `{jvm,js,native}/StorageSuite.scala` | `tests/inmemory.rs` (one `#[tokio::test]` per check; a single Rust variant replaces the three platform variants) |
 
 ### `modules/postgres/src/test` — planned (milestone 3)
 
