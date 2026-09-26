@@ -1,0 +1,42 @@
+[package]
+name = "edomata-book-samples"
+description = "Code samples of the Edomata for Rust book (rust/book); compiled and tested with the workspace, included in the chapters by anchor"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+edomata-core = { workspace = true, features = ["serde"] }
+edomata-backend = { workspace = true }
+edomata-postgres = { workspace = true }
+edomata-serde = { workspace = true }
+edomata-sqlx = { workspace = true }
+edomata-saas = { workspace = true }
+edomata-saas-sqlx = { workspace = true }
+edomata-simple = { workspace = true }
+edomata-broker = { workspace = true }
+edomata-testkit = { workspace = true }
+
+chrono = { workspace = true, features = ["clock"] }
+futures = { workspace = true, features = ["executor"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

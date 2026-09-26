@@ -82,6 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_default()
         .await?;
 
+    // ANCHOR: relay
     // The relay: a durable topic exchange, routing key = stream id.
     let publisher = RabbitMqPublisher::connect(&url)
         .await?
@@ -98,6 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .wake_on(backend.updates().outbox()),
     );
+    // ANCHOR_END: relay
     let cancel = CancellationToken::new();
     let running = tokio::spawn({
         let (relay, cancel) = (Arc::clone(&relay), cancel.clone());

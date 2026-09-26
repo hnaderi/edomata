@@ -251,9 +251,11 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout, broker distribution)
+- **Book**: `rust/book/` (mdBook; `mdbook build rust/book`); chapters include their code from the `rust/book/samples`
+  crate (`edomata-book-samples`) by anchor, so samples compile and are tested with the workspace
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout, broker distribution, documentation)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
-- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test and Docker for the testcontainers broker tests, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency and no-broker-client guards)
+- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test and Docker for the testcontainers broker tests, MSRV, wasm32 build of `edomata-core`, mdBook build, no-JVM-dependency and no-broker-client guards)
 
 ```bash
 cd rust
@@ -382,5 +384,6 @@ Do not ask for confirmation — go straight to reading the ticket and implementi
 > - `rust/PORTING.md`: every Rust path exists under `rust/crates/`, every Scala path exists under `modules/`, and every Rust type or function named in the type-mapping tables exists in the Rust sources
 > - `rust/docs/adr/*.md`: types, functions and modules they mention exist in the Rust sources
 > - Crate-level docs (`src/lib.rs` of each crate): every intra-doc link target exists and is exported
+> - `rust/book/src/**/*.md`: every include path and anchor exists in `rust/book/samples/src` or `rust/examples/src/bin`, every relative link resolves, every named type or method exists in the Rust sources, and every crate `README.md` under `rust/crates/*/` names existing items and chapters
 >
 > Report findings as a list: `[file:line] issue description — expected X, found Y`

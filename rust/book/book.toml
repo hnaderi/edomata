@@ -1,0 +1,18 @@
+[book]
+title = "Edomata for Rust"
+description = "Event-driven automata in Rust: event sourcing and CQRS on PostgreSQL, with the same wire format as the Scala library"
+authors = ["Hossein Naderi", "Beyond Scale Group"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[rust]
+edition = "2024"
+
+[output.html]
+default-theme = "light"
+git-repository-url = "https://github.com/beyond-scale-group/edomata"
+site-url = "/"

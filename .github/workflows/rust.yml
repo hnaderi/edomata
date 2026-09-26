@@ -114,6 +114,20 @@ jobs:
           workspaces: rust
       - run: cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 
+  book:
+    name: mdBook builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo install mdbook --locked
+      - run: mdbook build book
+      # The book's code samples are the `edomata-book-samples` workspace
+      # member, compiled and tested by the lint and test jobs.
+
   no-broker-deps:
     name: edomata-broker pulls no broker client
     runs-on: ubuntu-latest

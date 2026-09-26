@@ -87,6 +87,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_default()
         .await?;
 
+    // ANCHOR: relay
     // The relay: idempotent Kafka producer, a fixed topic (the default would
     // be one topic per source), the stream id as partition key, ids and
     // metadata as headers.
@@ -103,6 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .wake_on(backend.updates().outbox())
         .wake_on(listen(pool.clone(), "accounts_outbox")),
     );
+    // ANCHOR_END: relay
     let cancel = CancellationToken::new();
     let running = tokio::spawn({
         let (relay, cancel, pool) = (Arc::clone(&relay), cancel.clone(), pool.clone());

@@ -30,6 +30,12 @@ Cats: each abstraction is mapped to its idiomatic Rust equivalent (see
 
 The full roadmap is in [`docs/plans/rust-port.md`](../docs/plans/rust-port.md).
 
+## Documentation
+
+- **[The book](book/src/SUMMARY.md)** (`rust/book`, mdBook): tutorials (getting started, event sourcing, CQRS, running, processes, SaaS, migrations), principles, the PostgreSQL backend, the Simple API, distributing events with Kafka / RabbitMQ, a [migration guide for Scala and Java users](book/src/other/migration-guide.md), the porting map and the ADRs. Build it with `cargo install mdbook && mdbook build rust/book`; its code samples are the `edomata-book-samples` workspace member, compiled and tested with everything else.
+- **API docs**: `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps --open`.
+- Every crate has a `README.md`.
+
 ## Quick start
 
 ```toml
@@ -74,6 +80,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps
 cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
+mdbook build book
 ```
 
 The minimum supported Rust version is **1.88** (edition 2024) and is checked
