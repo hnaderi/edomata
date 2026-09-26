@@ -35,7 +35,7 @@ impl<S, N> Clone for Storage<S, N> {
 /// projections atomically).
 pub trait StorageDriver: Send + Sync {
     /// Codec required for payloads of type `T`.
-    type Codec<T>: Send + Sync + 'static;
+    type Codec<T: 'static>: Send + Sync + 'static;
     /// Transactional notification handler for notifications of type `N`.
     type Handler<N: 'static>: Send + Sync + 'static;
 

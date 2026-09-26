@@ -168,7 +168,7 @@ enum CommandCacheChoice {
 ///
 /// Defaults: an in-memory snapshot cache of 1000 aggregates, an in-memory
 /// command cache of 1000 commands, and [`RetryConfig::default`].
-pub struct BackendBuilder<S, E, R, N, D: StorageDriver> {
+pub struct BackendBuilder<S: 'static, E, R, N, D: StorageDriver> {
     model: SharedModel<S, E, R>,
     driver: D,
     snapshot: SnapshotChoice<S, D::Codec<S>>,

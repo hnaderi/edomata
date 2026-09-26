@@ -12,15 +12,15 @@ port is complete when no row is left *planned*.
 | 1 | `core` | `edomata-core` | ported (milestone 1) |
 | 2 | `backend` | `edomata-backend` | ported (milestone 2) |
 | 3 | `postgres` | `edomata-postgres` | ported (milestone 3) |
-| 4 | `skunk` | `edomata-sqlx` | planned (milestone 5) |
-| 5 | `doobie` | `edomata-sqlx` | planned (milestone 5) |
+| 4 | `skunk` | `edomata-sqlx` | ported (milestone 5) |
+| 5 | `doobie` | `edomata-sqlx` | ported (milestone 5) |
 | 6 | `skunk-circe` | `edomata-serde` | ported (milestone 4) |
 | 7 | `skunk-jsoniter` | `edomata-serde` | ported (milestone 4) |
 | 8 | `skunk-upickle` | `edomata-serde` | ported (milestone 4; `msgpack` payloads are a documented limitation) |
 | 9 | `doobie-circe` | `edomata-serde` | ported (milestone 4) |
 | 10 | `doobie-jsoniter` | `edomata-serde` | ported (milestone 4) |
 | 11 | `doobie-upickle` | `edomata-serde` | ported (milestone 4; `msgpack` payloads are a documented limitation) |
-| 12 | `backend-tests` | `edomata-backend-tests` | ported (milestone 2, in-memory); run against `sqlx` in milestone 5 |
+| 12 | `backend-tests` | `edomata-backend-tests` | ported (milestone 2, in-memory; milestone 5, PostgreSQL through `edomata-sqlx`) |
 | 13 | `e2e` | `edomata-e2e` | planned (milestone 8) |
 | 14 | `munit` | `edomata-testkit` | planned (milestone 6) |
 | 15 | `saas` | `edomata-saas` | planned (milestone 6) |
@@ -111,6 +111,20 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `UpickleCodec.msgpack` | not portable: real MessagePack, unreadable with `serde_json` (documented limitation) |
 | skunk `Codec[T]` / doobie `Meta[T]` wire encoding | `edomata_serde::pg::{JsonbPayload, JsonPayload, ByteaPayload, PgPayload}` (`sqlx` `Encode` / `Decode` / `Type`) |
 
+## Type mapping (PostgreSQL driver)
+
+| Scala (Skunk / Doobie) | Rust (`edomata-sqlx`) |
+|------------------------|-----------------------|
+| `SkunkDriver` / `DoobieDriver` (`apply(ns, pool)`, `from(namespace, pool)`, `from(naming, pool, skipSetup)`) | `SqlxDriver::for_namespace(ns, pool)`, `SqlxDriver::new(naming, pool)`, `SqlxDriver::new_with(naming, pool, skip_setup)` |
+| `SkunkCQRSDriver` / `DoobieCQRSDriver` | `SqlxCqrsDriver` (same constructors) |
+| `Resource[F, Session[F]]` / `Transactor[F]` | `sqlx::PgPool` |
+| `BackendCodec[T]` (driver codec typeclass) | `SqlxCodec<T>` (`StorageDriver::Codec<T>`; `Default` = `SerdeCodec::jsonb()`) |
+| `SkunkHandler[F][N]` / `DoobieHandler[N]` | `SqlxHandler<N>` (`Fn(&NonEmpty<N>, &mut PgConnection) -> BoxFuture<Result<(), BackendError>>`) |
+| `SkunkRepository`, `SkunkCQRSRepository`, `SkunkJournalReader`, `SkunkOutboxReader`, `SkunkSnapshotPersistence` (and Doobie twins) | private `SqlxRepository`, `SqlxCqrsRepository`, `SqlxJournalReader`, `SqlxOutboxReader`, `SqlxSnapshotPersistence` behind the `edomata-backend` traits |
+| `Queries.scala` (both drivers) | `queries.rs` (same SQL; setup DDL from `edomata_postgres::ddl`) |
+| `SkunkMigrations.run` / `DoobieMigrations.run(naming, pool, migrations, batchSize)` | `SqlxMigrations::run(&naming, &pool, &migrations)` / `run_with_batch_size` |
+| `SqlState.UniqueViolation` → `VersionConflict` | SQLSTATE `23505` → `BackendError::VersionConflict` |
+
 ## Test suites
 
 ### `modules/core/src/test`
@@ -156,7 +170,7 @@ All under `crates/edomata-backend/tests/`.
 
 The suites are a library crate, `crates/edomata-backend-tests`, so that the
 same checks run against every storage. `tests/inmemory.rs` runs them
-against the in-memory driver; milestone 5 adds the PostgreSQL runner.
+against the in-memory driver and `crates/edomata-sqlx/tests/shared_suites.rs` runs them against PostgreSQL.
 
 | Scala suite | Rust |
 |-------------|------|
@@ -187,12 +201,20 @@ These modules have no Scala test suites. The Rust crate adds:
 | `crates/edomata-serde/tests/sql.rs` | stored `jsonb` / `json` / `bytea` payloads queried with `->>` and `@>` on the docker-compose PostgreSQL |
 | `examples/src/test/scala/GoldenPayloads.scala` (new generator, test scope) | produces the golden payload files |
 
-### `modules/skunk` and `modules/doobie` tests — planned (milestone 5)
+### `modules/skunk` and `modules/doobie` tests
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `skunk/SkunkCompatibilitySuite.scala` | planned |
-| `doobie/DoobieCompatibilitySuite.scala` | planned |
+Both Scala suites wire the shared `backend-tests` suites to their driver; the
+single `edomata-sqlx` driver runs them once, under
+`crates/edomata-sqlx/tests/`.
+
+| Scala suite (classes) | Rust test | Notes |
+|-----------------------|-----------|-------|
+| `SkunkCompatibilitySuite` / `DoobieCompatibilitySuite` (`SkunkCompatibilitySuite` and `DoobieJsonCompatibilitySuite` for json, `*JsonbCompatibilitySuite`, `*BinaryCompatibilitySuite`) | `shared_suites.rs` (`compatibility_json`, `compatibility_jsonb`, `compatibility_binary`) | same `compatibility_*` schemas from `testdata.sql`; `IntCodec` in `common/mod.rs` reproduces the Scala test codecs (hex bytes for `bytea`) |
+| `*PersistenceSuite`, `*PersistenceKeywordNamespaceSuite`, `*PrefixedPersistenceSuite` | `shared_suites.rs` (`persistence`, `persistence_keyword_namespace`, `persistence_prefixed`) | checks of one namespace are serialised with a lock (MUnit runs a suite sequentially) |
+| `*SnapshotPersistenceSuite` | `shared_suites.rs` (`snapshot_*`) | |
+| `*CQRSSuite`, `*PrefixedCQRSSuite` | `shared_suites.rs` (`cqrs_schema`, `cqrs_prefixed`) | |
+| *(none in Scala)* | `migrations.rs` | pins `SkunkMigrations` / `DoobieMigrations` behaviour (apply, skip, rewrite, truncate snapshots, atomic failure) |
+| *(none in Scala)* | `driver.rs` | `skip_setup`, Flyway workflow with `PGSchema`, prefixed catalog names, namespace validation, transactional CQRS handler, duplicate-command race |
 
 ### `modules/saas/src/test` — planned (milestone 6)
 

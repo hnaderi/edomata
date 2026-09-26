@@ -83,7 +83,7 @@ impl<S, N> InMemoryStateStore<S, N> {
 }
 
 impl StorageDriver for InMemoryDriver {
-    type Codec<T> = ();
+    type Codec<T: 'static> = ();
     type Handler<N: 'static> = InMemoryNotificationHandler<N>;
 
     async fn build<S, N>(

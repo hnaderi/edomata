@@ -62,7 +62,7 @@ jobs:
           workspaces: rust
       - name: Create test databases
         working-directory: .
-        run: psql "$DATABASE_URL" -f testdbs.sql
+        run: psql "$DATABASE_URL" -f testdbs.sql && psql "$DATABASE_URL" -f testdata.sql
       - run: cargo test --workspace --all-features
 
   msrv:

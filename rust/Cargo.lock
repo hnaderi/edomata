@@ -293,6 +293,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "edomata-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "edomata-backend",
+ "edomata-backend-tests",
+ "edomata-core",
+ "edomata-postgres",
+ "edomata-serde",
+ "futures",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "either"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

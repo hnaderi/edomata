@@ -42,7 +42,7 @@ impl<S, E, R, N> Clone for Storage<S, E, R, N> {
 /// for the in-memory driver, a serde-based codec for PostgreSQL drivers.
 pub trait StorageDriver: Send + Sync {
     /// Codec required for payloads of type `T`.
-    type Codec<T>: Send + Sync + 'static;
+    type Codec<T: 'static>: Send + Sync + 'static;
 
     /// Builds a storage for one aggregate type.
     fn build<S, E, R, N>(

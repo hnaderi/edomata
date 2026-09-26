@@ -116,7 +116,7 @@ impl<S, E, N> InMemoryEventStore<S, E, N> {
 }
 
 impl StorageDriver for InMemoryDriver {
-    type Codec<T> = ();
+    type Codec<T: 'static> = ();
 
     async fn build<S, E, R, N>(
         &self,

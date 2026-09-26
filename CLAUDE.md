@@ -104,6 +104,7 @@ This starts PostgreSQL 14 on port 5432 with:
 - User: `postgres`
 - Password: `postgres`
 - Databases created by init scripts: `postgres` (default), `skunk_jvmplatform`, `skunk_jsplatform`, `skunk_nativeplatform`, `doobie` (unquoted in `testdbs.sql`, so PostgreSQL folds them to lowercase)
+- Fixture schemas loaded into `postgres` by `testdata.sql`: `compatibility_json`, `compatibility_jsonb`, `compatibility_binary` (read by the Scala and Rust compatibility suites)
 
 Run tests with:
 
@@ -231,13 +232,14 @@ When `skipSetup = true`:
 2. **Driver instances** (private field) — passed to Queries and SnapshotPersistence
 3. **Queries classes** (`modules/skunk/src/main/scala/Queries.scala`, `modules/doobie/src/main/scala/Queries.scala`) — table refs, constraint names, index names in SQL
 4. **SnapshotPersistence** — snapshot table setup
+5. **Migration runners** (`SkunkMigrations.run`, `DoobieMigrations.run`) — the `migrations` table DDL lives there, not in `Queries.scala`
 
 When modifying SQL generation, update both skunk and doobie Queries files. The skunk variant uses `sql"""#$interpolation"""` for literal SQL fragments; the doobie variant uses `Fragment.const(...)`.
 
 ### Adding a New Table
 
 If a new table is needed:
-1. Add a `PGNaming` method call in the new `Queries` class (both skunk and doobie)
+1. Add a `PGNaming` method call in the new `Queries` class (both skunk and doobie; migration-related tables live in the `*Migrations` files)
 2. Add the DDL to `PGSchema` (private helper method + include in `eventsourcing`/`cqrs`)
 3. Add tests in `PGNamespaceSuite.scala` (PGSchemaSuite section)
 4. Prefix constraint/index names using `naming.constraint()` / `naming.index()`
@@ -249,7 +251,7 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format)
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
 - **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
 
