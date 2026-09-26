@@ -25,7 +25,7 @@ port is complete when no row is left *planned*.
 | 14 | `munit` | `edomata-testkit` | ported (milestone 6) |
 | 15 | `saas` | `edomata-saas` | ported (milestone 6) |
 | 16 | `saas-skunk` | `edomata-saas-sqlx` | ported (milestone 6) |
-| 17 | `java-api` | `edomata-simple` | planned (milestone 7) |
+| 17 | `java-api` | `edomata-simple` | ported (milestone 7) |
 | — | `examples/` | `rust/examples/` | planned (milestone 8) |
 | — | *(new)* | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | planned (milestone 9) |
 
@@ -160,6 +160,28 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `SaaSQueries` (`listByTenant`, tenant-aware `put` / outbox insert) | private `SaaSStateQueries` / `SaaSOutboxQueries`; `TenantStateLister::list_by_tenant` |
 | `SaaSSkunkCQRSRepository`, `SaaSSkunkOutboxReader` | private `SaaSRepository`; `edomata_sqlx::shared::SqlxOutboxReader` reused |
 
+## Type mapping (simple facade)
+
+| Scala (`java-api`) | Rust (`edomata-simple`) |
+|--------------------|-------------------------|
+| `JDomainModel` (`initial`, `transition`, `create`, `toModelTC`) | `SimpleDomainModel` trait (`initial`, `transition` → `Result<S, Vec<R>>`, `into_model`), `ClosureModel::new` (`create`), `ModelAdapter` |
+| `JDecision` (`Accepted`, `Rejected`, `Indecisive`; `accept`, `acceptReturn`, `reject`, `pure`, `unit`, `map`, `flatMap`, `toEither`) | `SimpleDecision` enum (same variants; `accept`, `accept_return`, `reject`, `pure`, `unit`, `map`, `and_then` / `flat_map`, `to_result`, `events`, `reasons`) |
+| `Converters.decisionToJava` / `decisionToScala` | `SimpleDecision::from(Decision)` / `SimpleDecision::into_decision` (`EmptyRejection` error) |
+| `Converters.toJavaList` / `toChain` / `toNonEmptyChain` | `NonEmpty::into_vec`, `Vec`, `NonEmpty::from_vec` |
+| `JAppResult` (`decide`, `decideAndPublish`, `accept`, `reject`, `publish`) | `AppResult` (same constructors + `and_publish`) |
+| `JCommandHandler.create`, `JRequestContext` (`command`, `commandMessage`, `state`, `address`, `messageId`) | `CommandHandler::new` / `new_async`, `Context` (`command`, `message`, `state`, `address()`, `message_id()`, `time()`) |
+| `JCodec` (`encode`, `decode`, `of`, `toBackendCodec`) | `SimpleCodec` trait (`encode`, `decode` → `Result<T, String>`, `into_codec`), `ClosureCodec::new` (`of`), `CodecAdapter`, `serde_codec` for serde types |
+| `JCommandMessage.of(id, time, address, payload)` | `CommandMessage::new(id, time, address, payload)` (re-exported) |
+| `JEventMessage`, `JOutboxItem` | `EventMessage`, `OutboxItem` (re-exported) |
+| `JEither` (`left`, `right`, `isLeft`, `isRight`, `getLeft`, `getRight`, `fold`, `map`) | `Result<R, L>` (`Err`, `Ok`, `is_err`, `is_ok`, `unwrap_err`, `unwrap`, `map_or_else`, `map`) |
+| `JBackendBuilder.forDoobie(model)` (`namespace`, `schemaNamespace`, `dataSource`, `eventCodec`, `notificationCodec`, `maxRetry`, `inMemSnapshotSize`, `skipSetup`, `build(runtime)`) | `SimpleBackend::builder(model)` (`namespace`, `schema_namespace`, `naming`, `pool` / `database_url`, `event_codec` / `simple_event_codec`, `notification_codec` / `simple_notification_codec`, `serde_codecs`, `max_retry`, `in_mem_snapshot_size`, `skip_setup`, `build().await`, `build_blocking(runtime)`) |
+| `JBackend` (`handle`, `journal`, `outbox`, `close`) | `SimpleBackend` (`handle`, `compile`, `journal`, `outbox`, `close`, `inner`); `BlockingBackend` for blocking calls |
+| `JJournalReader` (`readStream`, `readStreamAfter`, `readAll`, `readAllAfter`) | `SimpleJournal` (`read_stream`, `read_stream_after`, `read_all`, `read_all_after`, returning `Vec`) |
+| `JOutboxReader.read` | `SimpleOutbox::read` (+ `mark_as_sent`, `mark_all_as_sent`); blocking twins on `BlockingBackend` |
+| `EdomataRuntime` (`create`, `global`, `fromExisting`, `close`) | `SimpleRuntime` (`create` owns a Tokio runtime since there is no global one, `from_handle`, `block_on`, `close`) |
+| `JPGSchema` (`eventsourcing`, `cqrs`, `eventsourcingWithSchema`, `cqrsWithSchema`) | `SimplePGSchema` (`eventsourcing` / `eventsourcing_with`, `cqrs` / `cqrs_with`, `eventsourcing_with_schema`, `cqrs_with_schema`, returning `Result<Vec<String>, SimpleError>`) |
+| `IllegalArgumentException` / `IllegalStateException` | `SimpleError::InvalidNamespace` / `MissingConfig`; `SimpleError::Connection`, `SimpleError::Backend` |
+
 ## Test suites
 
 ### `modules/core/src/test`
@@ -275,19 +297,22 @@ RLS DDL from `SaaSPGSchema` enforced as a non-superuser role, the
 transactional handler, namespace validation, `TenantStateLister` and
 `SaaSCodec`.
 
-### `modules/java-api/src/test` — planned (milestone 7)
+### `modules/java-api/src/test`
 
-| Scala suite | Rust test |
-|-------------|-----------|
-| `ConvertersSuite.scala` | planned |
-| `JAppResultSuite.scala` | planned |
-| `JCodecSuite.scala` | planned |
-| `JCommandMessageSuite.scala` | planned |
-| `JDecisionSuite.scala` | planned |
-| `JDomainModelSuite.scala` | planned |
-| `JEitherSuite.scala` | planned |
-| `JPGSchemaSuite.scala` | planned |
-| `JavaApiIntegrationSuite.scala` | planned |
+All under `crates/edomata-simple/tests/`.
+
+| Scala suite | Rust test | Notes |
+|-------------|-----------|-------|
+| `ConvertersSuite.scala` | `converters.rs` | list conversions become `NonEmpty::from_vec` / `into_vec` |
+| `JAppResultSuite.scala` | `app_result.rs` | |
+| `JCodecSuite.scala` | `codec.rs` | |
+| `JCommandMessageSuite.scala` | `command_message.rs` | on the re-exported `CommandMessage` |
+| `JDecisionSuite.scala` | `decision.rs` | |
+| `JDomainModelSuite.scala` | `domain_model.rs` | |
+| `JEitherSuite.scala` | `either.rs` | pins the `JEither` → `Result` mapping |
+| `JPGSchemaSuite.scala` | `pg_schema.rs` | |
+| `JavaApiIntegrationSuite.scala` (runs `src/test/java/.../JavaApiTest.java`) | `integration.rs` | the 17 Java checks |
+| *(none in Scala)* | `backend.rs` | `SimpleBackend` on PostgreSQL: builder validation, commands, journal, outbox, `skip_setup`, blocking backend |
 
 ### `modules/e2e` — planned (milestone 8)
 

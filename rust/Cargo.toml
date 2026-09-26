@@ -23,6 +23,7 @@ edomata-sqlx = { path = "crates/edomata-sqlx", version = "0.1.0" }
 edomata-testkit = { path = "crates/edomata-testkit", version = "0.1.0" }
 edomata-saas = { path = "crates/edomata-saas", version = "0.1.0" }
 edomata-saas-sqlx = { path = "crates/edomata-saas-sqlx", version = "0.1.0" }
+edomata-simple = { path = "crates/edomata-simple", version = "0.1.0" }
 
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "uuid"] }
 

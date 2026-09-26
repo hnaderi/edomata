@@ -22,7 +22,7 @@ Cats: each abstraction is mapped to its idiomatic Rust equivalent (see
 | [`edomata-testkit`](crates/edomata-testkit) | `munit` | available (`TestCommand`, `EdomatonAssertions`, `StomatonAssertions`) |
 | [`edomata-saas`](crates/edomata-saas) | `saas` | available (tenancy types, `AuthPolicy`, `SaaSGuard`, guarded DSLs and services, tenant-scoped readers, `SaaSPGSchema` with RLS and golden DDL tests) |
 | [`edomata-saas-sqlx`](crates/edomata-saas-sqlx) | `saas-skunk` | available (tenant-aware CQRS driver, `SaaSCodec`, `TenantStateLister`) |
-| `edomata-simple` | `java-api` | planned |
+| [`edomata-simple`](crates/edomata-simple) | `java-api` | available (closure-based facade: `SimpleDomainModel`, `SimpleDecision`, `CommandHandler`, `SimpleBackend::builder`, blocking runtime, `SimplePGSchema`) |
 | `edomata-e2e` | `e2e` | planned (test-only) |
 | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | *(new)* | planned |
 
@@ -78,7 +78,7 @@ The minimum supported Rust version is **1.88** (edition 2024) and is checked
 in CI. Every crate has `#![forbid(unsafe_code)]`.
 
 Integration tests (the `edomata-serde` SQL tests and the `edomata-sqlx` /
-`edomata-saas-sqlx` storage tests) use the PostgreSQL instance started by the repository's
+`edomata-saas-sqlx` / `edomata-simple` storage tests) use the PostgreSQL instance started by the repository's
 `docker-compose.yml`, which also loads the `compatibility_*` fixtures of
 `testdata.sql` that the compatibility suites read. They connect to `DATABASE_URL`, defaulting to
 `postgres://postgres:postgres@localhost:5432/postgres`. If another PostgreSQL

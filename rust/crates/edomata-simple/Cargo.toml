@@ -1,0 +1,33 @@
+[package]
+name = "edomata-simple"
+description = "A simplified, closure-based facade over Edomata for event-sourced services on PostgreSQL (the Rust counterpart of the Java API)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+edomata-core = { workspace = true }
+edomata-backend = { workspace = true }
+edomata-postgres = { workspace = true }
+edomata-serde = { workspace = true }
+edomata-sqlx = { workspace = true }
+
+chrono = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+uuid = { workspace = true }
+
+[lints]
+workspace = true

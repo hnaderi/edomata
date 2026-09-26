@@ -325,6 +325,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "edomata-simple"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "edomata-backend",
+ "edomata-core",
+ "edomata-postgres",
+ "edomata-serde",
+ "edomata-sqlx",
+ "futures",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "edomata-sqlx"
 version = "0.1.0"
 dependencies = [
