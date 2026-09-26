@@ -54,12 +54,23 @@ pub struct OutboxQueries {
     pub insert: String,
     pub read: String,
     pub mark_published: String,
+    /// `NOTIFY` channel raised after outbox rows are inserted, if any.
+    pub notify_channel: Option<String>,
 }
 
 impl OutboxQueries {
     pub fn new(naming: &PGNaming, payload_type: &str) -> Self {
+        Self::with_notify(naming, payload_type, None)
+    }
+
+    pub fn with_notify(
+        naming: &PGNaming,
+        payload_type: &str,
+        notify_channel: Option<&str>,
+    ) -> Self {
         let t = naming.table("outbox");
         Self {
+            notify_channel: notify_channel.map(str::to_owned),
             setup: ddl::outbox_statements(naming, payload_type),
             insert: format!(
                 "insert into {t} (payload, stream, created, correlation, causation) values ($1, $2, $3, $4, $5)"

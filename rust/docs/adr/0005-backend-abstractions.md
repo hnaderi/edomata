@@ -80,7 +80,8 @@ exactly one signal. A broadcast channel drops messages sent before a
 receiver subscribes, so it cannot satisfy that suite. `Notify::notify_one`
 has exactly the circular-buffer semantics (one stored permit, coalescing),
 so `Signal` wraps a `Notify`. Cross-process wake-ups (for the outbox relay)
-will use PostgreSQL `LISTEN/NOTIFY`, as planned.
+use PostgreSQL `LISTEN/NOTIFY` (`edomata_broker::postgres::listen` with the
+drivers' `with_outbox_notify_channel`, see ADR 0012).
 
 ### Resources and lifetimes
 

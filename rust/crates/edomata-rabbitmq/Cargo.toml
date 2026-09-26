@@ -1,0 +1,36 @@
+[package]
+name = "edomata-rabbitmq"
+description = "RabbitMQ publisher for edomata-broker relays, built on lapin (publisher confirms, persistent messages, exchange and routing key per message)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+edomata-core = { workspace = true }
+edomata-broker = { workspace = true }
+
+async-trait = { workspace = true }
+lapin = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+edomata-backend = { workspace = true }
+chrono = { workspace = true, features = ["clock"] }
+edomata-sqlx = { workspace = true }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true, features = ["rabbitmq"] }
+uuid = { workspace = true }
+
+[lints]
+workspace = true

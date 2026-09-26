@@ -25,6 +25,9 @@ edomata-saas = { path = "crates/edomata-saas", version = "0.1.0" }
 edomata-saas-sqlx = { path = "crates/edomata-saas-sqlx", version = "0.1.0" }
 edomata-simple = { path = "crates/edomata-simple", version = "0.1.0" }
 edomata-e2e = { path = "crates/edomata-e2e", version = "0.1.0" }
+edomata-broker = { path = "crates/edomata-broker", version = "0.1.0" }
+edomata-kafka = { path = "crates/edomata-kafka", version = "0.1.0" }
+edomata-rabbitmq = { path = "crates/edomata-rabbitmq", version = "0.1.0" }
 
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "uuid"] }
 
@@ -38,6 +41,11 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tokio-util = { version = "0.7", default-features = false }
+rdkafka = { version = "0.39", default-features = false, features = ["tokio", "libz"] }
+lapin = { version = "4" }
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", default-features = false }
 tracing = "0.1"
 uuid = { version = "1", features = ["v4"] }
 

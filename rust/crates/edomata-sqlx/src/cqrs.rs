@@ -97,6 +97,7 @@ pub struct SqlxCqrsDriver {
     naming: PGNaming,
     pool: PgPool,
     auto_setup: bool,
+    outbox_notify_channel: Option<String>,
 }
 
 impl SqlxCqrsDriver {
@@ -125,7 +126,15 @@ impl SqlxCqrsDriver {
             naming,
             pool,
             auto_setup: !skip_setup,
+            outbox_notify_channel: None,
         })
+    }
+
+    /// Raises `NOTIFY channel` in the transaction that inserts outbox rows
+    /// (see `SqlxDriver::with_outbox_notify_channel`).
+    pub fn with_outbox_notify_channel(mut self, channel: impl Into<String>) -> Self {
+        self.outbox_notify_channel = Some(channel.into());
+        self
     }
 
     /// The naming strategy.
@@ -159,9 +168,10 @@ impl StorageDriver for SqlxCqrsDriver {
         S: Payload,
         N: Payload,
     {
-        let outbox_q = Arc::new(OutboxQueries::new(
+        let outbox_q = Arc::new(OutboxQueries::with_notify(
             &self.naming,
             notification_codec.sql_type(),
+            self.outbox_notify_channel.as_deref(),
         ));
         let commands_q = Arc::new(CommandQueries::new(&self.naming));
         let state_q = Arc::new(StateQueries::new(&self.naming, state_codec.sql_type()));

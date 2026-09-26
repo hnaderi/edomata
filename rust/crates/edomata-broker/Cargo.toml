@@ -1,0 +1,36 @@
+[package]
+name = "edomata-broker"
+description = "Broker-agnostic distribution of Edomata outbox notifications and journal events: the Publisher trait, OutboxRelay, JournalRelay, PostgreSQL leader election and LISTEN/NOTIFY wake-ups"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[dependencies]
+edomata-core = { workspace = true }
+edomata-backend = { workspace = true }
+edomata-postgres = { workspace = true }
+
+async-trait = { workspace = true }
+chrono = { workspace = true, features = ["clock"] }
+futures = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sqlx = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+edomata-serde = { workspace = true }
+edomata-sqlx = { workspace = true }
+uuid = { workspace = true }
+
+[lints]
+workspace = true

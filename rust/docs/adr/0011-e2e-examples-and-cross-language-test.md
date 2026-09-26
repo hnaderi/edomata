@@ -62,8 +62,8 @@ and Scala reads the result, using the Scala build as an external oracle.
    example runs its tenant-scoped read queries for real (Scala's raise
    `NotImplementedError`); and the product catalogue example replaces the
    unimplemented `ProductQueries` with `TenantStateLister::list_by_tenant`
-   on the tenant-aware driver. Kafka and RabbitMQ examples come with
-   milestone 9.
+   on the tenant-aware driver. The Kafka and RabbitMQ examples were added
+   by milestone 9 (ADR 0012).
 
 ## Tests
 

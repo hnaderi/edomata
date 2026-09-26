@@ -37,6 +37,8 @@ pub struct SqlxDriver {
     naming: PGNaming,
     pool: PgPool,
     auto_setup: bool,
+    outbox_notify_channel: Option<String>,
+    journal_notify_channel: Option<String>,
 }
 
 impl SqlxDriver {
@@ -68,7 +70,25 @@ impl SqlxDriver {
             naming,
             pool,
             auto_setup: !skip_setup,
+            outbox_notify_channel: None,
+            journal_notify_channel: None,
         })
+    }
+
+    /// Raises `NOTIFY channel` in the transaction that inserts outbox rows,
+    /// so that an outbox relay in another process (`edomata-broker`,
+    /// `postgres::listen`) is woken up. Off by default (Scala has no such
+    /// option).
+    pub fn with_outbox_notify_channel(mut self, channel: impl Into<String>) -> Self {
+        self.outbox_notify_channel = Some(channel.into());
+        self
+    }
+
+    /// Raises `NOTIFY channel` in the transaction that appends events, for
+    /// journal relays in other processes. Off by default.
+    pub fn with_journal_notify_channel(mut self, channel: impl Into<String>) -> Self {
+        self.journal_notify_channel = Some(channel.into());
+        self
     }
 
     /// The naming strategy.
@@ -141,9 +161,10 @@ impl StorageDriver for SqlxDriver {
         N: Payload,
     {
         let journal_q = Arc::new(JournalQueries::new(&self.naming, event_codec.sql_type()));
-        let outbox_q = Arc::new(OutboxQueries::new(
+        let outbox_q = Arc::new(OutboxQueries::with_notify(
             &self.naming,
             notification_codec.sql_type(),
+            self.outbox_notify_channel.as_deref(),
         ));
         let commands_q = Arc::new(CommandQueries::new(&self.naming));
         if self.auto_setup {
@@ -176,6 +197,7 @@ impl StorageDriver for SqlxDriver {
             notification_codec,
             reader: Arc::clone(&reader),
             updates: updates.clone(),
+            journal_notify_channel: self.journal_notify_channel.clone(),
         });
         Ok(Storage {
             repository,
@@ -218,6 +240,17 @@ struct SqlxRepository<S, E, R, N> {
     notification_codec: SqlxCodec<N>,
     reader: Arc<dyn RepositoryReader<S, E, R>>,
     updates: Notifications,
+    journal_notify_channel: Option<String>,
+}
+
+/// Raises `NOTIFY channel` inside `tx` (delivered on commit).
+pub async fn notify(tx: &mut sqlx::PgConnection, channel: &str) -> Result<(), BackendError> {
+    sqlx::query("select pg_notify($1, '')")
+        .bind(channel)
+        .execute(&mut *tx)
+        .await
+        .map_err(map_write)?;
+    Ok(())
 }
 
 /// Inserts outbox rows inside `tx`.
@@ -242,6 +275,11 @@ pub async fn insert_outbox<N>(
             .map_err(map_write)?
             .rows_affected();
         assert_inserted(affected, 1)?;
+    }
+    if let Some(channel) = &q.notify_channel
+        && !notifications.is_empty()
+    {
+        notify(tx, channel).await?;
     }
     Ok(())
 }
@@ -310,6 +348,9 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Repository<S, E, R, N>
                 .map_err(map_write)?
                 .rows_affected();
             assert_inserted(affected, 1)?;
+        }
+        if let Some(channel) = &self.journal_notify_channel {
+            notify(&mut tx, channel).await?;
         }
         insert_outbox(
             &mut tx,

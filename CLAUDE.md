@@ -251,9 +251,9 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
-- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout)
+- **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout, broker distribution)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
-- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency guard)
+- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test and Docker for the testcontainers broker tests, MSRV, wasm32 build of `edomata-core`, no-JVM-dependency and no-broker-client guards)
 
 ```bash
 cd rust
@@ -302,7 +302,10 @@ sbt "e2eTestsJVM/Test/runMain crosslang.CrossLanguage verify cross_language"
 ```
 
 - **Examples**: `rust/examples/src/bin/*.rs` (`cargo run -p edomata-examples --bin <name>`), one per Scala
-  example.
+  example, plus `kafka_relay` / `rabbitmq_relay` behind the `kafka` / `rabbitmq` features.
+
+- **Broker tests**: `edomata-kafka` and `edomata-rabbitmq` start Kafka and RabbitMQ with testcontainers, so
+  `cargo test --workspace` needs Docker (their leader-election tests also use the docker-compose PostgreSQL).
 
 - **Database for Rust tests**: the SQL tests read `DATABASE_URL` (default
   `postgres://postgres:postgres@localhost:5432/postgres`, the docker-compose instance). If a local

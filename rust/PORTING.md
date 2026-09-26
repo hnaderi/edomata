@@ -26,8 +26,8 @@ port is complete when no row is left *planned*.
 | 15 | `saas` | `edomata-saas` | ported (milestone 6) |
 | 16 | `saas-skunk` | `edomata-saas-sqlx` | ported (milestone 6) |
 | 17 | `java-api` | `edomata-simple` | ported (milestone 7) |
-| — | `examples/` | `rust/examples/` (`edomata-examples`, one binary per example) | ported (milestone 8); Kafka and RabbitMQ examples planned (milestone 9) |
-| — | *(new)* | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | planned (milestone 9) |
+| — | `examples/` | `rust/examples/` (`edomata-examples`, one binary per example) | ported (milestone 8); Kafka and RabbitMQ examples added (milestone 9) |
+| — | *(new)* | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | added (milestone 9; no Scala equivalent) |
 
 ## Type mapping (core)
 
@@ -159,6 +159,24 @@ Method naming: Scala overloads become distinct names (`validate` /
 | `BackendCodec[S]` + `TenantExtractor[S]` (driver requirements) | `SaaSCodec<T>` (`state`, `with_extractor`, `notification`, `jsonb_state`, `jsonb_notification`) |
 | `SaaSQueries` (`listByTenant`, tenant-aware `put` / outbox insert) | private `SaaSStateQueries` / `SaaSOutboxQueries`; `TenantStateLister::list_by_tenant` |
 | `SaaSSkunkCQRSRepository`, `SaaSSkunkOutboxReader` | private `SaaSRepository`; `edomata_sqlx::shared::SqlxOutboxReader` reused |
+
+## Broker distribution (new, no Scala equivalent)
+
+| Concept | Rust |
+|---------|------|
+| broker-neutral message | `edomata_broker::BrokerMessage` (`outbox_id` / `journal_id`, `headers()`), `MessageKind`, `headers::*` |
+| publisher | `edomata_broker::Publisher` (`publish(&NonEmpty<BrokerMessage>)`), `PublishError` (`Transient` / `Permanent`), `RecordingPublisher` for tests |
+| outbox relay | `edomata_broker::OutboxRelay` (`relay_once`, `run`, `run_as_leader`, `wake_on`, `metrics`) |
+| journal relay | `edomata_broker::JournalRelay`, `CheckpointStore`, `InMemoryCheckpointStore`, `postgres::PgCheckpointStore`, `PGSchema::relay_checkpoints` (opt-in DDL) |
+| payload encoding | `MessageEncoder::serde` / `from_codec` |
+| configuration and counters | `RelayConfig`, `RetryPolicy`, `RelayMetrics` / `MetricsSnapshot`, `RelayError`, `CancellationToken` |
+| leader election, cross-process wake-ups | `postgres::LeaderLock` / `LeaderGuard`, `postgres::listen`; `SqlxDriver::with_outbox_notify_channel` / `with_journal_notify_channel`, `SqlxCqrsDriver::with_outbox_notify_channel` |
+| Kafka | `edomata_kafka::KafkaPublisher` (`builder`, `with_topic`, `with_fixed_topic`, `with_config`), `default_topic` |
+| RabbitMQ | `edomata_rabbitmq::RabbitMqPublisher` (`connect`, `with_exchange`, `with_routing_key`, `with_fixed_exchange`, `declare_exchange`) |
+
+Tests: `crates/edomata-broker/tests/{outbox_relay,journal_relay,postgres}.rs`,
+`crates/edomata-kafka/tests/kafka.rs` and `crates/edomata-rabbitmq/tests/rabbitmq.rs`
+(testcontainers; Docker required).
 
 ## Type mapping (simple facade)
 
@@ -339,4 +357,4 @@ All under `rust/examples/src/bin/`; run with `cargo run -p edomata-examples --bi
 | `MigrationExample.scala` | `migration.rs` | also seeds a V1 journal and reads it back as V3 |
 | `SaaSExample.scala` | `saas_todo.rs` | tenant-scoped read queries run real SQL |
 | `ProductCatalogExample.scala` | `product_catalog.rs` | the unimplemented `ProductQueries` read queries are replaced by `TenantStateLister::list_by_tenant` |
-| *(new)* | Kafka and RabbitMQ examples (planned, milestone 9) | |
+| *(new)* | `kafka_relay.rs`, `rabbitmq_relay.rs` (features `kafka` / `rabbitmq`) | outbox relays to Kafka and RabbitMQ (milestone 9) |

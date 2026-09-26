@@ -20,6 +20,9 @@ edomata-serde = { workspace = true }
 edomata-sqlx = { workspace = true }
 edomata-saas = { workspace = true }
 edomata-saas-sqlx = { workspace = true }
+edomata-broker = { workspace = true }
+edomata-kafka = { workspace = true, optional = true }
+edomata-rabbitmq = { workspace = true, optional = true }
 
 chrono = { workspace = true, features = ["clock"] }
 futures = { workspace = true }
@@ -28,6 +31,20 @@ serde_json = { workspace = true }
 sqlx = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }
 uuid = { workspace = true }
+
+[features]
+# Broker distribution is opt-in: without these features no broker client is
+# built or linked.
+kafka = ["dep:edomata-kafka"]
+rabbitmq = ["dep:edomata-rabbitmq"]
+
+[[bin]]
+name = "kafka_relay"
+required-features = ["kafka"]
+
+[[bin]]
+name = "rabbitmq_relay"
+required-features = ["rabbitmq"]
 
 [lints]
 workspace = true

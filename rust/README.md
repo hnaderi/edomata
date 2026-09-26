@@ -24,8 +24,9 @@ Cats: each abstraction is mapped to its idiomatic Rust equivalent (see
 | [`edomata-saas-sqlx`](crates/edomata-saas-sqlx) | `saas-skunk` | available (tenant-aware CQRS driver, `SaaSCodec`, `TenantStateLister`) |
 | [`edomata-simple`](crates/edomata-simple) | `java-api` | available (closure-based facade: `SimpleDomainModel`, `SimpleDecision`, `CommandHandler`, `SimpleBackend::builder`, blocking runtime, `SimplePGSchema`) |
 | [`edomata-e2e`](crates/edomata-e2e) | `e2e` | available (test-only: end-to-end suite and the Scala/Rust cross-language compatibility test) |
-| `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | *(new)* | planned |
-| [`edomata-examples`](examples) | `examples/` | available (`cargo run -p edomata-examples --bin <name>` with `counter`, `stomaton`, `migration`, `saas_todo` or `product_catalog`) |
+| [`edomata-broker`](crates/edomata-broker) | *(new)* | available (`Publisher`, `OutboxRelay`, `JournalRelay`, leader election, `LISTEN/NOTIFY` wake-ups) |
+| [`edomata-kafka`](crates/edomata-kafka), [`edomata-rabbitmq`](crates/edomata-rabbitmq) | *(new)* | available (publishers over `rdkafka` and `lapin`; testcontainers integration tests) |
+| [`edomata-examples`](examples) | `examples/` | available (`cargo run -p edomata-examples --bin <name>` with `counter`, `stomaton`, `migration`, `saas_todo` or `product_catalog`; `kafka_relay` and `rabbitmq_relay` behind the `kafka` / `rabbitmq` features) |
 
 The full roadmap is in [`docs/plans/rust-port.md`](../docs/plans/rust-port.md).
 
@@ -78,8 +79,9 @@ cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 The minimum supported Rust version is **1.88** (edition 2024) and is checked
 in CI. Every crate has `#![forbid(unsafe_code)]`.
 
-Integration tests (the `edomata-serde` SQL tests and the `edomata-sqlx` /
-`edomata-saas-sqlx` / `edomata-simple` storage tests) use the PostgreSQL instance started by the repository's
+Integration tests (the `edomata-serde` SQL tests, the `edomata-sqlx` /
+`edomata-saas-sqlx` / `edomata-simple` storage tests, the `edomata-broker`
+PostgreSQL tests and the broker leader-election tests) use the PostgreSQL instance started by the repository's
 `docker-compose.yml`, which also loads the `compatibility_*` fixtures of
 `testdata.sql` that the compatibility suites read. They connect to `DATABASE_URL`, defaulting to
 `postgres://postgres:postgres@localhost:5432/postgres`. If another PostgreSQL
@@ -95,9 +97,25 @@ variables. Set `EDOMATA_SBT` to point at a specific `sbt` binary.
 ## Examples
 
 `rust/examples` holds one binary per Scala example (`counter`, `stomaton`,
-`migration`, `saas_todo`, `product_catalog`). They connect to the same
-PostgreSQL instance:
+`migration`, `saas_todo`, `product_catalog`) plus the broker relays
+(`kafka_relay`, `rabbitmq_relay`, behind the `kafka` / `rabbitmq` features).
+They connect to the same PostgreSQL instance:
 
 ```bash
 cargo run -p edomata-examples --bin saas_todo
+KAFKA_BOOTSTRAP=localhost:9092 cargo run -p edomata-examples --features kafka --bin kafka_relay
 ```
+
+## Distributing events with Kafka or RabbitMQ
+
+Broker distribution is opt-in and never publishes from inside a command:
+commands write events and outbox rows in one PostgreSQL transaction, and an
+`OutboxRelay` from [`edomata-broker`](crates/edomata-broker) publishes the
+outbox through a `Publisher` ([`edomata-kafka`](crates/edomata-kafka) or
+[`edomata-rabbitmq`](crates/edomata-rabbitmq)), marking items as sent only
+after the broker acknowledged them (at-least-once, stable message ids,
+per-stream ordering). Several replicas can run the relay with a PostgreSQL
+advisory lock as leader election, and a relay in another process is woken
+up through `LISTEN/NOTIFY`. Applications that do not depend on the two
+broker crates pull no broker client. The broker integration tests use
+[testcontainers](https://rust.testcontainers.org/) and need Docker.

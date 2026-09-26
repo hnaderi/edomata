@@ -72,7 +72,7 @@ Each aggregate type has its own namespace that contains all the required tables.
 | `states` | Current state | CQRS apps (Stomaton) |
 | `migrations` | Applied event migrations | Event sourced apps |
 
-> **What is an Outbox?** A pattern for reliable message publishing. Instead of sending notifications directly (which might fail), we store them in the database atomically with the state change. A separate process then publishes them. This ensures we never lose notifications or send duplicates.
+> **What is an Outbox?** A pattern for reliable message publishing. Instead of sending notifications directly (which might fail), we store them in the database atomically with the state change. A separate process then publishes them. This ensures we never lose notifications; delivery is at-least-once, so consumers must tolerate duplicates.
 
 > **What is Idempotency?** The property that running an operation multiple times has the same effect as running it once. The `commands` table tracks which commands we've already processed, so if the same command is sent twice (due to network retries, etc.), we don't process it twice.
 

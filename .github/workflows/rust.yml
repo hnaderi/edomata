@@ -114,6 +114,20 @@ jobs:
           workspaces: rust
       - run: cargo build -p edomata-core --all-features --target wasm32-unknown-unknown
 
+  no-broker-deps:
+    name: edomata-broker pulls no broker client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: |
+          if cargo tree -p edomata-broker -e normal | grep -iE "rdkafka|lapin"; then
+            echo "edomata-broker must not depend on a broker client"; exit 1
+          fi
+          if cargo tree -p edomata-examples -e normal | grep -iE "rdkafka|lapin"; then
+            echo "the examples must not pull a broker client without the kafka / rabbitmq features"; exit 1
+          fi
+
   no-jvm-deps:
     name: dependency tree has no JVM/Scala/Java artifact
     runs-on: ubuntu-latest

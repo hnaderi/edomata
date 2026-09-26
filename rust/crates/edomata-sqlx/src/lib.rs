@@ -65,6 +65,6 @@ pub mod shared {
     pub use crate::error::{assert_inserted, is_unique_violation, map_sqlx, map_write};
     pub use crate::eventsourcing::{
         SqlxOutboxReader, command_exists, execute_all, insert_command, insert_outbox,
-        invalid_namespace, now,
+        invalid_namespace, notify, now,
     };
 }

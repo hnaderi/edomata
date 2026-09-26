@@ -51,6 +51,15 @@ impl PGSchema {
         out
     }
 
+    /// DDL for the optional `relay_checkpoints` table used by
+    /// `edomata-broker`'s `JournalRelay`. Not included in
+    /// [`eventsourcing`](Self::eventsourcing) / [`cqrs`](Self::cqrs), whose
+    /// output stays byte-identical to Scala's; append it when journal
+    /// streaming is enabled.
+    pub fn relay_checkpoints(naming: &PGNaming) -> Vec<String> {
+        ddl::relay_checkpoints_statements(naming)
+    }
+
     /// DDL for CQRS tables (states, outbox, commands) with `jsonb` payloads.
     pub fn cqrs(naming: &PGNaming) -> Vec<String> {
         Self::cqrs_with(naming, DEFAULT_PAYLOAD_TYPE, DEFAULT_PAYLOAD_TYPE)
@@ -134,6 +143,17 @@ pub mod ddl {
         let pk = naming.constraint("migrations_pk");
         vec![format!(
             "CREATE TABLE IF NOT EXISTS {t} (\n  \"version\" text NOT NULL,\n  description text NOT NULL,\n  applied_at timestamptz NOT NULL DEFAULT now(),\n  CONSTRAINT {pk} PRIMARY KEY (\"version\")\n);"
+        )]
+    }
+
+    /// The relay checkpoints table of `edomata-broker`'s `JournalRelay`
+    /// (opt-in: not part of [`super::PGSchema::eventsourcing`], which stays
+    /// identical to Scala's output).
+    pub fn relay_checkpoints_statements(naming: &PGNaming) -> Vec<String> {
+        let t = naming.table("relay_checkpoints");
+        let pk = naming.constraint("relay_checkpoints_pk");
+        vec![format!(
+            "CREATE TABLE IF NOT EXISTS {t} (\n  relay text NOT NULL,\n  seqnr int8 NOT NULL,\n  updated_at timestamptz NOT NULL DEFAULT now(),\n  CONSTRAINT {pk} PRIMARY KEY (relay)\n);"
         )]
     }
 
