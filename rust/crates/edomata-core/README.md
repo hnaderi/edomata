@@ -4,7 +4,7 @@ Core abstractions of Edomata: decisions, event-driven automata (`Edomaton`), sta
 
 - **Scala module(s)**: `core`
 - **Book chapter**: [Event sourcing](../../book/src/tutorials/eventsourcing.md)
-- **API documentation**: `cargo doc -p edomata-core --no-deps --open`
+- **API documentation**: [edomata_core](https://beyond-scale-group.github.io/edomata/rust/api/edomata_core/) (locally: `cargo doc -p edomata-core --no-deps --open`)
 
 ## Main items
 

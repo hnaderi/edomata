@@ -68,6 +68,18 @@ guide for Scala and Java users, and CI.
    since `mdbook-linkcheck` does not support mdBook 0.5); the samples are already
    covered by the lint and test jobs since they are workspace members.
 
+7. **The book and the API docs are published with the website.** The
+   website's gh-pages deploy (the Generate Site job of `ci.yml`) uses
+   `keep_files: false`, so a separate deploy would be wiped by the next
+   one. That job therefore builds the book and
+   `cargo doc --workspace --all-features --no-deps`, copies them to
+   `website/build/rust/book/` and `website/build/rust/api/` (with an
+   `index.html` redirecting to `edomata_core/`), and publishes them in the
+   same deploy, on pushes to `main` only. They are served at
+   <https://beyond-scale-group.github.io/edomata/rust/book/> and
+   <https://beyond-scale-group.github.io/edomata/rust/api/>; the book's
+   `site-url` is `/edomata/rust/book/` to match.
+
 ## Consequences
 
 Documentation drift is caught by the compiler (samples), by `mdbook build`

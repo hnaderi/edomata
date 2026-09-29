@@ -4,7 +4,7 @@ A closure-based facade for applications that do not want to touch the generic co
 
 - **Scala module(s)**: `java-api`
 - **Book chapter**: [Simple API](../../book/src/backends/simple-api.md)
-- **API documentation**: `cargo doc -p edomata-simple --no-deps --open`
+- **API documentation**: [edomata_simple](https://beyond-scale-group.github.io/edomata/rust/api/edomata_simple/) (locally: `cargo doc -p edomata-simple --no-deps --open`)
 
 ## Main items
 

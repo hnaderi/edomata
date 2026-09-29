@@ -15,4 +15,4 @@ edition = "2024"
 [output.html]
 default-theme = "light"
 git-repository-url = "https://github.com/beyond-scale-group/edomata"
-site-url = "/"
+site-url = "/edomata/rust/book/"

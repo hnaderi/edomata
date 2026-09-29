@@ -4,7 +4,7 @@ Broker-agnostic distribution of outbox notifications and journal events: the `Pu
 
 - **Scala module(s)**: *(new, no Scala equivalent)*
 - **Book chapters**: [Distributing events with Kafka / RabbitMQ](../../book/src/backends/brokers.md), [Running relays in production](../../book/src/operations/relays.md)
-- **API documentation**: `cargo doc -p edomata-broker --no-deps --open`
+- **API documentation**: [edomata_broker](https://beyond-scale-group.github.io/edomata/rust/api/edomata_broker/) (locally: `cargo doc -p edomata-broker --no-deps --open`)
 
 ## Main items
 

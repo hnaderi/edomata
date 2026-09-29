@@ -4,7 +4,7 @@ Multi-tenant CRUD abstractions: tenancy types, pluggable authorisation policies,
 
 - **Scala module(s)**: `saas`
 - **Book chapter**: [SaaS multi-tenant module](../../book/src/tutorials/saas.md)
-- **API documentation**: `cargo doc -p edomata-saas --no-deps --open`
+- **API documentation**: [edomata_saas](https://beyond-scale-group.github.io/edomata/rust/api/edomata_saas/) (locally: `cargo doc -p edomata-saas --no-deps --open`)
 
 ## Main items
 

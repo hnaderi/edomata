@@ -4,7 +4,7 @@ Kafka publisher for `edomata-broker` relays, over `rdkafka`: idempotent producer
 
 - **Scala module(s)**: *(new)*
 - **Book chapter**: [Distributing events with Kafka / RabbitMQ](../../book/src/backends/brokers.md)
-- **API documentation**: `cargo doc -p edomata-kafka --no-deps --open`
+- **API documentation**: [edomata_kafka](https://beyond-scale-group.github.io/edomata/rust/api/edomata_kafka/) (locally: `cargo doc -p edomata-kafka --no-deps --open`)
 
 ## Main items
 

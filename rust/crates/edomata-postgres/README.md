@@ -4,7 +4,7 @@ PostgreSQL naming and DDL, shared by every driver: schema or prefixed naming, va
 
 - **Scala module(s)**: `postgres`
 - **Book chapter**: [PostgreSQL (sqlx)](../../book/src/backends/postgres.md)
-- **API documentation**: `cargo doc -p edomata-postgres --no-deps --open`
+- **API documentation**: [edomata_postgres](https://beyond-scale-group.github.io/edomata/rust/api/edomata_postgres/) (locally: `cargo doc -p edomata-postgres --no-deps --open`)
 
 ## Main items
 

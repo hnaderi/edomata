@@ -186,6 +186,50 @@ jobs:
         working-directory: website
         run: npm run build
 
+      # The Rust book and API docs are published inside the same gh-pages
+      # deploy (keep_files: false replaces the whole branch), under
+      # /edomata/rust/book/ and /edomata/rust/api/.
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+
+      - name: Install mdBook
+        run: cargo install mdbook --locked
+
+      - name: Build Rust book
+        run: |
+          mdbook build rust/book
+          mkdir -p website/build/rust
+          rm -rf website/build/rust/book
+          cp -R rust/book/book website/build/rust/book
+
+      - name: Build Rust API docs
+        working-directory: rust
+        run: cargo doc --workspace --all-features --no-deps
+
+      - name: Copy Rust API docs
+        run: |
+          rm -rf website/build/rust/api
+          cp -R rust/target/doc website/build/rust/api
+          cat > website/build/rust/api/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <title>Edomata for Rust: API documentation</title>
+          <meta http-equiv="refresh" content="0; url=edomata_core/">
+          <link rel="canonical" href="edomata_core/">
+          </head>
+          <body>
+          <p>Redirecting to the <a href="edomata_core/">edomata_core API documentation</a>.</p>
+          </body>
+          </html>
+          EOF
+
       - name: Publish site
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4.0.0

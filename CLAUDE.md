@@ -255,9 +255,13 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 - **Book**: `rust/book/` (mdBook; `mdbook build rust/book`); chapters include their code from the `rust/book/samples`
   crate (`edomata-book-samples`) by anchor, so samples compile and are tested with the workspace;
   `python3 rust/book/check_links.py` (after `mdbook build`) checks every include, anchor and relative link
+- **Published docs**: the book and the rustdoc are served at https://beyond-scale-group.github.io/edomata/rust/book/
+  and https://beyond-scale-group.github.io/edomata/rust/api/ (an index redirecting to `edomata_core/`); they are built
+  and copied into `website/build/` by the Generate Site job of `.github/workflows/ci.yml`, inside the website's
+  gh-pages deploy (on pushes to `main` only)
 - **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout, broker distribution, documentation)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
-- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test and Docker for the testcontainers broker tests, MSRV, wasm32 build of `edomata-core`, mdBook build, no-JVM-dependency and no-broker-client guards)
+- **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test and Docker for the testcontainers broker tests, MSRV, wasm32 build of `edomata-core`, mdBook build, no-JVM-dependency and no-broker-client guards); publishing the book and the API docs is done by `ci.yml` (see above)
 
 ```bash
 cd rust
@@ -322,6 +326,14 @@ GitHub Actions runs on:
 - JVM versions: temurin@8, temurin@17
 - Platforms: JVM, JS, Native
 - Checks: format, compile, test
+- Generate Site job: `sbt docs/mdoc`, the Docusaurus build, then the Rust book and API docs copied into
+  `website/build/rust/`; deployed to gh-pages (`keep_files: false`) on pushes to `main` only
+- Rust: `.github/workflows/rust.yml` (see the Rust Port section)
+
+`.github/workflows/ci.yml` is maintained by hand (forked from the sbt-github-actions output; `ci.sbt` does not
+describe the Generate Site job). Don't regenerate it: `githubWorkflowGenerate`, run by the `precommit` alias,
+would drop that job, and `githubWorkflowCheck`, run by the `commit` alias, reports the hand-made changes as a
+diff.
 
 ### Releases
 

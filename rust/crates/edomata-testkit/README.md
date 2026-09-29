@@ -4,7 +4,7 @@ Assertion helpers for domain tests, usable from any test runner: run a program o
 
 - **Scala module(s)**: `munit`
 - **Book chapter**: [Testing](../../book/src/guides/testing.md)
-- **API documentation**: `cargo doc -p edomata-testkit --no-deps --open`
+- **API documentation**: [edomata_testkit](https://beyond-scale-group.github.io/edomata/rust/api/edomata_testkit/) (locally: `cargo doc -p edomata-testkit --no-deps --open`)
 
 ## Main items
 

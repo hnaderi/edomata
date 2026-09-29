@@ -4,7 +4,7 @@ Serde-based payload codecs for `jsonb` (default), `json` and `bytea` columns, wi
 
 - **Scala module(s)**: `skunk-circe`, `skunk-jsoniter`, `skunk-upickle`, `doobie-circe`, `doobie-jsoniter`, `doobie-upickle`
 - **Book chapter**: [PostgreSQL (sqlx)](../../book/src/backends/postgres.md)
-- **API documentation**: `cargo doc -p edomata-serde --no-deps --open`
+- **API documentation**: [edomata_serde](https://beyond-scale-group.github.io/edomata/rust/api/edomata_serde/) (locally: `cargo doc -p edomata-serde --no-deps --open`)
 
 ## Main items
 

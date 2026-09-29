@@ -4,7 +4,7 @@ Backend abstractions for event sourcing and CQRS: repositories, journal and outb
 
 - **Scala module(s)**: `backend`
 - **Book chapter**: [Running](../../book/src/tutorials/backends.md)
-- **API documentation**: `cargo doc -p edomata-backend --no-deps --open`
+- **API documentation**: [edomata_backend](https://beyond-scale-group.github.io/edomata/rust/api/edomata_backend/) (locally: `cargo doc -p edomata-backend --no-deps --open`)
 
 ## Main items
 

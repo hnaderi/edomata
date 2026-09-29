@@ -4,7 +4,7 @@ End-to-end tests on PostgreSQL and the Scala/Rust cross-language compatibility t
 
 - **Scala module(s)**: `e2e`
 - **Book chapter**: [Migration guide](../../book/src/other/migration-guide.md)
-- **API documentation**: `cargo doc -p edomata-e2e --no-deps --open`
+- **API documentation**: [edomata_e2e](https://beyond-scale-group.github.io/edomata/rust/api/edomata_e2e/) (locally: `cargo doc -p edomata-e2e --no-deps --open`)
 
 ## Main items
 

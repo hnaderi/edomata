@@ -55,6 +55,8 @@ libraryDependencies += "io.github.beyond-scale-group" %%% "edomata-core" % "0.12
 
 Visit the [documentation site](https://beyond-scale-group.github.io/edomata/) for the full guide.
 
+**Rust port:** a Rust port of the library lives in [`rust/`](rust/README.md). Read [the Rust book](https://beyond-scale-group.github.io/edomata/rust/book/) and the [Rust API docs](https://beyond-scale-group.github.io/edomata/rust/api/).
+
 **Available modules:**
 
 | Module | Artifact | Platforms | Description |

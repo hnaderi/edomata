@@ -4,7 +4,7 @@ The PostgreSQL backend: event-sourcing and CQRS drivers over a `sqlx::PgPool`, j
 
 - **Scala module(s)**: `skunk`, `doobie`
 - **Book chapter**: [PostgreSQL (sqlx)](../../book/src/backends/postgres.md)
-- **API documentation**: `cargo doc -p edomata-sqlx --no-deps --open`
+- **API documentation**: [edomata_sqlx](https://beyond-scale-group.github.io/edomata/rust/api/edomata_sqlx/) (locally: `cargo doc -p edomata-sqlx --no-deps --open`)
 
 ## Main items
 

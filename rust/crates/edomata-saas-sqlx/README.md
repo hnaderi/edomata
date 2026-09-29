@@ -4,7 +4,7 @@ The tenant-aware PostgreSQL CQRS driver: fills the `tenant_id` / `owner_id` colu
 
 - **Scala module(s)**: `saas-skunk`
 - **Book chapters**: [SaaS multi-tenant module](../../book/src/tutorials/saas.md), [Multi-tenant deployment](../../book/src/operations/saas.md)
-- **API documentation**: `cargo doc -p edomata-saas-sqlx --no-deps --open`
+- **API documentation**: [edomata_saas_sqlx](https://beyond-scale-group.github.io/edomata/rust/api/edomata_saas_sqlx/) (locally: `cargo doc -p edomata-saas-sqlx --no-deps --open`)
 
 ## Main items
 

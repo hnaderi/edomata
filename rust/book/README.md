@@ -1,6 +1,6 @@
 # Edomata for Rust: the book
 
-The user documentation of the Rust port, as an [mdBook](https://rust-lang.github.io/mdBook/).
+The user documentation of the Rust port, as an [mdBook](https://rust-lang.github.io/mdBook/), published at <https://beyond-scale-group.github.io/edomata/rust/book/> on every push to `main`.
 
 ```bash
 cargo install mdbook

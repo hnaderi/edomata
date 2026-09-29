@@ -4,7 +4,7 @@ The shared storage test suites (compatibility, persistence, snapshots, CQRS) as 
 
 - **Scala module(s)**: `backend-tests`
 - **Book chapter**: [Running](../../book/src/tutorials/backends.md)
-- **API documentation**: `cargo doc -p edomata-backend-tests --no-deps --open`
+- **API documentation**: [edomata_backend_tests](https://beyond-scale-group.github.io/edomata/rust/api/edomata_backend_tests/) (locally: `cargo doc -p edomata-backend-tests --no-deps --open`)
 
 ## Main items
 

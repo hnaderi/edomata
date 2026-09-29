@@ -32,8 +32,9 @@ The full roadmap is in [`docs/plans/rust-port.md`](../docs/plans/rust-port.md).
 
 ## Documentation
 
-- **[The book](book/src/SUMMARY.md)** (`rust/book`, mdBook): tutorials (getting started, event sourcing, CQRS, running, processes, SaaS, migrations), a cookbook, testing, operations (schema management, event migrations, relays in production, multi-tenant deployment), troubleshooting, an API reference, principles, the PostgreSQL backend, the Simple API, distributing events with Kafka / RabbitMQ, a [migration guide for Scala and Java users](book/src/other/migration-guide.md), the porting map and the ADRs. Build it with `cargo install mdbook && mdbook build rust/book`; its code samples are the `edomata-book-samples` workspace member, compiled and tested with everything else.
-- **API docs**: `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps --open`.
+- **[The book](https://beyond-scale-group.github.io/edomata/rust/book/)** (`rust/book`, mdBook; [sources](book/src/SUMMARY.md)): tutorials (getting started, event sourcing, CQRS, running, processes, SaaS, migrations), a cookbook, testing, operations (schema management, event migrations, relays in production, multi-tenant deployment), troubleshooting, an API reference, principles, the PostgreSQL backend, the Simple API, distributing events with Kafka / RabbitMQ, a [migration guide for Scala and Java users](book/src/other/migration-guide.md), the porting map and the ADRs. Build it with `cargo install mdbook && mdbook build rust/book`; its code samples are the `edomata-book-samples` workspace member, compiled and tested with everything else.
+- **[API docs](https://beyond-scale-group.github.io/edomata/rust/api/)** (rustdoc for every crate, starting at [`edomata_core`](https://beyond-scale-group.github.io/edomata/rust/api/edomata_core/)). Build them locally with `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps --open`.
+- The book and the API docs are published with the [website](https://beyond-scale-group.github.io/edomata/) on every push to `main`.
 - Every crate under `crates/` has a `README.md`.
 
 ## Quick start
