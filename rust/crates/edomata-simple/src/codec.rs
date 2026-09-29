@@ -12,6 +12,21 @@ use serde::de::DeserializeOwned;
 /// Scala's `JCodec`: implement it or build one from closures with
 /// [`ClosureCodec::new`] (`JCodec.of`). Serde types need no hand-written
 /// codec: use [`serde_codec`] (or the builder's `serde_codecs`).
+///
+/// ```
+/// use edomata_simple::SimpleCodec;
+///
+/// struct Amount;
+///
+/// impl SimpleCodec<i64> for Amount {
+///     fn encode(&self, value: &i64) -> String { value.to_string() }
+///     fn decode(&self, json: &str) -> Result<i64, String> { json.parse().map_err(|e| format!("{e}")) }
+/// }
+///
+/// assert_eq!(Amount.decode(&Amount.encode(&42)), Ok(42));
+/// let storage = Amount.into_codec(); // for `SimpleBackendBuilder::event_codec`
+/// assert_eq!(storage.sql_type(), "jsonb");
+/// ```
 pub trait SimpleCodec<T>: Send + Sync + 'static {
     /// Encodes a value as JSON text.
     fn encode(&self, value: &T) -> String;
@@ -34,6 +49,11 @@ pub trait SimpleCodec<T>: Send + Sync + 'static {
 
 /// The `jsonb` storage codec of a serde type: the usual choice in Rust,
 /// where no hand-written codec is needed.
+///
+/// ```
+/// let codec = edomata_simple::serde_codec::<Vec<String>>();
+/// assert_eq!(codec.sql_type(), "jsonb");
+/// ```
 pub fn serde_codec<T>() -> SqlxCodec<T>
 where
     T: Serialize + DeserializeOwned + Send + Sync + 'static,
@@ -45,6 +65,14 @@ type Encoder<T> = dyn Fn(&T) -> String + Send + Sync;
 type Decoder<T> = dyn Fn(&str) -> Result<T, String> + Send + Sync;
 
 /// A [`SimpleCodec`] built from closures.
+///
+/// ```
+/// use edomata_simple::{ClosureCodec, SimpleCodec};
+///
+/// let codec = ClosureCodec::new(|n: &u32| n.to_string(), |s: &str| s.parse::<u32>().map_err(|e| e.to_string()));
+/// assert_eq!(codec.decode("7"), Ok(7));
+/// assert!(codec.decode("x").is_err());
+/// ```
 pub struct ClosureCodec<T> {
     encoder: Arc<Encoder<T>>,
     decoder: Arc<Decoder<T>>,

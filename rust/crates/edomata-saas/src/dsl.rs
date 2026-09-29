@@ -25,6 +25,35 @@ pub type SaaSCqrsApp<Auth, C, A, R, N, T> =
 /// `CrudState<A>`, and `guarded_router` / `guarded` run the tenant and
 /// authorization checks before the business logic. Guard failures are
 /// turned into rejections with `mk_rejection`.
+///
+/// ```
+/// use edomata_saas::*;
+/// use edomata_core::RequestContext;
+///
+/// #[derive(Clone)]
+/// enum Cmd { Create(String), Delete }
+///
+/// let dsl: SaaSDomainDsl<CallerIdentity, Cmd, String, String, String, ()> =
+///     SaaSDomainDsl::new(PermissivePolicy, |reason| reason);
+/// let d = dsl.clone();
+/// let app = dsl.guarded_router(move |cmd| match cmd {
+///     Cmd::Create(title) => (CrudAction::Create, d.accept(format!("created {title}"))),
+///     Cmd::Delete => (CrudAction::Delete, d.accept("deleted".to_string())),
+/// });
+///
+/// let caller = CallerIdentity::new("acme", "alice", Vec::<String>::new());
+/// let run = |cmd: Cmd, state: CrudState<String>| {
+///     let msg = CommandMessage::new("cmd-1", chrono::DateTime::UNIX_EPOCH, "todo-1", SaaSCommand::new(caller.clone(), cmd));
+///     futures::executor::block_on(app.run(RequestContext::new(msg, state))).result
+/// };
+/// // `Create` skips the tenant check: the entity does not exist yet.
+/// assert!(run(Cmd::Create("milk".into()), CrudState::NonExistent).is_accepted());
+/// // Anything else needs an existing entity of the caller's tenant.
+/// assert_eq!(
+///     run(Cmd::Delete, CrudState::NonExistent).rejections().map(|r| r.to_vec()),
+///     Some(vec!["Entity not found".to_string()]),
+/// );
+/// ```
 pub struct SaaSDomainDsl<Auth, C, A, E, R, N> {
     inner: DomainDsl<SaaSCommand<Auth, C>, CrudState<A>, E, R, N>,
     policy: Arc<dyn AuthPolicy<Auth>>,
@@ -114,7 +143,8 @@ where
     }
 
     /// Routes each command to a `(action, logic)` pair; the guard for
-    /// `action` runs before `logic`.
+    /// `action` runs before `logic`, which never runs if the guard rejects.
+    /// See the [type-level example](Self).
     pub fn guarded_router<F>(&self, f: F) -> SaaSEsApp<Auth, C, A, E, R, N, ()>
     where
         F: Fn(C) -> (CrudAction, SaaSEsApp<Auth, C, A, E, R, N, ()>) + Send + Sync + 'static,
@@ -218,7 +248,26 @@ where
 }
 
 /// Guarded DSL for CQRS SaaS aggregates. Mirrors Scala's
-/// `SaaSCQRSDomainDSL`.
+/// `SaaSCQRSDomainDSL`: the [`SaaSDomainDsl`] checks, on
+/// [`Stomaton`] programs that set the new [`CrudState`] instead of emitting
+/// events.
+///
+/// ```
+/// use edomata_saas::*;
+///
+/// let dsl: SaaSCqrsDsl<CallerIdentity, String, String, String, ()> =
+///     SaaSCqrsDsl::new(PermissivePolicy, |reason| reason);
+/// let d = dsl.clone();
+/// let app = dsl.guarded_router(move |title: String| {
+///     (CrudAction::Create, d.set(CrudState::active("acme", "alice", title)))
+/// });
+///
+/// let caller = CallerIdentity::new("acme", "alice", Vec::<String>::new());
+/// let cmd = CommandMessage::new("cmd-1", chrono::DateTime::UNIX_EPOCH, "todo-1", SaaSCommand::new(caller, "milk".to_string()));
+/// let response = futures::executor::block_on(app.run(cmd, CrudState::NonExistent));
+/// let (state, ()) = response.result.unwrap();
+/// assert_eq!(state.data().map(String::as_str), Some("milk"));
+/// ```
 pub struct SaaSCqrsDsl<Auth, C, A, R, N> {
     inner: CqrsDomainDsl<SaaSCommand<Auth, C>, CrudState<A>, R, N>,
     policy: Arc<dyn AuthPolicy<Auth>>,
@@ -303,7 +352,8 @@ where
     }
 
     /// Routes each command to a `(action, logic)` pair; the guard for
-    /// `action` runs before `logic`.
+    /// `action` runs before `logic`, which never runs if the guard rejects.
+    /// See the [type-level example](Self).
     pub fn guarded_router<F>(&self, f: F) -> SaaSCqrsApp<Auth, C, A, R, N, ()>
     where
         F: Fn(C) -> (CrudAction, SaaSCqrsApp<Auth, C, A, R, N, ()>) + Send + Sync + 'static,

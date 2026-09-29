@@ -5,8 +5,61 @@
 //! persistence) so that the same checks run against the in-memory driver
 //! and against PostgreSQL. Test crates call them from `#[tokio::test]`
 //! functions, which replaces Scala's `StorageSuite.check`.
+//!
+//! ```
+//! use edomata_backend::cqrs::Backend as CqrsBackend;
+//! use edomata_backend::eventsourcing::Backend;
+//! use edomata_backend::inmemory::InMemoryDriver;
+//! use edomata_backend_tests::{cqrs, eventsourcing as es};
+//! use edomata_backend_tests::{TestCqrsModel, TestDomain, test_cqrs_dsl, test_domain_dsl};
+//!
+//! # tokio::runtime::Builder::new_current_thread().enable_time().build().unwrap().block_on(async {
+//! // In a test crate, each check is usually its own `#[tokio::test]`.
+//! let backend = Backend::builder(TestDomain, test_domain_dsl())
+//!     .driver(InMemoryDriver::new())
+//!     .build_default()
+//!     .await
+//!     .unwrap();
+//! es::must_append_correctly(&backend).await;
+//! es::appending_must_be_idempotent(&backend).await;
+//!
+//! let backend = CqrsBackend::builder(TestCqrsModel, test_cqrs_dsl())
+//!     .driver(InMemoryDriver::new())
+//!     .build_default()
+//!     .await
+//!     .unwrap();
+//! cqrs::inserts_state(&backend).await;
+//! # });
+//! ```
+//!
+//! To check a new storage driver, build its backends with [`TestDomain`] /
+//! [`TestCqrsModel`] and run every check of [`eventsourcing`] and [`cqrs`];
+//! for the [`eventsourcing::prepared_data`] checks, seed the storage with
+//! the rows that module describes first. `edomata-sqlx` does this in
+//! `tests/shared_suites.rs`.
+//!
+//! ## Panics
+//!
+//! Every check panics (through `assert!` and `unwrap`) when the storage does
+//! not behave as expected: that is how it fails the calling test.
+//!
+//! ## Where it fits
+//!
+//! A test-support crate: it depends on `edomata-core` and `edomata-backend`
+//! and is a dev-dependency of the storage drivers (`edomata-sqlx`). It is
+//! the port of the Scala `backend-tests` module. Its checks run against the
+//! in-memory driver in this crate's own tests.
+//!
+//! ## Feature flags
+//!
+//! This crate has no Cargo feature flags.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod cqrs;
 pub mod eventsourcing;

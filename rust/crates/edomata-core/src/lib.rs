@@ -52,8 +52,39 @@
 //!     notifications: vec!["changed".to_string()],
 //! });
 //! ```
+//!
+//! ## Where it fits
+//!
+//! `edomata-core` is the pure base of the workspace: it depends on no other
+//! Edomata crate, and every other crate builds on it, directly or (for
+//! `edomata-serde`, through `edomata-backend`) indirectly, except
+//! `edomata-postgres`, which is independent of it.
+//!
+//! - `edomata-backend` runs [`Edomaton`] and [`Stomaton`] programs against a
+//!   storage (journal, snapshots, outbox, optimistic concurrency, retries)
+//!   and ships an in-memory driver;
+//! - `edomata-postgres`, `edomata-serde` and `edomata-sqlx` provide the
+//!   PostgreSQL naming and DDL, the payload codecs and the sqlx driver;
+//! - `edomata-testkit` has assertion helpers for unit-testing programs;
+//! - `edomata-saas` / `edomata-saas-sqlx` add multi-tenancy,
+//!   `edomata-simple` a closure-based facade, and `edomata-broker`,
+//!   `edomata-kafka` and `edomata-rabbitmq` distribute notifications.
+//!
+//! Domain code usually only needs this crate: define a [`DomainModel`] (or a
+//! [`CqrsModel`]), write programs with its [`DomainDsl`] (or
+//! [`CqrsDomainDsl`]), and unit-test them with [`Edomaton::execute`].
+//!
+//! ## Feature flags
+//!
+//! | Feature | Default | Effect |
+//! |---------|---------|--------|
+//! | `serde` | no | Derives `serde::Serialize` / `serde::Deserialize` for [`CommandMessage`], [`MessageMetadata`] and [`NonEmpty`] (and enables `chrono/serde`). Deserializing an empty sequence into a [`NonEmpty`] fails with [`EmptyError`]. |
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 use std::future::Future;
@@ -85,6 +116,9 @@ pub use response::{RaiseError, ResponseD, ResponseE, ResponseT};
 pub use stomaton::Stomaton;
 
 /// A boxed, `Send` future, the shape of every effect in Edomata programs.
+///
+/// [`Edomaton::run`], [`Stomaton::run`], [`Action::run`] and
+/// [`DecisionT::run`] all return this type.
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 /// A result carrying one or more rejections, the counterpart of Cats'
@@ -93,4 +127,7 @@ pub type ResultNec<T, R> = Result<T, NonEmpty<R>>;
 
 /// The type of a domain service: handles a command and returns unit or the
 /// rejection reasons.
+///
+/// Backends compile an [`Edomaton`] (or a [`Stomaton`]) into a function of
+/// this shape, which hides storage, concurrency and retries from callers.
 pub type DomainService<'a, C, R> = dyn Fn(C) -> BoxFuture<'a, ResultNec<(), R>> + Send + Sync + 'a;

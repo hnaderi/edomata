@@ -27,8 +27,30 @@
 //!     app.expect_rejection_with(&Counter, 0, 10, ["zero".to_string()]).await;
 //! });
 //! ```
+//!
+//! ## Panics
+//!
+//! The `expect*` assertions panic, with the unexpected outcome in the
+//! message, when the program does not behave as asserted: that is how they
+//! fail a test. The `run_with*` methods never panic and return the outcome
+//! for custom assertions.
+//!
+//! ## Where it fits
+//!
+//! `edomata-testkit` depends only on `edomata-core`: it runs programs
+//! purely, without a backend, so it belongs in `[dev-dependencies]`. To
+//! test storages rather than domains, see `edomata-backend-tests`.
+//!
+//! ## Feature flags
+//!
+//! This crate has no Cargo feature flags.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use std::fmt::Debug;
 
@@ -42,6 +64,16 @@ use edomata_core::{
 /// `Default` uses id `"1"`, the minimum timestamp (Scala's `Instant.MIN`,
 /// here `DateTime::<Utc>::MIN_UTC`) and address `"sut"`, like Scala's
 /// `DomainSuite`.
+///
+/// ```
+/// use edomata_testkit::TestCommand;
+///
+/// let cmd = TestCommand::default().message(42);
+/// assert_eq!((cmd.id.as_str(), cmd.address.as_str(), cmd.payload), ("1", "sut", 42));
+///
+/// let cmd = TestCommand::new("cmd-7", "account-1").message("deposit");
+/// assert_eq!(cmd.address, "account-1");
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TestCommand {
     /// Message id of the generated commands.
@@ -83,7 +115,50 @@ impl TestCommand {
     }
 }
 
-/// Assertion helpers for event-sourced programs.
+/// Assertion helpers for event-sourced programs, implemented for every
+/// [`Edomaton`] over a [`RequestContext`] (the programs built with
+/// [`DomainDsl`](edomata_core::DomainDsl)).
+///
+/// Each assertion runs the program once with the given command and state,
+/// folds its events into the model with
+/// [`Edomaton::execute`], and panics if the [`EdomatonResult`] differs from
+/// the expectation. [`EdomatonResult::Indecisive`] (no event accepted) and
+/// [`EdomatonResult::Conflicted`] (events the model refuses) fail every
+/// `expect*` assertion; use [`run_with`](Self::run_with) to assert on them.
+///
+/// ```
+/// use edomata_core::*;
+/// use edomata_testkit::{EdomatonAssertions, TestCommand};
+///
+/// struct Account;
+/// impl DomainModel for Account {
+///     type State = u32; type Event = u32; type Rejection = String;
+///     fn initial(&self) -> u32 { 0 }
+///     fn transition(&self, e: &u32, s: u32) -> Result<u32, NonEmpty<String>> { Ok(s + e) }
+/// }
+///
+/// let dsl = Account.dsl::<u32, String>();
+/// let deposit = dsl.router(move |amount: u32| {
+///     if amount > 1000 {
+///         dsl.reject("too large".to_string())
+///     } else {
+///         dsl.accept(amount)
+///     }
+/// });
+///
+/// futures::executor::block_on(async {
+///     deposit.expect(&Account, 10, 5, 15, []).await;
+///     deposit.expect_that(&Account, 10, 5, [], |balance| assert!(*balance > 10)).await;
+///     let (_, reasons) = deposit.expect_rejection(&Account, 5000, 0).await;
+///     assert_eq!(reasons.head(), "too large");
+///
+///     // The raw outcome, with a custom command id and address.
+///     let outcome = deposit
+///         .run_with_command(&Account, &TestCommand::new("cmd-2", "acc-9"), 1, 0)
+///         .await;
+///     assert!(matches!(outcome, EdomatonResult::Accepted { new_state: 1, .. }));
+/// });
+/// ```
 #[allow(async_fn_in_trait)]
 pub trait EdomatonAssertions<C, S, E, R, N> {
     /// Runs the program against `state` with `command` (default
@@ -415,7 +490,35 @@ where
 }
 
 /// Assertion helpers for CQRS programs (no Scala equivalent; `DomainSuite`
-/// only covers `Edomaton`).
+/// only covers `Edomaton`), implemented for every [`Stomaton`] over a
+/// [`CommandMessage`] with a `()` output (the programs built with
+/// [`CqrsDomainDsl`](edomata_core::CqrsDomainDsl)).
+///
+/// ```
+/// use edomata_core::*;
+/// use edomata_testkit::StomatonAssertions;
+///
+/// struct Counter;
+/// impl CqrsModel for Counter {
+///     type State = i32; type Rejection = String;
+///     fn initial(&self) -> i32 { 0 }
+/// }
+///
+/// let dsl = Counter.dsl::<i32, String>();
+/// let add = dsl.router(move |by: i32| {
+///     if by == 0 {
+///         dsl.reject("zero".to_string())
+///     } else {
+///         dsl.modify(move |s| s + by).then(dsl.publish([format!("added {by}")]))
+///     }
+/// });
+///
+/// futures::executor::block_on(async {
+///     add.expect(2, 40, 42, ["added 2".to_string()]).await;
+///     add.expect_rejection_with(0, 40, ["zero".to_string()], []).await;
+///     assert!(add.run_with(1, 0).await.result.is_ok());
+/// });
+/// ```
 #[allow(async_fn_in_trait)]
 pub trait StomatonAssertions<C, S, R, N> {
     /// Runs the program with `command` (default [`TestCommand`]) and `state`.

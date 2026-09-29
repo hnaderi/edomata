@@ -4,7 +4,17 @@ use std::collections::BTreeSet;
 use std::fmt;
 use std::sync::Arc;
 
-/// Identifier of a tenant. Any string is accepted, as in Scala.
+/// Identifier of a tenant. Any string is accepted, as in Scala. With the
+/// `serde` feature it serializes as a plain JSON string.
+///
+/// ```
+/// use edomata_saas::TenantId;
+///
+/// let id = TenantId::from("acme");
+/// assert_eq!(id.value(), "acme");
+/// assert_eq!(id.to_string(), "acme");
+/// assert_eq!(String::from(id), "acme");
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(
     feature = "serde",
@@ -13,7 +23,8 @@ use std::sync::Arc;
 )]
 pub struct TenantId(String);
 
-/// Identifier of a user. Any string is accepted, as in Scala.
+/// Identifier of a user. Any string is accepted, as in Scala. Same API as
+/// [`TenantId`].
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[cfg_attr(
     feature = "serde",
@@ -100,7 +111,20 @@ impl CrudAction {
     ];
 }
 
-/// Lifecycle state of a tenant-owned entity.
+/// Lifecycle state of a tenant-owned entity: the state type of every SaaS
+/// aggregate. The tenant and owner are fixed when the entity is created and
+/// kept after deletion, so guards and tenant-aware storage can always
+/// attribute it.
+///
+/// ```
+/// use edomata_saas::CrudState;
+///
+/// let todo = CrudState::active("acme", "alice", "buy milk");
+/// assert_eq!(todo.tenant_id().map(|t| t.value()), Some("acme"));
+/// assert_eq!(todo.clone().map(str::len).data(), Some(&8));
+/// assert!(!CrudState::<&str>::deleted("acme", "alice").is_active());
+/// assert_eq!(CrudState::<&str>::default(), CrudState::NonExistent);
+/// ```
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum CrudState<A> {
@@ -176,7 +200,8 @@ impl<A> CrudState<A> {
         matches!(self, CrudState::Active { .. })
     }
 
-    /// Changes the business data, keeping the lifecycle state.
+    /// Changes the business data, keeping the lifecycle state, tenant and
+    /// owner.
     pub fn map<B, F: FnOnce(A) -> B>(self, f: F) -> CrudState<B> {
         match self {
             CrudState::NonExistent => CrudState::NonExistent,
@@ -219,12 +244,46 @@ impl<Auth, C> SaaSCommand<Auth, C> {
 
 /// Extracts the tenant from an authentication context and decides whether
 /// it may perform an action. Implement it for your own auth type (JWT
-/// claims, API key context, ...).
+/// claims, API key context, ...). [`PermissivePolicy`] and
+/// [`RoleBasedPolicy`] implement it for [`CallerIdentity`].
+///
+/// The guarded DSLs call [`tenant_id`](Self::tenant_id) to enforce tenant
+/// isolation (see [`SaaSGuard::check_tenant`](crate::SaaSGuard::check_tenant))
+/// and then [`authorize`](Self::authorize); an `Err` reason becomes a
+/// rejection of the command.
+///
+/// ```
+/// use edomata_saas::{AuthPolicy, CrudAction, TenantId};
+///
+/// /// Claims of a verified API key.
+/// struct ApiKey { tenant: String, read_only: bool }
+///
+/// struct ApiKeyPolicy;
+///
+/// impl AuthPolicy<ApiKey> for ApiKeyPolicy {
+///     fn tenant_id(&self, auth: &ApiKey) -> TenantId {
+///         TenantId::new(auth.tenant.clone())
+///     }
+///
+///     fn authorize(&self, auth: &ApiKey, action: CrudAction) -> Result<(), String> {
+///         if auth.read_only && action != CrudAction::Read {
+///             Err("read-only key".to_string())
+///         } else {
+///             Ok(())
+///         }
+///     }
+/// }
+///
+/// let key = ApiKey { tenant: "acme".into(), read_only: true };
+/// assert_eq!(ApiKeyPolicy.authorize(&key, CrudAction::Read), Ok(()));
+/// assert!(ApiKeyPolicy.authorize(&key, CrudAction::Delete).is_err());
+/// ```
 pub trait AuthPolicy<Auth>: Send + Sync {
     /// The tenant the caller acts for.
     fn tenant_id(&self, auth: &Auth) -> TenantId;
 
     /// `Ok(())` if the caller may perform `action`, `Err(reason)` otherwise.
+    /// The reason is passed to the DSL's `mk_rejection`.
     fn authorize(&self, auth: &Auth, action: CrudAction) -> Result<(), String>;
 }
 
@@ -239,6 +298,15 @@ impl<Auth, P: AuthPolicy<Auth> + ?Sized> AuthPolicy<Auth> for Arc<P> {
 }
 
 /// A convenient default authentication context: tenant, user and roles.
+/// Used with [`PermissivePolicy`] or [`RoleBasedPolicy`].
+///
+/// ```
+/// use edomata_saas::CallerIdentity;
+///
+/// let caller = CallerIdentity::new("acme", "alice", ["read", "write"]);
+/// assert!(caller.roles.contains("write"));
+/// assert_eq!(caller.tenant_id.value(), "acme");
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CallerIdentity {
@@ -282,7 +350,8 @@ impl AuthPolicy<CallerIdentity> for PermissivePolicy {
 }
 
 /// A role-based policy for [`CallerIdentity`]: each action requires a set
-/// of roles; missing roles are reported as `"Missing roles: a, b"`.
+/// of roles, all of which the caller must have; missing roles are reported
+/// as `"Missing roles: a, b"` (sorted).
 ///
 /// ```
 /// use edomata_saas::{AuthPolicy, CallerIdentity, CrudAction, RoleBasedPolicy};

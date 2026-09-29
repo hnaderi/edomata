@@ -81,7 +81,12 @@ impl<N> SqlxHandler<N> {
         Self { run: Arc::new(f) }
     }
 
-    /// Runs the handler.
+    /// Runs the handler on `conn`, the connection of the enclosing
+    /// transaction.
+    ///
+    /// # Errors
+    ///
+    /// Whatever the handler returns; an error rolls the save back.
     pub async fn call(
         &self,
         notifications: &NonEmpty<N>,
@@ -91,7 +96,28 @@ impl<N> SqlxHandler<N> {
     }
 }
 
-/// PostgreSQL storage driver for CQRS aggregates.
+/// PostgreSQL storage driver for CQRS aggregates: the `states`, `outbox`
+/// and `commands` tables.
+///
+/// States are saved with optimistic concurrency on their `version` column;
+/// a concurrent update is reported as `BackendError::VersionConflict` and
+/// retried by the command handler. A [`SqlxHandler`] registered with
+/// `with_event_handler` runs in the same transaction as the save.
+///
+/// ```no_run
+/// # use edomata_core::*;
+/// # use edomata_backend::cqrs::Backend;
+/// # use edomata_sqlx::{PGNaming, SqlxCqrsDriver};
+/// # struct Counter;
+/// # impl CqrsModel for Counter { type State = i32; type Rejection = String; fn initial(&self) -> i32 { 0 } }
+/// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+/// let driver = SqlxCqrsDriver::new(PGNaming::prefixed_str("counters")?, pool).await?;
+/// let backend = Backend::builder(Counter, Counter.dsl::<i32, String>())
+///     .driver(driver)
+///     .build_default()
+///     .await?;
+/// # let _ = backend; Ok(()) }
+/// ```
 #[derive(Clone, Debug)]
 pub struct SqlxCqrsDriver {
     naming: PGNaming,
@@ -101,19 +127,47 @@ pub struct SqlxCqrsDriver {
 }
 
 impl SqlxCqrsDriver {
-    /// A driver that sets the schema and tables up automatically.
+    /// A driver that sets the schema and tables up automatically. Mirrors
+    /// Scala's `SkunkCQRSDriver.from(naming, pool)`. Same as
+    /// [`new_with`](Self::new_with) with `skip_setup = false`.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::UnknownError`] if the `CREATE SCHEMA` statement (schema
+    /// mode only) fails.
     pub async fn new(naming: PGNaming, pool: PgPool) -> Result<Self, BackendError> {
         Self::new_with(naming, pool, false).await
     }
 
     /// A driver for a schema-mode namespace given as a string.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::PersistenceError`] if `namespace` is not a valid
+    /// [`PGNamespace`], and the errors of [`new`](Self::new).
     pub async fn for_namespace(namespace: &str, pool: PgPool) -> Result<Self, BackendError> {
         let ns = PGNamespace::from_string(namespace).map_err(invalid_namespace)?;
         Self::new(PGNaming::schema(ns), pool).await
     }
 
-    /// A driver with `skip_setup` as in Scala (no DDL is ever executed when
-    /// `true`).
+    /// A driver with `skip_setup` as in Scala's
+    /// `SkunkCQRSDriver.from(naming, pool, skipSetup)`: when `true`, no DDL
+    /// is ever executed and the tables of
+    /// [`PGSchema::cqrs`](edomata_postgres::PGSchema::cqrs) are assumed to
+    /// exist.
+    ///
+    /// ```no_run
+    /// # use edomata_sqlx::{PGNaming, SqlxCqrsDriver};
+    /// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    /// let driver = SqlxCqrsDriver::new_with(PGNaming::prefixed_str("carts")?, pool, true).await?;
+    /// assert!(!driver.auto_setup());
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// With `skip_setup = false`, [`BackendError::UnknownError`] if the setup
+    /// DDL fails; never with `true`.
     pub async fn new_with(
         naming: PGNaming,
         pool: PgPool,
@@ -131,7 +185,7 @@ impl SqlxCqrsDriver {
     }
 
     /// Raises `NOTIFY channel` in the transaction that inserts outbox rows
-    /// (see `SqlxDriver::with_outbox_notify_channel`).
+    /// (see [`SqlxDriver::with_outbox_notify_channel`](crate::SqlxDriver::with_outbox_notify_channel)).
     pub fn with_outbox_notify_channel(mut self, channel: impl Into<String>) -> Self {
         self.outbox_notify_channel = Some(channel.into());
         self
@@ -147,7 +201,7 @@ impl SqlxCqrsDriver {
         &self.pool
     }
 
-    /// Whether tables are created automatically.
+    /// Whether tables are created automatically (`!skip_setup`).
     pub fn auto_setup(&self) -> bool {
         self.auto_setup
     }

@@ -14,8 +14,9 @@ pub fn is_unique_violation(error: &sqlx::Error) -> bool {
 }
 
 /// Maps a sqlx error raised while writing an aggregate: a unique violation
-/// (duplicate `(stream, version)` or command id) is a version conflict, as
-/// in the Scala drivers; anything else is wrapped.
+/// (duplicate `(stream, version)` or command id) is a
+/// [`BackendError::VersionConflict`], as in the Scala drivers; anything else
+/// is wrapped by [`map_sqlx`].
 pub fn map_write(error: sqlx::Error) -> BackendError {
     if is_unique_violation(&error) {
         BackendError::VersionConflict
@@ -24,13 +25,24 @@ pub fn map_write(error: sqlx::Error) -> BackendError {
     }
 }
 
-/// Wraps any sqlx error.
+/// Wraps any sqlx error in [`BackendError::UnknownError`].
 pub fn map_sqlx(error: sqlx::Error) -> BackendError {
     BackendError::unknown(error)
 }
 
 /// Checks that exactly `expected` rows were affected, like the Scala
 /// `assertInserted` helper.
+///
+/// # Errors
+///
+/// [`BackendError::PersistenceError`] when `affected != expected`.
+///
+/// ```
+/// use edomata_sqlx::shared::assert_inserted;
+///
+/// assert!(assert_inserted(1, 1).is_ok());
+/// assert!(assert_inserted(0, 1).is_err());
+/// ```
 pub fn assert_inserted(affected: u64, expected: u64) -> Result<(), BackendError> {
     if affected == expected {
         Ok(())

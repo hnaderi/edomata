@@ -39,6 +39,14 @@ pub enum PGNamespaceError {
 impl PGNamespace {
     /// Validates `s`, with the same rules and messages as Scala's
     /// `PGNamespace.fromString`.
+    ///
+    /// # Errors
+    ///
+    /// - [`PGNamespaceError::Invalid`] if `s` is empty, starts with a digit
+    ///   or `$`, or contains a character other than ASCII letters, digits,
+    ///   `_` and `$`;
+    /// - [`PGNamespaceError::TooLong`] if it is longer than [`MAX_LEN`]
+    ///   characters.
     pub fn from_string(s: &str) -> Result<Self, PGNamespaceError> {
         let mut chars = s.chars();
         let valid_head = chars

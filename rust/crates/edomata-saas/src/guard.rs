@@ -44,7 +44,8 @@ impl SaaSGuard {
         }
     }
 
-    /// Delegates to the policy's authorization rule.
+    /// Delegates to the policy's authorization rule
+    /// ([`AuthPolicy::authorize`]).
     pub fn check_authorization<Auth, P>(
         auth: &Auth,
         action: CrudAction,
@@ -56,7 +57,7 @@ impl SaaSGuard {
         policy.authorize(auth, action)
     }
 
-    /// Both checks, tenant first.
+    /// Both checks, tenant first: the first failure is returned.
     pub fn check<Auth, A, P>(
         state: &CrudState<A>,
         auth: &Auth,

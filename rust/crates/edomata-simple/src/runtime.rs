@@ -18,6 +18,15 @@ use crate::{CommandHandler, SimpleBackend, SimpleError};
 /// that [`close`](SimpleRuntime::close) shuts down.
 /// [`SimpleRuntime::from_handle`] borrows an existing runtime (Scala's
 /// `fromExisting`), which `close` never shuts down.
+///
+/// ```
+/// use edomata_simple::SimpleRuntime;
+///
+/// let runtime = SimpleRuntime::create().unwrap();
+/// assert!(runtime.owns_runtime());
+/// assert_eq!(runtime.block_on(async { 1 + 1 }), 2);
+/// runtime.close();
+/// ```
 #[derive(Clone, Debug)]
 pub struct SimpleRuntime {
     owned: Option<Arc<Runtime>>,
@@ -29,6 +38,10 @@ impl SimpleRuntime {
     /// `EdomataRuntime.create`, except that the runtime is owned, see the
     /// type documentation). Must not be called from within an asynchronous
     /// context.
+    ///
+    /// # Errors
+    ///
+    /// The I/O error of the Tokio runtime builder.
     pub fn create() -> std::io::Result<Self> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .enable_all()
@@ -59,6 +72,12 @@ impl SimpleRuntime {
     }
 
     /// Runs a future to completion on this runtime.
+    ///
+    /// # Panics
+    ///
+    /// Panics when called from within an asynchronous context (Tokio's
+    /// `Handle::block_on` rule); use the asynchronous [`SimpleBackend`](crate::SimpleBackend)
+    /// there instead.
     pub fn block_on<F: Future>(&self, future: F) -> F::Output {
         self.handle.block_on(future)
     }
@@ -77,6 +96,12 @@ impl SimpleRuntime {
 
 /// A [`SimpleBackend`] with blocking methods, for callers outside an
 /// asynchronous context (the `CompletableFuture`-free view of `JBackend`).
+/// Build one with [`SimpleBackendBuilder::build_blocking`](crate::SimpleBackendBuilder::build_blocking)
+/// (see the [crate-level example](crate)).
+///
+/// Every method blocks on the runtime and so has the panics of
+/// [`SimpleRuntime::block_on`], and returns the errors of the matching
+/// [`SimpleBackend`] method.
 pub struct BlockingBackend<S, E, R, N> {
     backend: SimpleBackend<S, E, R, N>,
     runtime: SimpleRuntime,

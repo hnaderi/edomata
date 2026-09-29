@@ -209,6 +209,11 @@ where
     // ---------------------------------------------------------------------
 
     /// Runs this edomaton with the given input.
+    ///
+    /// The program is not consumed: it can be run any number of times, and
+    /// each run is independent. To also fold the decision into a
+    /// [`DomainModel`](crate::DomainModel), use
+    /// [`Edomaton::execute`](Edomaton::execute).
     pub fn run(&self, env: Env) -> BoxFuture<'static, ResponseD<R, E, N, A>> {
         (self.run)(env)
     }
@@ -258,6 +263,16 @@ where
 
     /// Creates a new edomaton that translates some input to what this one
     /// can understand.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, Edomaton};
+    ///
+    /// let accept_len: Edomaton<usize, (), usize, (), ()> =
+    ///     Edomaton::read().and_then(|n| Edomaton::accept(n));
+    /// let on_strings: Edomaton<&str, (), usize, (), ()> = accept_len.contramap(|s: &str| s.len());
+    /// let out = futures::executor::block_on(on_strings.run("hello"));
+    /// assert_eq!(out.result, Decision::accept(5));
+    /// ```
     pub fn contramap<Env2, F>(self, f: F) -> Edomaton<Env2, R, E, N, A>
     where
         Env2: Send + 'static,
@@ -321,7 +336,16 @@ where
     }
 
     /// Evaluates an effect using the output and uses its result as the new
-    /// output.
+    /// output. The effect is skipped when the edomaton is rejected.
+    ///
+    /// ```
+    /// use edomata_core::Edomaton;
+    ///
+    /// let program: Edomaton<u32, (), (), (), u32> =
+    ///     Edomaton::read().eval_map(|n| async move { n * 2 });
+    /// let out = futures::executor::block_on(program.run(21));
+    /// assert_eq!(out.result.result(), Some(&42));
+    /// ```
     pub fn eval_map<B, F, Fut>(self, f: F) -> Edomaton<Env, R, E, N, B>
     where
         B: Send + 'static,
@@ -373,7 +397,8 @@ where
         self.eval_tap(move |_| f())
     }
 
-    /// Decides based on the output.
+    /// Decides based on the output, with the semantics of
+    /// [`Decision::and_then`].
     pub fn decide_with<B, F>(self, f: F) -> Edomaton<Env, R, E, N, B>
     where
         B: Send + 'static,
@@ -412,7 +437,18 @@ where
         self.transform(move |r| r.publish_on_rejection(ns.clone()))
     }
 
-    /// Recovers from a rejection.
+    /// Recovers from a rejection: `f` receives the reasons and returns an
+    /// edomaton that runs with the same input. The rejected program's
+    /// notifications are discarded; successful runs are unchanged.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, Edomaton};
+    ///
+    /// let program: Edomaton<(), &str, &str, (), ()> = Edomaton::reject("not found")
+    ///     .handle_error_with(|_| Edomaton::accept("created"));
+    /// let out = futures::executor::block_on(program.run(()));
+    /// assert_eq!(out.result, Decision::accept("created"));
+    /// ```
     pub fn handle_error_with<F>(self, f: F) -> Self
     where
         Env: Clone,

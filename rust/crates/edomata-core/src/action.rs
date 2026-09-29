@@ -68,6 +68,15 @@ where
     }
 
     /// Lifts an effect, whose output becomes the program output.
+    ///
+    /// ```
+    /// use edomata_core::{Action, Decision};
+    ///
+    /// let program: Action<(), &str, (), ()> =
+    ///     Action::lift_future(async { 42 }).and_then(|n| if n > 0 { Action::accept("positive") } else { Action::void() });
+    /// let response = futures::executor::block_on(program);
+    /// assert_eq!(response.result, Decision::accept("positive"));
+    /// ```
     pub fn lift_future<Fut>(fut: Fut) -> Self
     where
         Fut: Future<Output = A> + Send + 'static,
@@ -116,6 +125,17 @@ where
     /// Events and notifications accumulate on success; a rejection
     /// terminates the chain and only keeps the notifications of the
     /// rejecting step.
+    ///
+    /// ```
+    /// use edomata_core::{Action, Decision, nonempty};
+    ///
+    /// let program: Action<&str, i32, &str, ()> = Action::accept(1)
+    ///     .publish(["accepted"])
+    ///     .and_then(|_| Action::reject("stop").publish(["rejected"]));
+    /// let response = futures::executor::block_on(program);
+    /// assert_eq!(response.result, Decision::Rejected(nonempty!["stop"]));
+    /// assert_eq!(response.notifications, vec!["rejected"]);
+    /// ```
     pub fn and_then<B, F>(self, f: F) -> Action<R, E, N, B>
     where
         B: Send + 'static,
@@ -168,6 +188,10 @@ where
     }
 
     /// Stack-safe iteration, the counterpart of Cats' `tailRecM`.
+    ///
+    /// Events and notifications accumulate across iterations; a rejection
+    /// stops the loop and keeps only the notifications of the rejecting
+    /// step.
     pub fn tail_rec<S, F>(init: S, mut f: F) -> Action<R, E, N, A>
     where
         S: Send + 'static,

@@ -56,6 +56,23 @@ type HandlerFn<C, S, E, R, N> =
 /// Mirrors Scala's `JCommandHandler`, with a blocking
 /// ([`CommandHandler::new`]) and an asynchronous
 /// ([`CommandHandler::new_async`]) constructor.
+///
+/// ```
+/// use edomata_simple::{AppResult, CommandHandler, CommandMessage, Context};
+///
+/// let handler: CommandHandler<i64, i64, i64, String, String> = CommandHandler::new(|ctx| {
+///     if ctx.state + ctx.command < 0 {
+///         AppResult::reject(["insufficient balance".to_string()])
+///     } else {
+///         AppResult::accept([ctx.command])
+///     }
+/// });
+///
+/// let message = CommandMessage::new("cmd-1", chrono::DateTime::UNIX_EPOCH, "acc-1", -50);
+/// let ctx = Context { command: -50, message, state: 20 };
+/// let result = futures::executor::block_on(handler.call(ctx));
+/// assert_eq!(result.decision.reasons(), &["insufficient balance".to_string()]);
+/// ```
 pub struct CommandHandler<C, S, E, R, N> {
     run: Arc<HandlerFn<C, S, E, R, N>>,
 }
@@ -95,7 +112,10 @@ where
         }
     }
 
-    /// A handler from an asynchronous function.
+    /// A handler from an asynchronous function, e.g. one that calls an
+    /// external service before deciding. The future runs inside the
+    /// command's retry loop, so it may run more than once on version
+    /// conflicts.
     pub fn new_async<F, Fut>(f: F) -> Self
     where
         F: Fn(Context<C, S>) -> Fut + Send + Sync + 'static,
@@ -106,7 +126,7 @@ where
         }
     }
 
-    /// Runs the handler.
+    /// Runs the handler on a context, without touching any storage.
     pub fn call(&self, ctx: Context<C, S>) -> BoxFuture<'static, AppResult<R, E, N>> {
         (self.run)(ctx)
     }

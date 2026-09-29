@@ -43,8 +43,28 @@
 //! against files written by the Scala codecs. uPickle's `msgpack` codec
 //! writes real MessagePack into `bytea`; those payloads cannot be read
 //! because `serde_json` is the only serializer.
+//!
+//! ## Where it fits
+//!
+//! `edomata-serde` depends only on `edomata-backend`, whose [`Codec`] trait
+//! it implements (and re-exports, with [`CodecError`] and
+//! [`PayloadFormat`]). It is the default codec of the PostgreSQL crates
+//! built on it: `edomata-sqlx` (whose drivers bind payloads through
+//! [`pg`]), `edomata-saas-sqlx`, `edomata-simple` and `edomata-e2e`.
+//!
+//! ## Feature flags
+//!
+//! - `sqlx` (enabled by default): the [`pg`] module, i.e. the PostgreSQL
+//!   wire types ([`pg::JsonbPayload`], [`pg::JsonPayload`],
+//!   [`pg::ByteaPayload`], [`pg::PgPayload`]) implementing sqlx's `Type`,
+//!   `Encode` and `Decode`. Disable default features to use
+//!   [`SerdeCodec`] without pulling in sqlx.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod codec;

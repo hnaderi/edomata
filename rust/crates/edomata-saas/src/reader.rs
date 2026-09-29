@@ -8,7 +8,33 @@ use edomata_core::BoxFuture;
 use crate::{AuthPolicy, TenantId};
 
 /// Reads a single entity on behalf of a caller; implementations filter by
-/// the caller's tenant.
+/// the caller's tenant, so an entity of another tenant reads as missing.
+///
+/// ```
+/// use std::collections::HashMap;
+/// use edomata_saas::{AuthPolicy, CallerIdentity, CrudState, PermissivePolicy, TenantAwareReader};
+///
+/// struct Todos(HashMap<String, CrudState<String>>);
+///
+/// #[async_trait::async_trait]
+/// impl TenantAwareReader<CallerIdentity, String> for Todos {
+///     async fn get(&self, auth: &CallerIdentity, id: &str) -> Option<String> {
+///         let tenant = PermissivePolicy.tenant_id(auth);
+///         match self.0.get(id)? {
+///             CrudState::Active { tenant_id, data, .. } if *tenant_id == tenant => Some(data.clone()),
+///             _ => None,
+///         }
+///     }
+/// }
+///
+/// let todos = Todos(HashMap::from([("t1".to_string(), CrudState::active("acme", "alice", "milk".to_string()))]));
+/// let alice = CallerIdentity::new("acme", "alice", Vec::<String>::new());
+/// let mallory = CallerIdentity::new("evil", "mallory", Vec::<String>::new());
+/// futures::executor::block_on(async {
+///     assert_eq!(todos.get(&alice, "t1").await.as_deref(), Some("milk"));
+///     assert_eq!(todos.get(&mallory, "t1").await, None);
+/// });
+/// ```
 #[async_trait]
 pub trait TenantAwareReader<Auth, A>: Send + Sync {
     /// The entity, if it exists and belongs to the caller's tenant.
@@ -36,7 +62,19 @@ type ScopedRun<A, Q> = dyn Fn(TenantId, Q) -> BoxFuture<'static, Vec<A>> + Send 
 type CrossRun<A, Q> = dyn Fn(Q) -> BoxFuture<'static, Vec<A>> + Send + Sync;
 
 /// A [`TenantScopedQuery`] built from a policy and a function of the
-/// tenant (Scala's `TenantScopedQuery.apply`).
+/// tenant (Scala's `TenantScopedQuery.apply`): the function receives the
+/// tenant extracted by the policy, never the raw auth context.
+///
+/// ```
+/// use edomata_saas::{CallerIdentity, PermissivePolicy, ScopedQueryFn, TenantScopedQuery};
+///
+/// let query = ScopedQueryFn::new(PermissivePolicy, |tenant, prefix: String| async move {
+///     vec![format!("{prefix} of {tenant}")]
+/// });
+/// let caller = CallerIdentity::new("acme", "alice", Vec::<String>::new());
+/// let rows = futures::executor::block_on(query.query(&caller, "todos".to_string()));
+/// assert_eq!(rows, ["todos of acme"]);
+/// ```
 pub struct ScopedQueryFn<Auth, A, Q> {
     policy: Arc<dyn AuthPolicy<Auth>>,
     run: Arc<ScopedRun<A, Q>>,

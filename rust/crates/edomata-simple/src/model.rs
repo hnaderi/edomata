@@ -8,6 +8,32 @@ use edomata_core::{DomainModel, NonEmpty};
 /// A domain model whose transition returns a plain `Result` with a vector
 /// of rejections. Mirrors Scala's `JDomainModel`; implement it directly or
 /// build one from closures with [`ClosureModel::new`] (`JDomainModel.create`).
+///
+/// ```
+/// use edomata_simple::SimpleDomainModel;
+///
+/// enum Event { Deposited(u64), Withdrawn(u64) }
+///
+/// struct Account;
+///
+/// impl SimpleDomainModel for Account {
+///     type State = u64;
+///     type Event = Event;
+///     type Rejection = String;
+///
+///     fn initial(&self) -> u64 { 0 }
+///
+///     fn transition(&self, event: &Event, balance: u64) -> Result<u64, Vec<String>> {
+///         match event {
+///             Event::Deposited(n) => Ok(balance + n),
+///             Event::Withdrawn(n) => balance.checked_sub(*n).ok_or_else(|| vec!["insufficient balance".to_string()]),
+///         }
+///     }
+/// }
+///
+/// assert_eq!(Account.transition(&Event::Deposited(10), 0), Ok(10));
+/// assert!(Account.transition(&Event::Withdrawn(10), 0).is_err());
+/// ```
 pub trait SimpleDomainModel: Send + Sync + 'static {
     /// Aggregate state.
     type State;
@@ -20,8 +46,8 @@ pub trait SimpleDomainModel: Send + Sync + 'static {
     fn initial(&self) -> Self::State;
 
     /// Given an event and the current state, the new state or the
-    /// rejections. As in Scala, an `Err` must carry at least one reason;
-    /// the adapter to the core model panics otherwise
+    /// rejections. As in Scala, an `Err` must carry at least one reason:
+    /// [`ModelAdapter`] (and so the backend) panics on an empty `Err`
     /// (`IllegalArgumentException` in Scala).
     fn transition(
         &self,
@@ -42,6 +68,18 @@ pub trait SimpleDomainModel: Send + Sync + 'static {
 type TransitionFn<S, E, R> = dyn Fn(&E, S) -> Result<S, Vec<R>> + Send + Sync;
 
 /// A [`SimpleDomainModel`] built from closures.
+///
+/// ```
+/// use edomata_simple::{ClosureModel, SimpleDomainModel};
+///
+/// let model = <ClosureModel<i64, i64, String>>::new(0, |event: &i64, balance| {
+///     let next = balance + event;
+///     if next < 0 { Err(vec!["insufficient balance".to_string()]) } else { Ok(next) }
+/// });
+/// assert_eq!(model.initial(), 0);
+/// assert_eq!(model.transition(&5, 10), Ok(15));
+/// assert_eq!(model.transition(&-20, 10), Err(vec!["insufficient balance".to_string()]));
+/// ```
 pub struct ClosureModel<S, E, R> {
     initial: S,
     transition: Arc<TransitionFn<S, E, R>>,
@@ -102,7 +140,13 @@ where
     }
 }
 
-/// A [`SimpleDomainModel`] seen as a core [`DomainModel`].
+/// A [`SimpleDomainModel`] seen as a core [`DomainModel`]: rejection vectors
+/// become [`NonEmpty`] chains.
+///
+/// # Panics
+///
+/// Its `transition` panics if the wrapped model returns `Err` with an empty
+/// vector, a programming error (Scala throws `IllegalArgumentException`).
 #[derive(Clone, Debug)]
 pub struct ModelAdapter<M>(pub M);
 

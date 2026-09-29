@@ -9,6 +9,16 @@ use crate::SimpleError;
 /// use the prefixed naming strategy (`ns_journal`, ...), the `*_with_schema`
 /// ones create a PostgreSQL schema (`"ns".journal`). An invalid namespace
 /// is reported as [`SimpleError::InvalidNamespace`].
+///
+/// ```
+/// use edomata_simple::SimplePGSchema;
+///
+/// let ddl = SimplePGSchema::eventsourcing("accounts").unwrap();
+/// assert!(ddl[0].starts_with("CREATE TABLE IF NOT EXISTS accounts_journal"));
+/// let ddl = SimplePGSchema::cqrs_with_schema("carts").unwrap();
+/// assert_eq!(ddl[0], r#"CREATE SCHEMA IF NOT EXISTS "carts";"#);
+/// assert!(SimplePGSchema::cqrs("not a name!").is_err());
+/// ```
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SimplePGSchema;
 

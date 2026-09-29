@@ -19,6 +19,11 @@ pub const DEFAULT_PAYLOAD_TYPE: &str = "jsonb";
 /// let ddl = PGSchema::cqrs(&PGNaming::prefixed_str("auth").unwrap());
 /// assert_eq!(ddl.len(), 3); // states, outbox, commands
 /// assert!(ddl.iter().all(|s| s.ends_with(';')));
+///
+/// // Schema mode starts with `CREATE SCHEMA`; payload types can be chosen.
+/// let ddl = PGSchema::eventsourcing_with(&PGNaming::schema_str("auth").unwrap(), "bytea", "jsonb", "json");
+/// assert_eq!(ddl[0], r#"CREATE SCHEMA IF NOT EXISTS "auth";"#);
+/// assert!(ddl.iter().any(|s| s.contains(r#""auth".journal"#) && s.contains("payload bytea")));
 /// ```
 #[derive(Clone, Copy, Debug, Default)]
 pub struct PGSchema;

@@ -15,6 +15,27 @@ use serde::de::DeserializeOwned;
 ///
 /// `SerdeCodec` is a small `Copy` value (just the format): it is `Default` (`jsonb`) and
 /// can be passed to `BackendBuilder::build`.
+///
+/// # Errors
+///
+/// [`Codec::encode`] fails with [`CodecError::Encode`] when `serde_json`
+/// cannot serialize the value (for instance a map with non-string keys);
+/// [`Codec::decode`] fails with [`CodecError::Decode`] when the bytes are not
+/// valid JSON for `T`. Both carry `serde_json`'s message.
+///
+/// ```
+/// use edomata_serde::{Codec, CodecError, PayloadFormat, SerdeCodec};
+///
+/// // The same JSON bytes, whatever the column type.
+/// for codec in [SerdeCodec::<Vec<u32>>::jsonb(), SerdeCodec::json(), SerdeCodec::bytea()] {
+///     assert_eq!(codec.encode(&vec![1, 2]).unwrap(), b"[1,2]");
+/// }
+/// assert_eq!(SerdeCodec::<u32>::bytea().format(), PayloadFormat::Bytea);
+/// assert_eq!(SerdeCodec::<u32>::default().format(), PayloadFormat::Jsonb);
+///
+/// let err = SerdeCodec::<u32>::jsonb().decode(b"\"not a number\"").unwrap_err();
+/// assert!(matches!(err, CodecError::Decode(_)));
+/// ```
 pub struct SerdeCodec<T> {
     format: PayloadFormat,
     _marker: PhantomData<fn() -> T>,

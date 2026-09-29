@@ -3,7 +3,21 @@
 use crate::SimpleDecision;
 
 /// What a command handler returns: a decision (with a `()` result) and the
-/// notifications to publish. Mirrors Scala's `JAppResult`.
+/// notifications to publish. Mirrors Scala's `JAppResult`. Notifications
+/// are written to the outbox together with the events, and also when the
+/// decision is a rejection.
+///
+/// ```
+/// use edomata_simple::AppResult;
+///
+/// let result: AppResult<String, i64, String> = AppResult::accept([100]).and_publish(["deposited".to_string()]);
+/// assert_eq!(result.decision.events(), &[100]);
+/// assert_eq!(result.notifications, ["deposited".to_string()]);
+///
+/// // A rejection must carry at least one reason (see `SimpleBackend::compile`).
+/// let rejected: AppResult<String, i64, String> = AppResult::reject(["zero amount".to_string()]);
+/// assert!(rejected.decision.is_rejected());
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AppResult<R, E, N> {
     /// The decision.

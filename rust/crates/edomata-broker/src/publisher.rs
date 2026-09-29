@@ -8,10 +8,25 @@ use edomata_core::NonEmpty;
 
 use crate::BrokerMessage;
 
-/// A boxed error.
+/// A boxed, thread-safe error: the source of [`PublishError`] and of some
+/// [`RelayError`](crate::RelayError) variants.
 pub type BoxError = Box<dyn std::error::Error + Send + Sync + 'static>;
 
 /// Why a batch could not be published.
+///
+/// The distinction drives the relay: transient failures are retried with
+/// the configured [`RetryPolicy`](crate::RetryPolicy), permanent ones stop
+/// the relay with [`RelayError::Publish`](crate::RelayError::Publish). In
+/// both cases nothing of the batch is marked as sent. When unsure, report a
+/// failure as transient: a retry at worst redelivers messages, which
+/// at-least-once consumers tolerate.
+///
+/// ```
+/// use edomata_broker::PublishError;
+///
+/// assert!(PublishError::transient("connection reset").is_transient());
+/// assert!(!PublishError::permanent("unknown topic").is_transient());
+/// ```
 #[derive(Debug, thiserror::Error)]
 pub enum PublishError {
     /// The broker is unavailable or the batch was not acknowledged; the
@@ -48,9 +63,43 @@ impl PublishError {
 /// the journal checkpoint) only after `publish` succeeded, which is what
 /// makes delivery at-least-once. Messages of a batch are given in sequence
 /// order and must be published in that order per stream.
+///
+/// A publisher may deliver part of a batch and then fail: the relay
+/// republishes the whole batch, so consumers see duplicates, never gaps.
+/// Classify failures with [`PublishError`]. Implementations exist for
+/// Kafka (`edomata_kafka::KafkaPublisher`), RabbitMQ
+/// (`edomata_rabbitmq::RabbitMqPublisher`), and tests
+/// ([`RecordingPublisher`]); `Arc<P>` is a publisher when `P` is.
+///
+/// ```
+/// use edomata_broker::{BrokerMessage, PublishError, Publisher};
+/// use edomata_core::NonEmpty;
+///
+/// /// Writes every message to standard output, one line each.
+/// struct Stdout;
+///
+/// #[async_trait::async_trait]
+/// impl Publisher for Stdout {
+///     async fn publish(&self, batch: &NonEmpty<BrokerMessage>) -> Result<(), PublishError> {
+///         for message in batch.iter() {
+///             // A real broker call; map its errors to transient / permanent.
+///             println!("{} {} {}", message.id, message.stream_id, message.payload_text());
+///         }
+///         // Return only once every message was acknowledged.
+///         Ok(())
+///     }
+/// }
+/// ```
 #[async_trait]
 pub trait Publisher: Send + Sync {
-    /// Publishes a batch and waits for the broker's acknowledgment.
+    /// Publishes a batch, in order, and waits for the broker's
+    /// acknowledgment of every message.
+    ///
+    /// # Errors
+    ///
+    /// [`PublishError::Transient`] when the batch may succeed later (the
+    /// relay retries it), [`PublishError::Permanent`] when it never will
+    /// (the relay stops).
     async fn publish(&self, batch: &NonEmpty<BrokerMessage>) -> Result<(), PublishError>;
 }
 
@@ -63,6 +112,36 @@ impl<P: Publisher + ?Sized> Publisher for Arc<P> {
 
 /// An in-memory publisher that records every message it receives, with
 /// programmable failures. Meant for tests and examples.
+///
+/// ```
+/// use std::sync::Arc;
+/// use edomata_broker::{
+///     BrokerMessage, MessageKind, PublishError, Publisher, RecordingPublisher,
+/// };
+/// use edomata_core::NonEmpty;
+///
+/// # fn message(seq_nr: i64) -> BrokerMessage {
+/// #     BrokerMessage {
+/// #         id: BrokerMessage::outbox_id("s", seq_nr), source: "s".into(),
+/// #         kind: MessageKind::Notification, stream_id: "a".into(), seq_nr,
+/// #         time: chrono::DateTime::UNIX_EPOCH, content_type: "application/json".into(),
+/// #         payload: b"{}".to_vec(), correlation: None, causation: None,
+/// #         extra_headers: Default::default(),
+/// #     }
+/// # }
+/// # futures::executor::block_on(async {
+/// let publisher = RecordingPublisher::new();
+/// let batch = NonEmpty::new(message(1));
+///
+/// publisher.fail_next(1); // the broker is down once
+/// assert!(matches!(publisher.publish(&batch).await, Err(PublishError::Transient(_))));
+/// assert!(publisher.messages().is_empty());
+///
+/// publisher.publish(&batch).await.unwrap();
+/// assert_eq!(publisher.ids(), ["s:outbox:1"]);
+/// assert_eq!(publisher.calls(), 2);
+/// # });
+/// ```
 #[derive(Debug, Default)]
 pub struct RecordingPublisher {
     messages: Mutex<Vec<BrokerMessage>>,

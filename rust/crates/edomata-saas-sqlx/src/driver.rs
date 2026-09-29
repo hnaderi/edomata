@@ -23,7 +23,14 @@ use crate::codec::SaaSCodec;
 use crate::queries::{SaaSOutboxQueries, SaaSStateQueries};
 
 /// Tenant-aware PostgreSQL CQRS driver. Mirrors Scala's
-/// `SaaSSkunkCQRSDriver`; constructors follow `edomata_sqlx::SqlxCqrsDriver`.
+/// `SaaSSkunkCQRSDriver`; constructors follow
+/// [`SqlxCqrsDriver`](edomata_sqlx::SqlxCqrsDriver).
+///
+/// Its codecs are [`SaaSCodec`]s: on every save, the state codec's
+/// extractor gives the `tenant_id` / `owner_id` written next to the state
+/// and to each outbox row. A state without a tenant (e.g.
+/// `CrudState::NonExistent`) is written with empty strings, as in Scala.
+/// See the [crate-level example](crate).
 #[derive(Clone, Debug)]
 pub struct SaaSSqlxCqrsDriver {
     naming: PGNaming,
@@ -32,19 +39,47 @@ pub struct SaaSSqlxCqrsDriver {
 }
 
 impl SaaSSqlxCqrsDriver {
-    /// A driver that sets the schema and tables up automatically.
+    /// A driver that sets the schema and tables up automatically. Same as
+    /// [`new_with`](Self::new_with) with `skip_setup = false`.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::UnknownError`] if the `CREATE SCHEMA` statement
+    /// (schema mode only) fails.
     pub async fn new(naming: PGNaming, pool: PgPool) -> Result<Self, BackendError> {
         Self::new_with(naming, pool, false).await
     }
 
     /// A driver for a schema-mode namespace given as a string.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::PersistenceError`] if `namespace` is not a valid
+    /// PostgreSQL identifier, and the errors of [`new`](Self::new).
     pub async fn for_namespace(namespace: &str, pool: PgPool) -> Result<Self, BackendError> {
         let ns = PGNamespace::from_string(namespace).map_err(invalid_namespace)?;
         Self::new(PGNaming::schema(ns), pool).await
     }
 
-    /// A driver with `skip_setup` as in Scala (no DDL is ever executed when
-    /// `true`).
+    /// A driver with `skip_setup` as in Scala's
+    /// `SaaSSkunkCQRSDriver.from(naming, pool, skipSetup)`: when `true`, no
+    /// DDL is ever executed and the tables of
+    /// [`SaaSPGSchema::cqrs`](edomata_saas::SaaSPGSchema::cqrs) are assumed
+    /// to exist.
+    ///
+    /// ```no_run
+    /// # use edomata_saas::PGNaming;
+    /// # use edomata_saas_sqlx::SaaSSqlxCqrsDriver;
+    /// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    /// let driver = SaaSSqlxCqrsDriver::new_with(PGNaming::prefixed_str("todos")?, pool, true).await?;
+    /// assert!(!driver.auto_setup());
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// With `skip_setup = false`, [`BackendError::UnknownError`] if the
+    /// `CREATE SCHEMA` statement fails; never with `true`.
     pub async fn new_with(
         naming: PGNaming,
         pool: PgPool,
@@ -70,7 +105,7 @@ impl SaaSSqlxCqrsDriver {
         &self.pool
     }
 
-    /// Whether tables are created automatically.
+    /// Whether tables are created automatically (`!skip_setup`).
     pub fn auto_setup(&self) -> bool {
         self.auto_setup
     }
@@ -277,7 +312,21 @@ impl<S: Payload, N: Payload> Repository<S, N> for SaaSRepository<S, N> {
 }
 
 /// Tenant-scoped listing of states, the counterpart of Scala's
-/// `listByTenant` query.
+/// `listByTenant` query. It reads the driver's `states` table directly (no
+/// cache), filtered on the `tenant_id` column.
+///
+/// ```no_run
+/// # use edomata_saas::{CrudState, PGNaming, TenantId};
+/// # use edomata_saas_sqlx::{SaaSCodec, SaaSSqlxCqrsDriver, TenantStateLister};
+/// # #[derive(Clone, serde::Serialize, serde::Deserialize)] struct Todo { title: String }
+/// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+/// let driver = SaaSSqlxCqrsDriver::new(PGNaming::prefixed_str("todos")?, pool).await?;
+/// let lister = TenantStateLister::new(&driver, SaaSCodec::<CrudState<Todo>>::jsonb_state());
+/// for aggregate in lister.list_by_tenant(&TenantId::new("acme")).await? {
+///     println!("version {}", aggregate.version);
+/// }
+/// # Ok(()) }
+/// ```
 pub struct TenantStateLister<S> {
     pool: PgPool,
     states: SaaSStateQueries,
@@ -294,7 +343,12 @@ impl<S: Payload> TenantStateLister<S> {
         }
     }
 
-    /// All states of a tenant.
+    /// All states of a tenant, with their versions.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::UnknownError`] for database errors, and the codec's
+    /// decoding errors.
     pub async fn list_by_tenant(
         &self,
         tenant: &TenantId,

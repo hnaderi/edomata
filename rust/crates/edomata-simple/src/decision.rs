@@ -11,6 +11,18 @@ use edomata_core::{Decision, NonEmpty};
 /// type treats an `Accepted` decision without events as `Indecisive` and
 /// refuses a `Rejected` decision without reasons (see
 /// [`SimpleDecision::into_decision`]).
+///
+/// ```
+/// use edomata_simple::SimpleDecision;
+///
+/// let accepted: SimpleDecision<String, i64, u32> = SimpleDecision::accept_return(1, [10]);
+/// let chained = accepted.and_then(|n| SimpleDecision::accept_return(n + 1, [20]));
+/// assert_eq!(chained.events(), &[10, 20]);
+/// assert_eq!(chained.to_result(), Ok(2));
+///
+/// let rejected: SimpleDecision<String, i64, u32> = SimpleDecision::reject(["closed".to_string()]);
+/// assert_eq!(rejected.and_then(|n| SimpleDecision::pure(n + 1)).reasons(), &["closed".to_string()]);
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SimpleDecision<R, E, A> {
     /// The command was accepted: `events` are appended and `result` is
@@ -163,6 +175,10 @@ impl<R, E, A> SimpleDecision<R, E, A> {
     /// Converts to the core [`Decision`] (`Converters.decisionToScala`):
     /// an `Accepted` decision without events becomes `InDecisive`; a
     /// `Rejected` decision without reasons is an error.
+    ///
+    /// # Errors
+    ///
+    /// [`EmptyRejection`] for a `Rejected` decision with no reason.
     pub fn into_decision(self) -> Result<Decision<R, E, A>, EmptyRejection> {
         match self {
             SimpleDecision::Accepted { events, result } => Ok(match NonEmpty::from_vec(events) {

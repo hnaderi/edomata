@@ -18,7 +18,46 @@ type Tag<T> = PhantomData<fn() -> T>;
 /// Every method returns an `Edomaton<RequestContext<C, S>, R, E, N, T>`,
 /// which fixes the type parameters so that inference works without
 /// annotations. Obtain it with [`DomainModel::dsl`](crate::DomainModel::dsl)
-/// or [`DomainDsl::new`].
+/// or [`DomainDsl::new`]. The DSL is a zero-sized `Copy` value, so it can be
+/// moved into as many closures as needed.
+///
+/// ```
+/// use edomata_core::*;
+///
+/// #[derive(Clone, Debug, PartialEq)]
+/// enum Command { Open, Close }
+/// #[derive(Clone, Debug, PartialEq)]
+/// enum Event { Opened, Closed }
+/// #[derive(Clone, Debug, PartialEq)]
+/// enum State { New, Open, Closed }
+///
+/// struct Door;
+/// impl DomainModel for Door {
+///     type State = State; type Event = Event; type Rejection = String;
+///     fn initial(&self) -> State { State::New }
+///     fn transition(&self, e: &Event, _: State) -> Result<State, NonEmpty<String>> {
+///         Ok(match e { Event::Opened => State::Open, Event::Closed => State::Closed })
+///     }
+/// }
+///
+/// let dsl = Door.dsl::<Command, String>();
+/// let app = dsl.router(move |cmd| match cmd {
+///     Command::Open => dsl.state().and_then(move |s| match s {
+///         State::Open => dsl.reject("already open".to_string()),
+///         _ => dsl.accept(Event::Opened).publish(["door opened".to_string()]),
+///     }),
+///     Command::Close => dsl.accept(Event::Closed),
+/// });
+///
+/// let ctx = CommandMessage::new("cmd-1", chrono::DateTime::UNIX_EPOCH, "door-1", Command::Open)
+///     .build_context(State::New);
+/// let out = futures::executor::block_on(app.execute(&Door, ctx));
+/// assert_eq!(out, EdomatonResult::Accepted {
+///     new_state: State::Open,
+///     events: nonempty![Event::Opened],
+///     notifications: vec!["door opened".to_string()],
+/// });
+/// ```
 pub struct DomainDsl<C, S, E, R, N> {
     _marker: Tag<(C, S, E, R, N)>,
 }
@@ -221,7 +260,9 @@ where
         Edomaton::map_input(|ctx: RequestContext<C, S>| ctx.command)
     }
 
-    /// Routes the command payload to a program.
+    /// Routes the command payload to a program: `f` receives the command
+    /// payload and returns the program to run for it (usually a `match` on
+    /// the command). See [`DomainDsl`] for an example.
     pub fn router<T, F>(self, f: F) -> App<C, S, E, R, N, T>
     where
         C: Clone,
@@ -239,6 +280,33 @@ where
 /// Every method returns a `Stomaton<CommandMessage<C>, S, R, N, T>`. Obtain
 /// it with [`CqrsModel::dsl`](crate::CqrsModel::dsl) or
 /// [`CqrsDomainDsl::new`].
+///
+/// ```
+/// use edomata_core::*;
+///
+/// #[derive(Clone)]
+/// enum Command { Rename(String), Delete }
+///
+/// let dsl = CqrsDomainDsl::<Command, Option<String>, String, String>::new();
+/// let app = dsl.router(move |cmd| match cmd {
+///     Command::Rename(name) => dsl
+///         .set(Some(name.clone()))
+///         .publish([format!("renamed to {name}")]),
+///     Command::Delete => dsl.state().and_then(move |s| match s {
+///         None => dsl.reject("nothing to delete".to_string()),
+///         Some(_) => dsl.set(None),
+///     }),
+/// });
+///
+/// let rename = CommandMessage::new("c1", chrono::DateTime::UNIX_EPOCH, "item-1", Command::Rename("a".into()));
+/// let out = futures::executor::block_on(app.run(rename, None));
+/// assert_eq!(out.result, Ok((Some("a".to_string()), ())));
+/// assert_eq!(out.notifications, vec!["renamed to a".to_string()]);
+///
+/// let delete = CommandMessage::new("c2", chrono::DateTime::UNIX_EPOCH, "item-1", Command::Delete);
+/// let out = futures::executor::block_on(app.run(delete, None));
+/// assert_eq!(out.result, Err(nonempty!["nothing to delete".to_string()]));
+/// ```
 pub struct CqrsDomainDsl<C, S, R, N> {
     _marker: Tag<(C, S, R, N)>,
 }
@@ -437,7 +505,9 @@ where
         Stomaton::map_input(|cmd: CommandMessage<C>| cmd.payload)
     }
 
-    /// Routes the command payload to a program.
+    /// Routes the command payload to a program: `f` receives the command
+    /// payload and returns the program to run for it. See [`CqrsDomainDsl`]
+    /// for an example.
     pub fn router<T, F>(self, f: F) -> CqrsApp<C, S, R, N, T>
     where
         C: Clone,

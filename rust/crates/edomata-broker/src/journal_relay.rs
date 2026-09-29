@@ -19,12 +19,27 @@ use crate::{
 };
 
 /// Where a [`JournalRelay`] remembers the last published sequence number.
+///
+/// Checkpoints are keyed by relay name ([`JournalRelay::name`]), so one
+/// store serves many relays. Use [`postgres::PgCheckpointStore`](crate::postgres::PgCheckpointStore)
+/// in production and [`InMemoryCheckpointStore`] in tests.
 #[async_trait]
 pub trait CheckpointStore: Send + Sync {
-    /// The last published journal sequence number of `relay`, if any.
+    /// The last published journal sequence number of `relay`, if any
+    /// (`None`: start from the beginning of the journal).
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Checkpoint`] when the store cannot be read.
     async fn load(&self, relay: &str) -> Result<Option<i64>, RelayError>;
 
-    /// Records the last published journal sequence number of `relay`.
+    /// Records the last published journal sequence number of `relay`,
+    /// replacing the previous one.
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Checkpoint`] when the store cannot be written; the
+    /// batch is then published again by the next pass.
     async fn save(&self, relay: &str, seq_nr: i64) -> Result<(), RelayError>;
 }
 
@@ -68,6 +83,58 @@ impl CheckpointStore for InMemoryCheckpointStore {
 /// Same loop, ordering, batching, retry and leader election as
 /// [`OutboxRelay`](crate::OutboxRelay); wake-ups typically come from the
 /// backend's journal signal or a PostgreSQL `LISTEN` stream.
+///
+/// Unlike the outbox, the journal is never modified: the checkpoint is the
+/// relay's only state, and several relays with different
+/// [`name`](Self::with_name)s can publish the same journal independently.
+///
+/// ```
+/// use std::sync::Arc;
+///
+/// use edomata_backend::eventsourcing::Backend;
+/// use edomata_backend::inmemory::InMemoryDriver;
+/// use edomata_broker::{
+///     InMemoryCheckpointStore, JournalRelay, MessageEncoder, MessageKind, RecordingPublisher,
+///     RelayConfig,
+/// };
+/// use edomata_core::*;
+///
+/// struct Counter;
+/// impl DomainModel for Counter {
+///     type State = i32; type Event = i32; type Rejection = String;
+///     fn initial(&self) -> i32 { 0 }
+///     fn transition(&self, e: &i32, s: i32) -> Result<i32, NonEmpty<String>> { Ok(s + e) }
+/// }
+///
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let dsl = Counter.dsl::<i32, ()>();
+/// let backend = Backend::builder(Counter, dsl)
+///     .driver(InMemoryDriver::new())
+///     .build_default()
+///     .await?;
+/// let service = backend.compile(dsl.router(move |n: i32| dsl.accept(n)));
+/// assert!(service(CommandMessage::new("c1", chrono::Utc::now(), "counter-1", 7)).await?.is_ok());
+///
+/// let checkpoints = Arc::new(InMemoryCheckpointStore::new());
+/// let publisher = Arc::new(RecordingPublisher::new());
+/// let relay = JournalRelay::new(
+///     Arc::clone(backend.journal()),
+///     Arc::clone(&checkpoints) as _,
+///     Arc::clone(&publisher) as _,
+///     MessageEncoder::serde(),
+///     RelayConfig::new("counters"),
+/// );
+///
+/// assert_eq!(relay.relay_once().await?, 1);
+/// let message = &publisher.messages()[0];
+/// assert_eq!(message.kind, MessageKind::Event);
+/// assert_eq!(message.payload_text(), "7");
+/// // The checkpoint moved past the published event.
+/// assert_eq!(checkpoints.get(relay.name()), Some(message.seq_nr));
+/// assert_eq!(relay.relay_once().await?, 0);
+/// # Ok(()) }
+/// ```
 pub struct JournalRelay<E> {
     reader: Arc<dyn JournalReader<E>>,
     checkpoints: Arc<dyn CheckpointStore>,
@@ -89,8 +156,10 @@ impl<E> std::fmt::Debug for JournalRelay<E> {
 }
 
 impl<E: Payload> JournalRelay<E> {
-    /// A relay from a journal reader to a publisher, checkpointed under the
-    /// name `"{source}:journal"`.
+    /// A relay from a journal reader (typically
+    /// [`Backend::journal`](edomata_backend::eventsourcing::Backend::journal))
+    /// to a publisher, checkpointed in `checkpoints` under the name
+    /// `"{source}:journal"`.
     pub fn new(
         reader: Arc<dyn JournalReader<E>>,
         checkpoints: Arc<dyn CheckpointStore>,
@@ -118,25 +187,34 @@ impl<E: Payload> JournalRelay<E> {
         self
     }
 
-    /// Adds a wake-up stream: every element triggers a pass.
+    /// Adds a wake-up stream: every element triggers a pass. Streams are
+    /// taken by the first [`run`](Self::run) / [`run_as_leader`](Self::run_as_leader)
+    /// call; when they end, the relay keeps polling.
     pub fn wake_on(self, wakeups: BoxStream<'static, ()>) -> Self {
         self.wakeups.lock().unwrap().push(wakeups);
         self
     }
 
-    /// The relay's counters.
+    /// The relay's counters, shared with the running relay.
     pub fn metrics(&self) -> Arc<RelayMetrics> {
         Arc::clone(&self.metrics)
     }
 
-    /// The checkpoint name.
+    /// The checkpoint name: `"{source}:journal"` unless set with
+    /// [`with_name`](Self::with_name).
     pub fn name(&self) -> &str {
         &self.name
     }
 
     /// The message published for a journaled event; its id is
     /// [`BrokerMessage::journal_id`] of the relay source and the event's
-    /// sequence number, and the event id and version travel as headers.
+    /// sequence number, and the event id and version travel as the
+    /// [`headers::EVENT_ID`] and [`headers::VERSION`] headers. Journal
+    /// messages have no correlation or causation id.
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Encode`] when the payload cannot be encoded.
     pub fn message(&self, event: &EventMessage<E>) -> Result<BrokerMessage, RelayError> {
         let mut extra_headers = std::collections::BTreeMap::new();
         extra_headers.insert(headers::EVENT_ID.to_string(), event.metadata.id.to_string());
@@ -159,8 +237,18 @@ impl<E: Payload> JournalRelay<E> {
         })
     }
 
-    /// One pass: publishes every event after the checkpoint and advances it.
-    /// Returns the number of events published.
+    /// One pass: publishes every event after the checkpoint, batch by
+    /// batch, saving the checkpoint after each acknowledged batch. Returns
+    /// the number of events published.
+    ///
+    /// # Errors
+    ///
+    /// - [`RelayError::Checkpoint`] when the checkpoint cannot be loaded or
+    ///   saved;
+    /// - [`RelayError::Backend`] when reading the journal fails;
+    /// - [`RelayError::Encode`] when a payload cannot be encoded;
+    /// - [`RelayError::Publish`] on a permanent publish failure, or once the
+    ///   [`RetryPolicy`](crate::RetryPolicy) budget is exhausted.
     pub async fn relay_once(&self) -> Result<usize, RelayError> {
         self.pass(&CancellationToken::new()).await
     }
@@ -202,7 +290,15 @@ impl<E: Payload> JournalRelay<E> {
         Ok(total)
     }
 
-    /// Runs the relay until `cancel` fires.
+    /// Runs the relay until `cancel` fires, like
+    /// [`OutboxRelay::run`](crate::OutboxRelay::run). Returns `Ok(())` when
+    /// cancelled.
+    ///
+    /// # Errors
+    ///
+    /// The first error of a pass (see [`relay_once`](Self::relay_once));
+    /// [`RelayError::Cancelled`] when `cancel` fires while a batch waits to
+    /// be retried.
     pub async fn run(&self, cancel: CancellationToken) -> Result<(), RelayError> {
         let wakeups = std::mem::take(&mut *self.wakeups.lock().unwrap());
         let inner = cancel.clone();
@@ -211,6 +307,11 @@ impl<E: Payload> JournalRelay<E> {
 
     /// Runs the relay while holding a leader lock (see
     /// [`OutboxRelay::run_as_leader`](crate::OutboxRelay::run_as_leader)).
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Leader`] when the lock cannot be queried, plus the
+    /// errors of [`run`](Self::run) while leading.
     pub async fn run_as_leader(
         &self,
         lock: LeaderLock,

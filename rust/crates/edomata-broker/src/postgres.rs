@@ -23,6 +23,27 @@ fn checkpoint_error(e: sqlx::Error) -> RelayError {
 /// (`pg_try_advisory_lock(hashtext('edomata-relay:{source}'))`): the lock
 /// is held by a dedicated connection for as long as the [`LeaderGuard`]
 /// lives, and released when the guard is released or its connection closes.
+///
+/// Give every replica of one relay the same source (or key); give different
+/// relays different ones. The key is hashed to a 32-bit advisory lock id,
+/// so unrelated keys can collide, which only makes the relays wait for each
+/// other. [`OutboxRelay::run_as_leader`](crate::OutboxRelay::run_as_leader)
+/// and [`JournalRelay::run_as_leader`](crate::JournalRelay::run_as_leader)
+/// drive the lock; it can also be used directly:
+///
+/// ```no_run
+/// # use std::time::Duration;
+/// # use edomata_broker::postgres::LeaderLock;
+/// # async fn example(pool: sqlx::PgPool) -> Result<(), edomata_broker::RelayError> {
+/// let lock = LeaderLock::new(pool, "accounts").with_health_interval(Duration::from_secs(2));
+/// assert_eq!(lock.key(), "edomata-relay:accounts");
+/// if let Some(mut guard) = lock.try_acquire().await? {
+///     // This process is the leader until the guard is released or lost.
+///     assert!(guard.is_held().await);
+///     guard.release().await;
+/// }
+/// # Ok(()) }
+/// ```
 #[derive(Clone, Debug)]
 pub struct LeaderLock {
     pool: PgPool,
@@ -31,7 +52,8 @@ pub struct LeaderLock {
 }
 
 impl LeaderLock {
-    /// A lock for the relay of `source`.
+    /// A lock for the relay of `source`, with the key
+    /// `"edomata-relay:{source}"` and a 5-second health check.
     pub fn new(pool: PgPool, source: &str) -> Self {
         Self {
             pool,
@@ -40,7 +62,7 @@ impl LeaderLock {
         }
     }
 
-    /// A lock with an explicit key.
+    /// A lock with an explicit key (used as is) and a 5-second health check.
     pub fn with_key(pool: PgPool, key: impl Into<String>) -> Self {
         Self {
             pool,
@@ -61,7 +83,14 @@ impl LeaderLock {
         &self.key
     }
 
-    /// Tries to take the lock without waiting.
+    /// Tries to take the lock without waiting: `Some(guard)` when this
+    /// process is now the leader, `None` when another session holds it. The
+    /// guard owns a connection detached from the pool.
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Leader`] when no connection can be acquired or the
+    /// query fails.
     pub async fn try_acquire(&self) -> Result<Option<LeaderGuard>, RelayError> {
         let mut conn = self.pool.acquire().await.map_err(leader_error)?.detach();
         let acquired: bool = sqlx::query_scalar("select pg_try_advisory_lock(hashtext($1))")
@@ -92,7 +121,9 @@ pub struct LeaderGuard {
 }
 
 impl LeaderGuard {
-    /// Whether the lock's connection still answers.
+    /// Whether the lock's connection still answers (`select 1`). A session
+    /// advisory lock lives as long as its session, so a live connection
+    /// means the lock is still held.
     pub async fn is_held(&mut self) -> bool {
         match &mut self.conn {
             Some(conn) => sqlx::query("select 1").execute(&mut *conn).await.is_ok(),
@@ -110,7 +141,8 @@ impl LeaderGuard {
         }
     }
 
-    /// Releases the lock and closes the connection.
+    /// Releases the lock and closes the connection. Errors are ignored: if
+    /// the unlock fails, closing the connection releases the lock anyway.
     pub async fn release(mut self) {
         if let Some(mut conn) = self.conn.take() {
             let _ = sqlx::query("select pg_advisory_unlock(hashtext($1))")
@@ -126,6 +158,20 @@ impl LeaderGuard {
 /// (payloads are ignored), reconnecting after connection errors. Pair it
 /// with the drivers' `with_outbox_notify_channel` / `with_journal_notify_channel`
 /// so that a relay in another process is woken up by the writers.
+///
+/// The stream never ends. After a lost connection it yields once (anything
+/// written meanwhile gets relayed), then reconnects on the next poll,
+/// retrying every second and logging a `tracing` warning; notifications
+/// sent while disconnected are lost, which the relays' polling fallback
+/// covers.
+///
+/// ```no_run
+/// # use edomata_broker::{OutboxRelay, postgres::listen};
+/// # fn example(relay: OutboxRelay<String>, pool: sqlx::PgPool) {
+/// // The writer side: `SqlxDriver::...with_outbox_notify_channel("accounts_outbox")`.
+/// let relay = relay.wake_on(listen(pool, "accounts_outbox"));
+/// # let _ = relay; }
+/// ```
 pub fn listen(pool: PgPool, channel: impl Into<String>) -> BoxStream<'static, ()> {
     let channel = channel.into();
     Box::pin(futures::stream::unfold(
@@ -163,7 +209,22 @@ async fn connect(pool: &PgPool, channel: &str) -> Result<PgListener, sqlx::Error
 }
 
 /// A [`CheckpointStore`] in the `relay_checkpoints` table of a namespace
-/// (DDL: [`PGSchema::relay_checkpoints`]).
+/// (DDL: [`PGSchema::relay_checkpoints`]), one row per relay name.
+///
+/// ```no_run
+/// # use std::sync::Arc;
+/// # use edomata_broker::CheckpointStore;
+/// # use edomata_broker::postgres::PgCheckpointStore;
+/// # use edomata_postgres::{PGNaming, PGNamespace};
+/// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+/// let naming = PGNaming::prefixed(PGNamespace::try_from("accounts")?);
+/// let checkpoints = PgCheckpointStore::new(pool, naming); // table `accounts_relay_checkpoints`
+/// checkpoints.setup().await?; // or create the table with a migration tool
+/// assert_eq!(checkpoints.load("accounts:journal").await?, None);
+/// checkpoints.save("accounts:journal", 42).await?;
+/// let checkpoints: Arc<dyn CheckpointStore> = Arc::new(checkpoints); // for `JournalRelay::new`
+/// # let _ = checkpoints; Ok(()) }
+/// ```
 #[derive(Clone, Debug)]
 pub struct PgCheckpointStore {
     pool: PgPool,
@@ -173,7 +234,8 @@ pub struct PgCheckpointStore {
 }
 
 impl PgCheckpointStore {
-    /// A store for the tables of `naming`.
+    /// A store for the tables of `naming`. It does not touch the database;
+    /// call [`setup`](Self::setup) or create the table beforehand.
     pub fn new(pool: PgPool, naming: PGNaming) -> Self {
         let t = naming.table("relay_checkpoints");
         Self {
@@ -187,6 +249,13 @@ impl PgCheckpointStore {
     }
 
     /// Creates the checkpoint table (`CREATE TABLE IF NOT EXISTS`).
+    /// Idempotent. It does not create the schema of a
+    /// [`PGNaming::Schema`] naming, which the storage driver's setup (or a
+    /// migration) creates.
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Checkpoint`] when a statement fails.
     pub async fn setup(&self) -> Result<(), RelayError> {
         for statement in PGSchema::relay_checkpoints(&self.naming) {
             sqlx::query(&statement)

@@ -111,7 +111,8 @@ where
         self.map(|_| b)
     }
 
-    /// Binds another program to this one.
+    /// Binds another program to this one: events accumulate in order and a
+    /// rejection short-circuits, as in [`Decision::and_then`].
     pub fn and_then<B, F>(self, f: F) -> DecisionT<R, E, B>
     where
         B: Send + 'static,
@@ -154,7 +155,16 @@ where
         DecisionT::new(async move { self.await.and_then(f) })
     }
 
-    /// Recovers from a rejection.
+    /// Recovers from a rejection: `f` receives the reasons and runs a
+    /// replacement program. Non-rejected decisions are returned unchanged.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, DecisionT};
+    ///
+    /// let program: DecisionT<&str, &str, ()> =
+    ///     DecisionT::reject("missing").handle_error_with(|_| DecisionT::accept("created"));
+    /// assert_eq!(futures::executor::block_on(program), Decision::accept("created"));
+    /// ```
     pub fn handle_error_with<F>(self, f: F) -> DecisionT<R, E, A>
     where
         F: FnOnce(NonEmpty<R>) -> DecisionT<R, E, A> + Send + 'static,
@@ -167,7 +177,8 @@ where
         })
     }
 
-    /// Stack-safe iteration, the counterpart of Cats' `tailRecM`.
+    /// Stack-safe iteration, the counterpart of Cats' `tailRecM`, with the
+    /// semantics of [`Decision::tail_rec`].
     pub fn tail_rec<S, F>(init: S, mut f: F) -> DecisionT<R, E, A>
     where
         S: Send + 'static,

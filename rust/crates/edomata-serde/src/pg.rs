@@ -11,6 +11,19 @@
 //! - [`ByteaPayload`]: `bytea`, opaque bytes.
 //!
 //! [`PgPayload`] dispatches on a [`PayloadFormat`] at runtime.
+//!
+//! ```
+//! use edomata_serde::pg::{JsonbPayload, PgPayload};
+//! use edomata_serde::{Codec, PayloadFormat, SerdeCodec};
+//!
+//! let codec = SerdeCodec::<Vec<u8>>::jsonb();
+//! let payload = PgPayload::new(codec.format(), codec.encode(&vec![1, 2]).unwrap());
+//! assert_eq!(payload, PgPayload::Jsonb(JsonbPayload(b"[1,2]".to_vec())));
+//! assert_eq!(payload.format(), PayloadFormat::Jsonb);
+//! assert_eq!(payload.into_bytes(), b"[1,2]");
+//! // Bind `payload` in a sqlx query: it is sent as binary `jsonb`
+//! // (the version byte `1` followed by `[1,2]`).
+//! ```
 
 use std::error::Error;
 
@@ -25,10 +38,17 @@ type BoxDynError = Box<dyn Error + Send + Sync + 'static>;
 pub const JSONB_VERSION: u8 = 1;
 
 /// JSON bytes stored in a `jsonb` column.
+///
+/// Encoded as binary `jsonb` ([`JSONB_VERSION`] then the JSON text). Decodes
+/// from a `jsonb` or a `json` column, in text or binary format, to the JSON
+/// text bytes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JsonbPayload(pub Vec<u8>);
 
 /// JSON bytes stored in a `json` column.
+///
+/// Encoded as the JSON text itself. Decodes from a `json` or a `jsonb`
+/// column, like [`JsonbPayload`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JsonPayload(pub Vec<u8>);
 
@@ -196,6 +216,11 @@ impl PgPayload {
     }
 
     /// Decodes a value of the given column type.
+    ///
+    /// # Errors
+    ///
+    /// Fails if the value is `NULL`, or if a binary `jsonb` value is empty
+    /// or has a version byte other than [`JSONB_VERSION`].
     pub fn decode_as(format: PayloadFormat, value: PgValueRef<'_>) -> Result<Self, BoxDynError> {
         Ok(match format {
             PayloadFormat::Jsonb => PgPayload::Jsonb(JsonbPayload::decode(value)?),

@@ -43,12 +43,47 @@ pub enum CodecError {
 }
 
 /// Serialises payloads of type `T`.
+///
+/// `decode(encode(v))` must give back `v`. Encoded bytes must be valid for
+/// the declared [`format`](Codec::format): UTF-8 JSON for
+/// [`PayloadFormat::Json`] and [`PayloadFormat::Jsonb`], anything for
+/// [`PayloadFormat::Bytea`]. `edomata_serde::SerdeCodec` is the ready-made
+/// implementation; write your own for other serialisation formats.
+///
+/// ```
+/// use edomata_backend::{Codec, CodecError, PayloadFormat};
+///
+/// /// Stores strings as raw UTF-8 in a `bytea` column.
+/// struct Utf8;
+///
+/// impl Codec<String> for Utf8 {
+///     fn format(&self) -> PayloadFormat { PayloadFormat::Bytea }
+///     fn encode(&self, value: &String) -> Result<Vec<u8>, CodecError> {
+///         Ok(value.as_bytes().to_vec())
+///     }
+///     fn decode(&self, bytes: &[u8]) -> Result<String, CodecError> {
+///         String::from_utf8(bytes.to_vec()).map_err(|e| CodecError::Decode(e.to_string()))
+///     }
+/// }
+///
+/// assert_eq!(Utf8.decode(&Utf8.encode(&"hé".to_string()).unwrap()).unwrap(), "hé");
+/// assert!(matches!(Utf8.decode(&[0xff]), Err(CodecError::Decode(_))));
+/// assert_eq!(Utf8.format().sql_type(), "bytea");
+/// ```
 pub trait Codec<T>: Send + Sync {
     /// Column type the encoded bytes are stored in.
     fn format(&self) -> PayloadFormat;
     /// Encodes a value.
+    ///
+    /// # Errors
+    ///
+    /// [`CodecError::Encode`] if the value cannot be represented.
     fn encode(&self, value: &T) -> Result<Vec<u8>, CodecError>;
     /// Decodes a value.
+    ///
+    /// # Errors
+    ///
+    /// [`CodecError::Decode`] if the bytes are not a valid encoding of `T`.
     fn decode(&self, bytes: &[u8]) -> Result<T, CodecError>;
 }
 

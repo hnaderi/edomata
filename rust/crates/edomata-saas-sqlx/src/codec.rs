@@ -21,6 +21,21 @@ type Extractor<T> = dyn Fn(&T) -> Option<(TenantId, UserId)> + Send + Sync;
 /// [`SaaSCodec::notification`] for the notification codec;
 /// [`SaaSCodec::jsonb_state`] / [`SaaSCodec::jsonb_notification`] are the
 /// serde `jsonb` defaults.
+///
+/// ```
+/// use edomata_backend::PayloadFormat;
+/// use edomata_saas::{CrudState, TenantId, UserId};
+/// use edomata_saas_sqlx::SaaSCodec;
+///
+/// let states = SaaSCodec::<CrudState<String>>::jsonb_state();
+/// let active = CrudState::active("acme", "alice", "milk".to_string());
+/// assert_eq!(states.tenant_and_owner(&active), Some((TenantId::new("acme"), UserId::new("alice"))));
+/// assert_eq!(states.format(), PayloadFormat::Jsonb);
+///
+/// // Notification codecs are not tenant-aware: the outbox's tenant comes from the state.
+/// let notifications = SaaSCodec::<String>::jsonb_notification();
+/// assert_eq!(notifications.tenant_and_owner(&"created".to_string()), None);
+/// ```
 pub struct SaaSCodec<T> {
     codec: SqlxCodec<T>,
     extractor: Option<Arc<Extractor<T>>>,
@@ -53,7 +68,8 @@ impl<T: 'static> SaaSCodec<T> {
         Self::with_extractor(codec, TenantExtractor::tenant_and_owner)
     }
 
-    /// A state codec with a custom extractor.
+    /// A state codec with a custom extractor, for state types that do not
+    /// implement [`TenantExtractor`].
     pub fn with_extractor<F>(codec: impl Codec<T> + 'static, extractor: F) -> Self
     where
         F: Fn(&T) -> Option<(TenantId, UserId)> + Send + Sync + 'static,
@@ -88,16 +104,25 @@ impl<T: 'static> SaaSCodec<T> {
     }
 
     /// Encodes a value into a bindable payload.
+    ///
+    /// # Errors
+    ///
+    /// The payload codec's encoding error.
     pub fn encode(&self, value: &T) -> Result<PgPayload, BackendError> {
         self.codec.encode(value)
     }
 
     /// Decodes a payload column.
+    ///
+    /// # Errors
+    ///
+    /// See [`SqlxCodec::decode_row`].
     pub fn decode_row(&self, row: &PgRow, column: &str) -> Result<T, BackendError> {
         self.codec.decode_row(row, column)
     }
 
-    /// The tenant and owner of a value, when this codec is tenant-aware.
+    /// The tenant and owner of a value; always `None` for a notification
+    /// codec.
     pub fn tenant_and_owner(&self, value: &T) -> Option<(TenantId, UserId)> {
         self.extractor.as_ref().and_then(|f| f(value))
     }

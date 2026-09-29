@@ -10,6 +10,11 @@ use std::ops::Deref;
 /// `NonEmpty<T>` dereferences to `[T]`, so every read-only slice method
 /// (`iter`, `len`, `first`, `last`, ...) is available.
 ///
+/// The invariant (at least one element) is upheld by every constructor and
+/// method, so [`NonEmpty::head`] and [`NonEmpty::last`] never panic. With the
+/// `serde` feature it serializes as a plain sequence, and deserializing an
+/// empty sequence fails.
+///
 /// ```
 /// use edomata_core::{NonEmpty, nonempty};
 ///

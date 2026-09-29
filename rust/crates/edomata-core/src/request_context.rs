@@ -4,6 +4,10 @@ use chrono::{DateTime, Utc};
 
 /// The input of an [`Edomaton`](crate::Edomaton): the command being handled
 /// together with the current state of the aggregate.
+///
+/// Backends build it from the incoming [`CommandMessage`] and the state read
+/// from storage; in tests, build it with [`CommandMessage::build_context`]
+/// or [`RequestContext::new`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RequestContext<C, S> {
     /// The command message.
@@ -20,6 +24,27 @@ impl<C, S> RequestContext<C, S> {
 }
 
 /// A command message sent to an aggregate.
+///
+/// Backends use [`CommandMessage::id`] to make command handling idempotent
+/// (a command id is processed at most once) and
+/// [`CommandMessage::address`] as the aggregate's stream id.
+///
+/// ```
+/// use edomata_core::{CommandMessage, MessageMetadata};
+///
+/// let cmd = CommandMessage::new("cmd-1", chrono::DateTime::UNIX_EPOCH, "account-42", "deposit");
+/// // A root message is its own correlation and causation.
+/// assert_eq!(cmd.metadata, MessageMetadata::root("cmd-1"));
+///
+/// // A message caused by `cmd` keeps the correlation and points back to it.
+/// let next = cmd.derive_meta();
+/// assert_eq!(next.correlation.as_deref(), Some("cmd-1"));
+/// assert_eq!(next.causation.as_deref(), Some("cmd-1"));
+///
+/// let ctx = cmd.build_context(100_i64);
+/// assert_eq!(ctx.command.address, "account-42");
+/// assert_eq!(ctx.state, 100);
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct CommandMessage<C> {

@@ -5,7 +5,8 @@ use std::future::Future;
 
 use crate::{App, Decision, DomainModel, Edomaton, NonEmpty, RequestContext};
 
-/// Outcome of executing an [`Edomaton`] against a [`DomainModel`].
+/// Outcome of executing an [`Edomaton`] against a [`DomainModel`], produced
+/// by [`DomainCompiler::execute`] and [`Edomaton::execute`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EdomatonResult<S, E, R, N> {
     /// Events were accepted and applied to the state.
@@ -38,12 +39,46 @@ pub enum EdomatonResult<S, E, R, N> {
 }
 
 /// Runs domain programs and folds their decisions into the model.
+///
+/// This is what a backend does with the program's response before
+/// persisting it; calling it directly is the easiest way to unit-test a
+/// program without any storage.
+///
+/// ```
+/// use edomata_core::*;
+///
+/// struct Account;
+/// impl DomainModel for Account {
+///     type State = i64; type Event = i64; type Rejection = String;
+///     fn initial(&self) -> i64 { 0 }
+///     fn transition(&self, e: &i64, s: i64) -> Result<i64, NonEmpty<String>> {
+///         if s + e < 0 { Err(NonEmpty::new("negative balance".into())) } else { Ok(s + e) }
+///     }
+/// }
+///
+/// let dsl = Account.dsl::<i64, String>();
+/// // This program does not check the balance itself: the model refuses the event.
+/// let app = dsl.router(move |amount| dsl.accept(amount));
+/// let run = |amount, balance| {
+///     let ctx = CommandMessage::new("cmd", chrono::DateTime::UNIX_EPOCH, "acc-1", amount).build_context(balance);
+///     futures::executor::block_on(DomainCompiler::execute(&Account, &app, ctx))
+/// };
+///
+/// assert_eq!(run(5, 10), EdomatonResult::Accepted { new_state: 15, events: nonempty![5], notifications: vec![] });
+/// assert_eq!(run(-50, 10), EdomatonResult::Conflicted { reasons: nonempty!["negative balance".to_string()] });
+/// ```
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DomainCompiler;
 
 impl DomainCompiler {
     /// Executes `app` with `ctx` and applies the resulting decision to the
     /// current state with `model`.
+    ///
+    /// The outcome is [`EdomatonResult::Rejected`] when the program rejects,
+    /// [`EdomatonResult::Conflicted`] when the program accepts events the
+    /// model refuses, [`EdomatonResult::Indecisive`] when it accepts nothing,
+    /// and [`EdomatonResult::Accepted`] otherwise. The program output `T` is
+    /// discarded.
     pub fn execute<M, C, N, T>(
         model: &M,
         app: &App<C, M::State, M::Event, M::Rejection, N, T>,

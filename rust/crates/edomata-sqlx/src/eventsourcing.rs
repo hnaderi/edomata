@@ -32,6 +32,41 @@ use crate::queries::{
 /// Constructing the driver creates the schema in `Schema` naming mode unless
 /// `skip_setup` is set; building a storage creates the tables unless
 /// `skip_setup` is set (`CREATE ... IF NOT EXISTS`, so both are idempotent).
+/// DDL runs in one transaction under an advisory lock, so several replicas
+/// can start at once.
+///
+/// The driver is cheap to clone (a pool handle and the naming). Pass it to
+/// [`Backend::builder`](edomata_backend::eventsourcing::Backend::builder)'s
+/// `driver`; the resulting backend exposes the PostgreSQL journal
+/// ([`JournalReader`]), outbox ([`OutboxReader`]) and repository.
+///
+/// ```no_run
+/// # use edomata_core::*;
+/// # use edomata_backend::eventsourcing::{Backend, JournalReader};
+/// # use edomata_backend::OutboxReader;
+/// # use edomata_sqlx::{PGNaming, SqlxDriver};
+/// # use futures::TryStreamExt;
+/// # struct Counter;
+/// # impl DomainModel for Counter {
+/// #     type State = i32; type Event = i32; type Rejection = String;
+/// #     fn initial(&self) -> i32 { 0 }
+/// #     fn transition(&self, e: &i32, s: i32) -> Result<i32, NonEmpty<String>> { Ok(s + e) }
+/// # }
+/// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+/// let driver = SqlxDriver::new(PGNaming::prefixed_str("counters")?, pool)
+///     .await?
+///     .with_outbox_notify_channel("counters_outbox"); // wakes relays in other processes
+/// let backend = Backend::builder(Counter, Counter.dsl::<i32, String>())
+///     .driver(driver)
+///     .build_default()
+///     .await?;
+///
+/// // Every event of one stream, in version order.
+/// let events: Vec<_> = backend.journal().read_stream("counter-1").try_collect().await?;
+/// // Notifications not yet marked as sent, in sequence order.
+/// let pending: Vec<_> = backend.outbox().read().try_collect().await?;
+/// # let _ = (events, pending); Ok(()) }
+/// ```
 #[derive(Clone, Debug)]
 pub struct SqlxDriver {
     naming: PGNaming,
@@ -44,12 +79,23 @@ pub struct SqlxDriver {
 impl SqlxDriver {
     /// A driver that sets the schema and tables up automatically. Mirrors
     /// Scala's `SkunkDriver.from(naming, pool)` / `DoobieDriver.from`.
+    /// Same as [`new_with`](Self::new_with) with `skip_setup = false`.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::UnknownError`] if the `CREATE SCHEMA` statement (schema
+    /// mode only) fails, e.g. because the database is unreachable.
     pub async fn new(naming: PGNaming, pool: PgPool) -> Result<Self, BackendError> {
         Self::new_with(naming, pool, false).await
     }
 
     /// A driver for a schema-mode namespace given as a string. Mirrors
     /// Scala's `SkunkDriver("namespace", pool)`.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::PersistenceError`] if `namespace` is not a valid
+    /// [`PGNamespace`], and the errors of [`new`](Self::new).
     pub async fn for_namespace(namespace: &str, pool: PgPool) -> Result<Self, BackendError> {
         let ns = PGNamespace::from_string(namespace).map_err(invalid_namespace)?;
         Self::new(PGNaming::schema(ns), pool).await
@@ -58,6 +104,22 @@ impl SqlxDriver {
     /// A driver with `skip_setup` as in Scala: when `true`, no `CREATE
     /// SCHEMA` and no `CREATE TABLE` / `CREATE INDEX` is ever executed and
     /// the tables are assumed to exist (created by Flyway or manually).
+    /// Use [`PGSchema::eventsourcing`](edomata_postgres::PGSchema::eventsourcing)
+    /// with the same naming to generate them.
+    ///
+    /// ```no_run
+    /// # use edomata_sqlx::{PGNaming, SqlxDriver};
+    /// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    /// let driver = SqlxDriver::new_with(PGNaming::prefixed_str("accounts")?, pool, true).await?;
+    /// assert!(!driver.auto_setup());
+    /// # Ok(()) }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// With `skip_setup = false`, [`BackendError::UnknownError`] if the setup
+    /// DDL fails. With `true`, it never fails: missing tables surface as
+    /// errors of the first query instead.
     pub async fn new_with(
         naming: PGNaming,
         pool: PgPool,
@@ -85,7 +147,8 @@ impl SqlxDriver {
     }
 
     /// Raises `NOTIFY channel` in the transaction that appends events, for
-    /// journal relays in other processes. Off by default.
+    /// journal relays in other processes. Off by default. The payload of
+    /// the notification is empty: listeners re-read the journal.
     pub fn with_journal_notify_channel(mut self, channel: impl Into<String>) -> Self {
         self.journal_notify_channel = Some(channel.into());
         self
@@ -101,13 +164,14 @@ impl SqlxDriver {
         &self.pool
     }
 
-    /// Whether tables are created automatically.
+    /// Whether tables are created automatically (`!skip_setup`).
     pub fn auto_setup(&self) -> bool {
         self.auto_setup
     }
 }
 
-/// Maps a namespace validation error to a backend error.
+/// Maps a namespace validation error to a
+/// [`BackendError::PersistenceError`].
 pub fn invalid_namespace(e: PGNamespaceError) -> BackendError {
     BackendError::persistence(e.to_string())
 }
@@ -119,7 +183,13 @@ pub fn invalid_namespace(e: PGNamespaceError) -> BackendError {
 const DDL_LOCK_KEY: &str = "edomata-ddl";
 
 /// Runs DDL statements in one transaction, under a transaction-scoped
-/// advisory lock shared by every Edomata driver.
+/// advisory lock shared by every Edomata driver. Does nothing (and does not
+/// connect) when `statements` is empty.
+///
+/// # Errors
+///
+/// [`BackendError::UnknownError`] wrapping the first sqlx error; the transaction
+/// is rolled back.
 pub async fn execute_all(pool: &PgPool, statements: &[String]) -> Result<(), BackendError> {
     if statements.is_empty() {
         return Ok(());
@@ -244,6 +314,10 @@ struct SqlxRepository<S, E, R, N> {
 }
 
 /// Raises `NOTIFY channel` inside `tx` (delivered on commit).
+///
+/// # Errors
+///
+/// The sqlx error, mapped by [`map_write`](crate::shared::map_write).
 pub async fn notify(tx: &mut sqlx::PgConnection, channel: &str) -> Result<(), BackendError> {
     sqlx::query("select pg_notify($1, '')")
         .bind(channel)
@@ -253,7 +327,14 @@ pub async fn notify(tx: &mut sqlx::PgConnection, channel: &str) -> Result<(), Ba
     Ok(())
 }
 
-/// Inserts outbox rows inside `tx`.
+/// Inserts outbox rows inside `tx`, then raises the query catalogue's
+/// `NOTIFY` channel (if any) when at least one row was inserted.
+///
+/// # Errors
+///
+/// A codec error, a sqlx error mapped by
+/// [`map_write`](crate::shared::map_write), or
+/// [`BackendError::PersistenceError`] if a row was not inserted.
 pub async fn insert_outbox<N>(
     tx: &mut sqlx::PgConnection,
     q: &OutboxQueries,
@@ -285,6 +366,11 @@ pub async fn insert_outbox<N>(
 }
 
 /// Records a handled command inside `tx`.
+///
+/// # Errors
+///
+/// [`BackendError::VersionConflict`] if the command id was already recorded
+/// (unique violation), other sqlx errors wrapped.
 pub async fn insert_command(
     tx: &mut sqlx::PgConnection,
     q: &CommandQueries,
@@ -302,6 +388,10 @@ pub async fn insert_command(
 }
 
 /// Whether a command id was already recorded.
+///
+/// # Errors
+///
+/// [`BackendError::UnknownError`] wrapping the sqlx error.
 pub async fn command_exists(
     executor: impl sqlx::PgExecutor<'_>,
     q: &CommandQueries,

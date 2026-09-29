@@ -14,7 +14,30 @@ type EncodeFn<T> = dyn Fn(&T) -> Result<Vec<u8>, RelayError> + Send + Sync;
 /// [`MessageEncoder::serde`] writes JSON with `serde_json`; the JSON is the
 /// one `edomata-serde` stores in `jsonb` columns, so brokers and the
 /// database share one representation. [`MessageEncoder::from_codec`]
-/// reuses any storage [`Codec`].
+/// reuses any storage [`Codec`], and [`MessageEncoder::new`] takes any
+/// function. The encoder also decides the message's
+/// [`content_type`](crate::BrokerMessage::content_type).
+///
+/// ```
+/// use edomata_broker::{APPLICATION_OCTET_STREAM, MessageEncoder};
+///
+/// #[derive(serde::Serialize)]
+/// struct Deposited { amount: i64 }
+///
+/// let json = MessageEncoder::<Deposited>::serde();
+/// assert_eq!(json.content_type(), "application/json");
+/// assert_eq!(json.encode(&Deposited { amount: 5 }).unwrap(), br#"{"amount":5}"#);
+///
+/// // Any function: here a fixed-width binary encoding.
+/// let binary = MessageEncoder::<Deposited>::new(APPLICATION_OCTET_STREAM, |d| {
+///     Ok(d.amount.to_be_bytes().to_vec())
+/// });
+/// assert_eq!(binary.encode(&Deposited { amount: 1 }).unwrap(), [0, 0, 0, 0, 0, 0, 0, 1]);
+///
+/// // Storage codecs are reused as they are.
+/// let from_codec = MessageEncoder::from_codec(edomata_serde::SerdeCodec::<i64>::jsonb());
+/// assert_eq!(from_codec.content_type(), "application/json");
+/// ```
 pub struct MessageEncoder<T> {
     content_type: String,
     encode: Arc<EncodeFn<T>>,
@@ -37,13 +60,16 @@ impl<T> std::fmt::Debug for MessageEncoder<T> {
     }
 }
 
-/// The JSON content type.
+/// The JSON content type, used by [`MessageEncoder::serde`] and for `json` /
+/// `jsonb` codecs.
 pub const APPLICATION_JSON: &str = "application/json";
-/// The binary content type.
+/// The binary content type, used for `bytea` codecs.
 pub const APPLICATION_OCTET_STREAM: &str = "application/octet-stream";
 
 impl<T> MessageEncoder<T> {
-    /// An encoder from a function and a content type.
+    /// An encoder from a content type and a function. The function reports
+    /// failures as [`RelayError::Encode`], which stops the relay: a payload
+    /// that cannot be encoded is not skipped.
     pub fn new<F>(content_type: impl Into<String>, encode: F) -> Self
     where
         F: Fn(&T) -> Result<Vec<u8>, RelayError> + Send + Sync + 'static,
@@ -54,7 +80,8 @@ impl<T> MessageEncoder<T> {
         }
     }
 
-    /// JSON through `serde_json` (`application/json`).
+    /// JSON through `serde_json` (`application/json`): the same bytes that
+    /// `edomata-serde` writes in `json` / `jsonb` columns.
     pub fn serde() -> Self
     where
         T: Serialize,
@@ -84,6 +111,10 @@ impl<T> MessageEncoder<T> {
     }
 
     /// Encodes a value.
+    ///
+    /// # Errors
+    ///
+    /// [`RelayError::Encode`] when the underlying function or codec fails.
     pub fn encode(&self, value: &T) -> Result<Vec<u8>, RelayError> {
         (self.encode)(value)
     }

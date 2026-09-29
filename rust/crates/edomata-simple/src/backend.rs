@@ -45,7 +45,12 @@ pub type SimpleService<C, R> =
     Arc<dyn Fn(CommandMessage<C>) -> BoxFuture<'static, HandleResult<R>> + Send + Sync>;
 
 /// An event-sourced backend on PostgreSQL with a closure-based API.
-/// Mirrors Scala's `JBackend`; build one with [`SimpleBackend::builder`].
+/// Mirrors Scala's `JBackend`; build one with [`SimpleBackend::builder`]
+/// (see the [crate-level example](crate)).
+///
+/// Commands are handled with optimistic concurrency, retried on version
+/// conflicts up to the builder's `max_retry`, and deduplicated by command
+/// id: a command id already handled is accepted again without effect.
 pub struct SimpleBackend<S, E, R, N> {
     inner: Backend<S, E, R, N>,
 }
@@ -94,6 +99,12 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> SimpleBackend<S, E, R, N> {
     }
 
     /// Compiles a handler into a reusable service.
+    ///
+    /// # Panics
+    ///
+    /// The service panics if the handler returns a `Rejected` decision
+    /// without reasons, a programming error (Scala throws
+    /// `IllegalArgumentException`).
     pub fn compile<C: Payload>(
         &self,
         handler: &CommandHandler<C, S, E, R, N>,
@@ -126,7 +137,18 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> SimpleBackend<S, E, R, N> {
         })
     }
 
-    /// Handles one command with `handler` (`JBackend.handle`).
+    /// Handles one command with `handler` (`JBackend.handle`). Compiles the
+    /// handler on each call; use [`compile`](Self::compile) to reuse it.
+    ///
+    /// # Errors
+    ///
+    /// [`SimpleError::Backend`] on storage failures, including
+    /// `BackendError::MaxRetryExceeded` after too many version conflicts.
+    /// A rejection is not an error: it is the inner `Err(reasons)`.
+    ///
+    /// # Panics
+    ///
+    /// See [`compile`](Self::compile).
     pub async fn handle<C: Payload>(
         &self,
         handler: &CommandHandler<C, S, E, R, N>,
@@ -156,6 +178,9 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> SimpleBackend<S, E, R, N> {
 }
 
 /// Journal access returning vectors instead of streams (`JJournalReader`).
+/// Stream reads are in version order, global reads in sequence-number
+/// order. Every method fails with [`SimpleError::Backend`] on storage or
+/// decoding errors.
 pub struct SimpleJournal<E> {
     inner: Arc<dyn JournalReader<E>>,
 }
@@ -206,7 +231,9 @@ impl<E: Payload> SimpleJournal<E> {
 }
 
 /// Outbox access returning vectors instead of streams (`JOutboxReader`,
-/// plus the `mark_*` operations Java lacked).
+/// plus the `mark_*` operations Java lacked). Items are read in sequence
+/// order, and only those not yet marked as sent. Every method fails with
+/// [`SimpleError::Backend`] on storage or decoding errors.
 pub struct SimpleOutbox<N> {
     inner: Arc<dyn OutboxReader<N>>,
 }
@@ -387,7 +414,9 @@ where
         self
     }
 
-    /// Skips the automatic DDL setup (for Flyway / manual migrations).
+    /// Skips the automatic DDL setup (for Flyway / manual migrations): the
+    /// tables of [`SimplePGSchema`](crate::SimplePGSchema) must exist. The
+    /// `skip_setup` flag of [`SqlxDriver::new_with`](edomata_sqlx::SqlxDriver::new_with).
     pub fn skip_setup(mut self, skip: bool) -> Self {
         self.skip_setup = skip;
         self
@@ -395,6 +424,14 @@ where
 
     /// Builds the backend, opening the connection pool when needed and
     /// creating the tables unless `skip_setup` is set.
+    ///
+    /// # Errors
+    ///
+    /// - [`SimpleError::MissingConfig`] if the namespace, a codec or the
+    ///   connection is missing;
+    /// - [`SimpleError::InvalidNamespace`] for an invalid namespace;
+    /// - [`SimpleError::Connection`] if the pool cannot connect;
+    /// - [`SimpleError::Backend`] if the DDL setup fails.
     pub async fn build(self) -> Result<BuiltBackend<M, N>, SimpleError> {
         let naming = self
             .naming
@@ -427,7 +464,12 @@ where
     }
 
     /// Builds the backend on `runtime` and wraps it for blocking use
-    /// (`JBackendBuilder.build(runtime)`).
+    /// (`JBackendBuilder.build(runtime)`). Must not be called from within
+    /// an asynchronous context (it blocks on `runtime`).
+    ///
+    /// # Errors
+    ///
+    /// Those of [`build`](Self::build).
     pub fn build_blocking(
         self,
         runtime: SimpleRuntime,

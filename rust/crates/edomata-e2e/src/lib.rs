@@ -2,8 +2,52 @@
 //! Scala `e2e` module (`modules/e2e/src/main/scala/accounts/*.scala`) with
 //! the JSON shape Circe gives it, so that Scala and Rust services can share
 //! a journal. Used by `tests/e2e.rs` and by the cross-language test.
+//!
+//! The domain is also a compact, complete example of an event-sourced
+//! aggregate: [`AccountModel`] folds [`Event`]s into an [`Account`], the
+//! decisions live on [`Account`], and [`account_service`] routes
+//! [`Command`]s and publishes [`Notification`]s.
+//!
+//! ```
+//! use edomata_core::{CommandMessage, EdomatonResult};
+//! use edomata_e2e::*;
+//!
+//! let deposit = |state: Account, amount: i64| {
+//!     let cmd = CommandMessage::new("cmd-1", chrono::Utc::now(), "acc-1", Command::Deposit(amount.into()));
+//!     futures::executor::block_on(account_service().execute(&AccountModel, cmd.build_context(state)))
+//! };
+//!
+//! match deposit(Account::open_with(10), 5) {
+//!     EdomatonResult::Accepted { new_state, notifications, .. } => {
+//!         assert_eq!(new_state, Account::open_with(15));
+//!         assert_eq!(notifications, [Notification::BalanceUpdated { account_id: "acc-1".into(), balance: 15.into() }]);
+//!     }
+//!     other => panic!("unexpected {other:?}"),
+//! }
+//! assert!(matches!(deposit(Account::New {}, 5), EdomatonResult::Rejected { .. }));
+//!
+//! // The Circe JSON shape shared with the Scala services.
+//! let json = serde_json::to_string(&Event::Deposited { amount: 5.into() }).unwrap();
+//! assert_eq!(json, r#"{"Deposited":{"amount":5.0}}"#);
+//! ```
+//!
+//! ## Where it fits
+//!
+//! A test-support crate, not meant as a dependency of applications. It
+//! builds on `edomata-core` (the domain), `edomata-backend`, `edomata-sqlx`
+//! and `edomata-serde` (the PostgreSQL tests and the Scala/Rust
+//! cross-language test in its `tests/` directory). Nothing depends on it.
+//!
+//! ## Feature flags
+//!
+//! This crate has no Cargo feature flags.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 use edomata_core::{App, Decision, DomainModel, NonEmpty};
 pub use rust_decimal::Decimal as Amount;
@@ -205,7 +249,9 @@ pub enum Notification {
 pub type AccountApp = App<Command, Account, Event, Rejection, Notification, ()>;
 
 /// Port of `AccountService`: routes commands to the domain and publishes
-/// notifications.
+/// notifications ([`Notification::AccountOpened`] on open,
+/// [`Notification::BalanceUpdated`] after a deposit or withdrawal, nothing
+/// on close). See the [crate-level example](crate).
 pub fn account_service() -> AccountApp {
     let dsl = AccountModel.dsl::<Command, Notification>();
     dsl.router(move |cmd| match cmd {
@@ -240,7 +286,14 @@ pub fn account_service() -> AccountApp {
     })
 }
 
-/// Connects to `DATABASE_URL` or the docker-compose default.
+/// Connects to `DATABASE_URL` or the docker-compose default
+/// (`postgres://postgres:postgres@localhost:5432/postgres`), with at most
+/// 8 connections.
+///
+/// # Panics
+///
+/// Panics if the database is unreachable: this is a test fixture, and a
+/// missing database should fail the test with a clear message.
 pub async fn pool() -> edomata_sqlx::PgPool {
     let url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://postgres:postgres@localhost:5432/postgres".to_string());

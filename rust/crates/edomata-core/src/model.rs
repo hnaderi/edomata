@@ -114,6 +114,24 @@ pub trait DomainModel {
 
     /// Helps with deciding based on the state and then applying the
     /// decision.
+    ///
+    /// The output of the returned decision is the new state. If the model
+    /// refuses an accepted event, the decision is rejected with the model's
+    /// reasons.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, DomainModel, NonEmpty};
+    ///
+    /// struct Counter;
+    /// impl DomainModel for Counter {
+    ///     type State = u32; type Event = u32; type Rejection = &'static str;
+    ///     fn initial(&self) -> u32 { 0 }
+    ///     fn transition(&self, e: &u32, s: u32) -> Result<u32, NonEmpty<&'static str>> { Ok(s + e) }
+    /// }
+    ///
+    /// let d = Counter.decide(10, |s| Decision::reject_when(*s >= 100, "full").then(Decision::accept(5)));
+    /// assert_eq!(d, Decision::accept_return(15, 5));
+    /// ```
     fn decide<T, F>(
         &self,
         state: Self::State,
@@ -155,7 +173,7 @@ pub trait DomainModel {
     }
 
     /// A DSL for writing programs on this model with commands `C` and
-    /// notifications `N`.
+    /// notifications `N`. See [`DomainDsl`] for an example.
     fn dsl<C, N>(&self) -> DomainDsl<C, Self::State, Self::Event, Self::Rejection, N>
     where
         Self: Sized,
@@ -167,7 +185,30 @@ pub trait DomainModel {
 /// Definition of a CQRS domain model: only an initial state, since the state
 /// is stored directly.
 ///
-/// This merges Scala's `CQRSModel` and `StateModelTC`.
+/// This merges Scala's `CQRSModel` and `StateModelTC`. Programs for a CQRS
+/// model are [`Stomaton`](crate::Stomaton)s, written with
+/// [`CqrsModel::dsl`].
+///
+/// ```
+/// use edomata_core::{CqrsModel, NonEmpty};
+///
+/// struct Counter;
+///
+/// impl CqrsModel for Counter {
+///     type State = u32;
+///     type Rejection = &'static str;
+///     fn initial(&self) -> u32 { 0 }
+/// }
+///
+/// let dsl = Counter.dsl::<u32, &'static str>();
+/// let add = dsl.router(move |by| {
+///     dsl.decide_s(move |s: u32| s.checked_add(by).ok_or_else(|| NonEmpty::new("overflow")))
+/// });
+///
+/// let cmd = edomata_core::CommandMessage::new("cmd-1", chrono::DateTime::UNIX_EPOCH, "counter-1", 5);
+/// let out = futures::executor::block_on(add.run(cmd, Counter.initial()));
+/// assert_eq!(out.result, Ok((5, 5)));
+/// ```
 pub trait CqrsModel {
     /// Aggregate state.
     type State;
@@ -178,7 +219,7 @@ pub trait CqrsModel {
     fn initial(&self) -> Self::State;
 
     /// A DSL for writing programs on this model with commands `C` and
-    /// notifications `N`.
+    /// notifications `N`. See [`CqrsDomainDsl`].
     fn dsl<C, N>(&self) -> CqrsDomainDsl<C, Self::State, Self::Rejection, N>
     where
         Self: Sized,

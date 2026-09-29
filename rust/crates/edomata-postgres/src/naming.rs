@@ -45,11 +45,28 @@ impl PGNaming {
     }
 
     /// Schema-based naming, validating the namespace.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`PGNamespaceError`] if `ns` is not a valid
+    /// [`PGNamespace`].
     pub fn schema_str(ns: &str) -> Result<Self, PGNamespaceError> {
         PGNamespace::from_string(ns).map(PGNaming::Schema)
     }
 
     /// Prefix-based naming, validating the namespace.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`PGNamespaceError`] if `ns` is not a valid
+    /// [`PGNamespace`].
+    ///
+    /// ```
+    /// use edomata_postgres::PGNaming;
+    ///
+    /// assert_eq!(PGNaming::prefixed_str("orders").unwrap().table("outbox"), "orders_outbox");
+    /// assert!(PGNaming::prefixed_str("not valid").is_err());
+    /// ```
     pub fn prefixed_str(ns: &str) -> Result<Self, PGNamespaceError> {
         PGNamespace::from_string(ns).map(PGNaming::Prefixed)
     }
@@ -67,7 +84,8 @@ impl PGNaming {
     }
 
     /// A fully-qualified (schema mode) or prefixed (prefix mode) table
-    /// reference suitable for embedding in SQL.
+    /// reference suitable for embedding in SQL. The schema name is quoted,
+    /// so it keeps its case; `name` is spliced as is.
     pub fn table(&self, name: &str) -> String {
         match self {
             PGNaming::Schema(ns) => format!("\"{ns}\".{name}"),

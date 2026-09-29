@@ -12,7 +12,20 @@ use crate::{Decision, NonEmpty};
 ///
 /// This is the Rust counterpart of Scala's `RaiseError[F, R]` typeclass
 /// combined with the `MonadError` instance that `ResponseT` needs. It is
-/// implemented for [`Decision`] and for `Result<A, NonEmpty<R>>`.
+/// implemented for [`Decision`] and for `Result<A, NonEmpty<R>>`, which are
+/// the results of [`ResponseD`] and [`ResponseE`]. Application code rarely
+/// needs it directly; it lets [`ResponseT`] define its combinators once for
+/// both.
+///
+/// ```
+/// use edomata_core::{Decision, NonEmpty, RaiseError};
+///
+/// let d: Decision<&str, (), i32> = RaiseError::pure(1);
+/// assert_eq!(d.into_result(), Ok(1));
+///
+/// let r: Result<i32, NonEmpty<&str>> = RaiseError::raise(NonEmpty::new("no"));
+/// assert!(r.is_error());
+/// ```
 pub trait RaiseError: Sized {
     /// Rejection type.
     type Rejection;
@@ -177,10 +190,46 @@ pub struct ResponseT<Res, N> {
     pub notifications: Vec<N>,
 }
 
-/// A [`Decision`] together with notifications.
+/// A [`Decision`] together with notifications: the response of
+/// [`Edomaton`](crate::Edomaton) and [`Action`](crate::Action) programs.
+///
+/// Events accumulate in the decision, notifications in
+/// [`ResponseT::notifications`]; a rejection keeps only the notifications
+/// of the rejecting step (see [`ResponseT::and_then`]).
+///
+/// ```
+/// use edomata_core::{Decision, ResponseD, nonempty};
+///
+/// let opened: ResponseD<&str, &str, &str, u32> =
+///     ResponseD::accept_return(100, "opened").publish(["account opened"]);
+/// let deposited = opened.and_then(|balance| {
+///     ResponseD::accept_return(balance + 50, "deposited").publish(["balance changed"])
+/// });
+/// assert_eq!(deposited.result, Decision::Accepted { events: nonempty!["opened", "deposited"], result: 150 });
+/// assert_eq!(deposited.notifications, vec!["account opened", "balance changed"]);
+///
+/// // A rejection drops the events and keeps only its own notifications.
+/// let rejected = deposited
+///     .then(ResponseD::<_, _, _, ()>::reject("frozen").publish_on_rejection(["alert"]));
+/// assert_eq!(rejected.result, Decision::Rejected(nonempty!["frozen"]));
+/// assert_eq!(rejected.notifications, vec!["alert"]);
+/// ```
 pub type ResponseD<R, E, N, A> = ResponseT<Decision<R, E, A>, N>;
 
-/// A `Result<A, NonEmpty<R>>` together with notifications.
+/// A `Result<A, NonEmpty<R>>` together with notifications: the response of
+/// [`Stomaton`](crate::Stomaton) programs, which have no events.
+///
+/// ```
+/// use edomata_core::{ResponseE, nonempty};
+///
+/// let ok: ResponseE<&str, &str, i32> = ResponseE::pure(1).publish(["one"]);
+/// let next = ok.and_then(|n| ResponseE::pure(n + 1).publish(["two"]));
+/// assert_eq!(next.result, Ok(2));
+/// assert_eq!(next.notifications, vec!["one", "two"]);
+///
+/// let ko: ResponseE<&str, &str, i32> = ResponseE::reject("no");
+/// assert_eq!(ko.result, Err(nonempty!["no"]));
+/// ```
 pub type ResponseE<R, N, A> = ResponseT<Result<A, NonEmpty<R>>, N>;
 
 impl<Res, N> ResponseT<Res, N> {
@@ -317,7 +366,16 @@ impl<Res: RaiseError, N> ResponseT<Res, N> {
         self.and_then(|_| next)
     }
 
-    /// If rejected, uses `f` to decide what to publish.
+    /// If rejected, uses `f` to decide what to publish; a successful response
+    /// is returned unchanged.
+    ///
+    /// ```
+    /// use edomata_core::ResponseD;
+    ///
+    /// let r: ResponseD<&str, (), String, ()> = ResponseD::reject("no")
+    ///     .publish_on_rejection_with(|reasons| [format!("rejected: {}", reasons.head())]);
+    /// assert_eq!(r.notifications, vec!["rejected: no".to_string()]);
+    /// ```
     pub fn publish_on_rejection_with<F, I>(self, f: F) -> Self
     where
         F: FnOnce(&NonEmpty<Res::Rejection>) -> I,
@@ -337,7 +395,9 @@ impl<Res: RaiseError, N> ResponseT<Res, N> {
         self.publish_on_rejection_with(|_| ns)
     }
 
-    /// Recovers from a rejection.
+    /// Recovers from a rejection: `f` receives the reasons and builds the
+    /// replacement response (the rejected notifications are discarded). A
+    /// successful response is returned unchanged.
     pub fn handle_error_with<F>(self, f: F) -> Self
     where
         F: FnOnce(NonEmpty<Res::Rejection>) -> Self,

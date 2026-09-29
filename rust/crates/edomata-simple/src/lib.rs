@@ -47,8 +47,56 @@
 //! }
 //! # Ok(()) }
 //! ```
+//!
+//! ## Blocking use and hand-made tables
+//!
+//! Outside an asynchronous context, build a [`BlockingBackend`] on a
+//! [`SimpleRuntime`]. With `skip_setup(true)` the backend runs no DDL; create
+//! the tables from [`SimplePGSchema`] with a migration tool first.
+//!
+//! ```no_run
+//! use edomata_simple::*;
+//!
+//! # fn demo() -> Result<(), Box<dyn std::error::Error>> {
+//! for statement in SimplePGSchema::eventsourcing("accounts")? {
+//!     println!("{statement}"); // into V1__accounts.sql
+//! }
+//!
+//! let model = <ClosureModel<i64, i64, String>>::new(0, |event: &i64, balance| Ok(balance + event));
+//! let backend = SimpleBackend::builder(model)
+//!     .namespace("accounts")
+//!     .database_url("postgres://postgres:postgres@localhost:5432/postgres")
+//!     .serde_codecs()
+//!     .skip_setup(true)
+//!     .build_blocking(SimpleRuntime::create()?)?;
+//!
+//! let handler: CommandHandler<i64, i64, i64, String, String> =
+//!     CommandHandler::new(|ctx| AppResult::accept([ctx.command]));
+//! let outcome = backend.handle(&handler, CommandMessage::new("cmd-1", chrono::Utc::now(), "acc-1", 100))?;
+//! assert_eq!(outcome, Ok(()));
+//! assert_eq!(backend.read_stream("acc-1")?.len(), 1);
+//! # Ok(()) }
+//! ```
+//!
+//! ## Where it fits
+//!
+//! A facade over `edomata-core` (programs), `edomata-backend` (command
+//! handling), `edomata-sqlx` (the PostgreSQL driver), `edomata-postgres`
+//! (DDL) and `edomata-serde` (codecs); it re-exports what an application
+//! needs, so no other Edomata crate is required. No library crate
+//! builds on it (the book samples use it). Move to the generic crates when you need CQRS, SaaS,
+//! custom storages or composable programs.
+//!
+//! ## Feature flags
+//!
+//! This crate has no Cargo feature flags.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 mod app_result;
 mod backend;

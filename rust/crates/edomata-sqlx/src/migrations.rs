@@ -22,11 +22,31 @@ pub const DEFAULT_MIGRATION_BATCH_SIZE: usize = 500;
 /// tracking table and truncates the snapshots (cached state is invalid
 /// after a payload change). Already-applied versions are skipped, so
 /// calling `run` on every start-up is safe.
+///
+/// The journal is rewritten through its text representation and written
+/// back as `jsonb`, so migrations apply to JSON payloads.
+///
+/// ```no_run
+/// use edomata_sqlx::{EventMigration, PGNaming, SqlxMigrations};
+///
+/// # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+/// let migrations = [EventMigration::new("1", "rename owner to holder", |payload| {
+///     Ok(payload.replace("\"owner\"", "\"holder\""))
+/// })];
+/// let result = SqlxMigrations::run(&PGNaming::prefixed_str("accounts")?, &pool, &migrations).await?;
+/// println!("applied {:?}, skipped {:?}", result.applied, result.skipped);
+/// # Ok(()) }
+/// ```
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SqlxMigrations;
 
 impl SqlxMigrations {
-    /// Runs the pending migrations with the default batch size.
+    /// Runs the pending migrations with the default batch size
+    /// ([`DEFAULT_MIGRATION_BATCH_SIZE`]).
+    ///
+    /// # Errors
+    ///
+    /// See [`run_with_batch_size`](Self::run_with_batch_size).
     pub async fn run(
         naming: &PGNaming,
         pool: &PgPool,
@@ -35,7 +55,16 @@ impl SqlxMigrations {
         Self::run_with_batch_size(naming, pool, migrations, DEFAULT_MIGRATION_BATCH_SIZE).await
     }
 
-    /// Runs the pending migrations, updating `batch_size` rows at a time.
+    /// Runs the pending migrations, updating `batch_size` rows at a time
+    /// (a `batch_size` of 0 is treated as 1).
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::PersistenceError`] if a migration function fails on
+    /// a payload (naming the migration and the event id), and
+    /// [`BackendError::UnknownError`] for database errors. The failing
+    /// migration's transaction is rolled back; migrations applied before
+    /// it stay applied.
     pub async fn run_with_batch_size(
         naming: &PGNaming,
         pool: &PgPool,

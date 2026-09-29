@@ -6,6 +6,12 @@ use std::fmt;
 use chrono::{DateTime, Utc};
 
 /// Names of the standard headers every publisher attaches to a message.
+///
+/// [`BrokerMessage::headers`](super::BrokerMessage::headers) returns them
+/// with their values. `edomata-kafka` sends all of them as Kafka headers;
+/// `edomata-rabbitmq` maps [`ID`](headers::ID) to the AMQP `message_id`
+/// property, [`CONTENT_TYPE`](headers::CONTENT_TYPE) to `content_type`, and
+/// sends the others as AMQP headers.
 pub mod headers {
     /// The stable message id ([`super::BrokerMessage::id`]).
     pub const ID: &str = "edomata-id";
@@ -31,7 +37,7 @@ pub mod headers {
     pub const VERSION: &str = "edomata-version";
 }
 
-/// What a message carries.
+/// What a message carries: which relay produced it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum MessageKind {
     /// An outbox notification.
@@ -41,7 +47,8 @@ pub enum MessageKind {
 }
 
 impl MessageKind {
-    /// The header value.
+    /// The value of the [`headers::KIND`] header: `"notification"` or
+    /// `"event"`.
     pub fn as_str(self) -> &'static str {
         match self {
             MessageKind::Notification => "notification",
@@ -64,9 +71,42 @@ impl fmt::Display for MessageKind {
 /// consumers deduplicate on it. Per-stream ordering is preserved by
 /// publishing in sequence-number order and keying / routing by
 /// [`stream_id`](Self::stream_id).
+///
+/// Relays build messages with
+/// [`OutboxRelay::message`](crate::OutboxRelay::message) and
+/// [`JournalRelay::message`](crate::JournalRelay::message); publishers read
+/// them.
+///
+/// ```
+/// use edomata_broker::{BrokerMessage, MessageKind, headers};
+///
+/// let message = BrokerMessage {
+///     id: BrokerMessage::outbox_id("accounts", 42),
+///     source: "accounts".into(),
+///     kind: MessageKind::Notification,
+///     stream_id: "acc-1".into(),
+///     seq_nr: 42,
+///     time: chrono::DateTime::UNIX_EPOCH,
+///     content_type: "application/json".into(),
+///     payload: br#"{"balance":10}"#.to_vec(),
+///     correlation: Some("corr-1".into()),
+///     causation: None,
+///     extra_headers: Default::default(),
+/// };
+/// assert_eq!(message.id, "accounts:outbox:42");
+/// assert_eq!(message.payload_text(), r#"{"balance":10}"#);
+///
+/// let hs = message.headers();
+/// assert_eq!(hs[0], (headers::ID.to_string(), "accounts:outbox:42".to_string()));
+/// assert!(hs.contains(&(headers::KIND.to_string(), "notification".to_string())));
+/// assert!(hs.contains(&(headers::CORRELATION.to_string(), "corr-1".to_string())));
+/// assert!(!hs.iter().any(|(k, _)| k == headers::CAUSATION)); // `None` is omitted
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BrokerMessage {
-    /// Stable, deterministic id.
+    /// Stable, deterministic id: [`BrokerMessage::outbox_id`] or
+    /// [`BrokerMessage::journal_id`]. Republishing an item yields the same
+    /// id, so consumers deduplicate on it.
     pub id: String,
     /// The relay source (typically the aggregate namespace).
     pub source: String,
@@ -91,17 +131,23 @@ pub struct BrokerMessage {
 }
 
 impl BrokerMessage {
-    /// The id of an outbox item: `"{source}:outbox:{seq_nr}"`.
+    /// The id of an outbox item: `"{source}:outbox:{seq_nr}"`. Outbox
+    /// sequence numbers are unique per outbox table, so the id is unique per
+    /// source.
     pub fn outbox_id(source: &str, seq_nr: i64) -> String {
         format!("{source}:outbox:{seq_nr}")
     }
 
-    /// The id of a journal event: `"{source}:journal:{seq_nr}"`.
+    /// The id of a journal event: `"{source}:journal:{seq_nr}"`, unique per
+    /// source like [`outbox_id`](Self::outbox_id).
     pub fn journal_id(source: &str, seq_nr: i64) -> String {
         format!("{source}:journal:{seq_nr}")
     }
 
-    /// Every header, standard ones first, in a stable order.
+    /// Every header as `(name, value)` pairs, in a stable order: the
+    /// standard [`headers`] `ID`, `SOURCE`, `KIND`, `STREAM`, `SEQ_NR`, `TIME`
+    /// and `CONTENT_TYPE`, then `CORRELATION` and `CAUSATION` when present,
+    /// then [`extra_headers`](Self::extra_headers) sorted by name.
     pub fn headers(&self) -> Vec<(String, String)> {
         let mut out = vec![
             (headers::ID.to_string(), self.id.clone()),
@@ -126,7 +172,8 @@ impl BrokerMessage {
         out
     }
 
-    /// The payload as UTF-8 text (lossy), for logs and tests.
+    /// The payload as UTF-8 text, for logs and tests; invalid UTF-8 is
+    /// replaced with `U+FFFD`.
     pub fn payload_text(&self) -> String {
         String::from_utf8_lossy(&self.payload).into_owned()
     }

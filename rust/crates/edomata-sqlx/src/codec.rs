@@ -23,7 +23,15 @@ use sqlx::postgres::PgRow;
 /// let default = SqlxCodec::<i32>::default();
 /// assert_eq!(default.format(), PayloadFormat::Jsonb);
 /// assert_eq!(SqlxCodec::<i32>::json().format(), PayloadFormat::Json);
+///
+/// // Any `Codec` can be wrapped, e.g. a `bytea` column holding JSON bytes.
+/// let codec = SqlxCodec::new(edomata_serde::SerdeCodec::<String>::bytea());
+/// assert_eq!(codec.sql_type(), "bytea");
 /// ```
+///
+/// The payload format must match the column type of existing tables: the
+/// driver creates the columns with [`sql_type`](Self::sql_type) and binds
+/// values in that format's wire encoding.
 pub struct SqlxCodec<T> {
     inner: Arc<dyn Codec<T>>,
 }
@@ -68,12 +76,21 @@ impl<T> SqlxCodec<T> {
     }
 
     /// Encodes a value into a bindable PostgreSQL payload.
+    ///
+    /// # Errors
+    ///
+    /// The wrapped codec's encoding error.
     pub fn encode(&self, value: &T) -> Result<PgPayload, BackendError> {
         let bytes = self.inner.encode(value)?;
         Ok(PgPayload::new(self.format(), bytes))
     }
 
     /// Decodes the payload column `column` of a row.
+    ///
+    /// # Errors
+    ///
+    /// [`BackendError::PersistenceError`] if the column is missing or not in
+    /// the codec's format, and the wrapped codec's decoding error.
     pub fn decode_row(&self, row: &PgRow, column: &str) -> Result<T, BackendError> {
         let raw = row
             .try_get_raw(column)

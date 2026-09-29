@@ -58,7 +58,22 @@ impl EventMigration {
     }
 
     /// A typed migration: decode the old payload, transform it, encode the
-    /// new one.
+    /// new one. A decoding error aborts the migration with that message.
+    ///
+    /// ```
+    /// use edomata_postgres::EventMigration;
+    ///
+    /// // Old events were bare numbers; new ones are `{"amount":n}` objects.
+    /// let migration = EventMigration::typed(
+    ///     "001",
+    ///     "Wrap amounts",
+    ///     |raw| raw.parse::<i64>().map_err(|e| e.to_string()),
+    ///     |amount| amount * 100,
+    ///     |cents| format!(r#"{{"amount":{cents}}}"#),
+    /// );
+    /// assert_eq!(migration.run("12"), Ok(r#"{"amount":1200}"#.to_string()));
+    /// assert!(migration.run("oops").is_err());
+    /// ```
     pub fn typed<A, B, D, T, E>(
         version: impl Into<String>,
         description: impl Into<String>,
@@ -77,6 +92,13 @@ impl EventMigration {
     }
 
     /// Transforms one raw payload.
+    ///
+    /// # Errors
+    ///
+    /// Returns the migration function's error message. `SqlxMigrations`
+    /// (in `edomata-sqlx`) applies each migration in its own transaction:
+    /// the first error rolls back that migration and stops the run, and
+    /// migrations applied before it stay applied.
     pub fn run(&self, raw: &str) -> Result<String, String> {
         (self.run)(raw)
     }

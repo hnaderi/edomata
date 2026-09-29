@@ -83,6 +83,13 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Backend<S, E, R, N> {
     }
 
     /// Compiles a domain program into a service.
+    ///
+    /// The service loads the aggregate, runs `app`, persists the outcome in
+    /// one transaction and retries on version conflicts with the configured
+    /// [`RetryConfig`]. It resolves to `Ok(Ok(()))` when the command was
+    /// accepted, indecisive or already handled, `Ok(Err(reasons))` when it
+    /// was rejected or the aggregate is conflicted, and `Err(_)` when the
+    /// backend failed (including [`BackendError::MaxRetryExceeded`]).
     pub fn compile<C: Payload>(
         &self,
         app: Edomaton<RequestContext<C, S>, R, E, N, ()>,
@@ -112,6 +119,11 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Backend<S, E, R, N> {
 
     /// Consumes the outbox with `handler`, now and whenever new items are
     /// published, until the backend is dropped. See [`OutboxConsumer`].
+    ///
+    /// # Errors
+    ///
+    /// Stops at the first error of `handler` or of the outbox; the failing
+    /// batch is not marked as sent, so it is delivered again next time.
     pub async fn consume_outbox<F, Fut>(
         &self,
         consumer: OutboxConsumer,
@@ -126,7 +138,12 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Backend<S, E, R, N> {
             .await
     }
 
-    /// Releases resources: flushes persisted snapshots when configured.
+    /// Releases resources: flushes persisted snapshots when configured
+    /// ([`PersistedSnapshotConfig::flush_on_exit`]). Call it before shutdown.
+    ///
+    /// # Errors
+    ///
+    /// Returns the snapshot persistence's error if the flush fails.
     pub async fn close(&self) -> Result<(), BackendError> {
         self.snapshot.close().await
     }
@@ -238,7 +255,12 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload, D: StorageDriver>
         self.retry
     }
 
-    /// Builds the backend with default codecs.
+    /// Builds the backend with default codecs (`()` for the in-memory
+    /// driver, `SerdeCodec::jsonb()` for the sqlx drivers).
+    ///
+    /// # Errors
+    ///
+    /// As [`build`](Self::build).
     pub async fn build_default(self) -> Result<Backend<S, E, R, N>, BackendError>
     where
         D::Codec<E>: Default,
@@ -247,7 +269,13 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload, D: StorageDriver>
         self.build(Default::default(), Default::default()).await
     }
 
-    /// Builds the backend.
+    /// Builds the backend with the given payload codecs.
+    ///
+    /// # Errors
+    ///
+    /// Returns the driver's error when it cannot set up its storage (for
+    /// PostgreSQL drivers: connection failures, or DDL failures when
+    /// automatic setup is enabled).
     pub async fn build(
         self,
         event_codec: D::Codec<E>,

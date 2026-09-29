@@ -2,7 +2,8 @@
 
 use edomata_postgres::PGNaming;
 
-/// PostgreSQL Row-Level Security configuration.
+/// PostgreSQL Row-Level Security configuration for
+/// [`SaaSPGSchema::cqrs_with`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RlsConfig {
     /// The PostgreSQL role to grant access to (e.g. `"app_user"`).
@@ -33,18 +34,29 @@ impl RlsConfig {
 /// let naming = PGNaming::prefixed_str("catalog").unwrap();
 /// let ddl = SaaSPGSchema::cqrs_with(&naming, "jsonb", "jsonb", Some(&RlsConfig::new("app_user", "app.tenant_id")));
 /// assert!(ddl.iter().any(|s| s.contains("ENABLE ROW LEVEL SECURITY")));
+/// assert!(ddl.iter().any(|s| s.contains("USING (tenant_id = current_setting('app.tenant_id'))")));
+/// assert!(ddl.iter().any(|s| s.starts_with("GRANT SELECT, INSERT, UPDATE ON catalog_states TO app_user")));
 /// ```
+///
+/// With RLS, the policies compare `tenant_id` with the session variable, so
+/// connections using `pg_role` must set it (`SET app.tenant_id = 'acme'`,
+/// or `set_config` per transaction) before touching the tables. Unlike the
+/// table statements, `CREATE POLICY` has no `IF NOT EXISTS`: run the RLS
+/// statements once, from a migration tool.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SaaSPGSchema;
 
 impl SaaSPGSchema {
     /// DDL for states (with `tenant_id`, `owner_id`), outbox (with
-    /// `tenant_id`) and commands, `jsonb` payloads, no RLS.
+    /// `tenant_id`) and commands, `jsonb` payloads, no RLS. In schema naming
+    /// mode the first statement is `CREATE SCHEMA IF NOT EXISTS`.
     pub fn cqrs(naming: &PGNaming) -> Vec<String> {
         Self::cqrs_with(naming, "jsonb", "jsonb", None)
     }
 
-    /// DDL with explicit payload types and optional RLS statements.
+    /// DDL with explicit payload types and optional RLS statements
+    /// (appended last). Payload types are spliced into the DDL without
+    /// validation; use `"jsonb"`, `"json"` or `"bytea"`.
     pub fn cqrs_with(
         naming: &PGNaming,
         state_type: &str,
@@ -94,7 +106,8 @@ pub mod ddl {
         ]
     }
 
-    /// Row-Level Security policies and grants, when configured.
+    /// Row-Level Security policies and grants, when configured (empty for
+    /// `None`).
     pub fn rls_statements(naming: &PGNaming, rls: Option<&RlsConfig>) -> Vec<String> {
         let Some(config) = rls else {
             return Vec::new();

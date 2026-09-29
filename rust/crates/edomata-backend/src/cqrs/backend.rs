@@ -72,6 +72,13 @@ impl<S: Payload, N: Payload> Backend<S, N> {
     }
 
     /// Compiles a domain program into a service.
+    ///
+    /// The service loads the aggregate, runs `app`, persists the outcome in
+    /// one transaction and retries on version conflicts with the configured
+    /// [`RetryConfig`]. It resolves to `Ok(Ok(()))` when the command was
+    /// accepted, indecisive or already handled, `Ok(Err(reasons))` when it
+    /// was rejected, and `Err(_)` when the backend failed (including
+    /// [`BackendError::MaxRetryExceeded`]).
     pub fn compile<C: Payload, R: Payload>(
         &self,
         app: Stomaton<CommandMessage<C>, S, R, N, ()>,
@@ -96,6 +103,11 @@ impl<S: Payload, N: Payload> Backend<S, N> {
 
     /// Consumes the outbox with `handler`, now and whenever new items are
     /// published, until the backend is dropped. See [`OutboxConsumer`].
+    ///
+    /// # Errors
+    ///
+    /// Stops at the first error of `handler` or of the outbox; the failing
+    /// batch is not marked as sent, so it is delivered again next time.
     pub async fn consume_outbox<F, Fut>(
         &self,
         consumer: OutboxConsumer,
@@ -196,7 +208,12 @@ impl<S: Payload, N: Payload, D: StorageDriver> BackendBuilder<S, N, D> {
         self.retry
     }
 
-    /// Builds the backend with default codecs.
+    /// Builds the backend with default codecs (`()` for the in-memory
+    /// driver, `SerdeCodec::jsonb()` for the sqlx drivers).
+    ///
+    /// # Errors
+    ///
+    /// As [`build`](Self::build).
     pub async fn build_default(self) -> Result<Backend<S, N>, BackendError>
     where
         D::Codec<S>: Default,
@@ -205,7 +222,13 @@ impl<S: Payload, N: Payload, D: StorageDriver> BackendBuilder<S, N, D> {
         self.build(Default::default(), Default::default()).await
     }
 
-    /// Builds the backend.
+    /// Builds the backend with the given payload codecs.
+    ///
+    /// # Errors
+    ///
+    /// Returns the driver's error when it cannot set up its storage (for
+    /// PostgreSQL drivers: connection failures, or DDL failures when
+    /// automatic setup is enabled).
     pub async fn build(
         self,
         state_codec: D::Codec<S>,

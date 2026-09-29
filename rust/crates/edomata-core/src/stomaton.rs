@@ -194,7 +194,10 @@ where
     // Running
     // ---------------------------------------------------------------------
 
-    /// Runs this stomaton with the given input and state.
+    /// Runs this stomaton with the given input and state, yielding the new
+    /// state and the output (or the rejections) with the notifications.
+    ///
+    /// The program is not consumed and can be run any number of times.
     pub fn run(&self, env: Env, state: S) -> BoxFuture<'static, ResponseE<R, N, (S, A)>> {
         (self.run)(env, state)
     }
@@ -256,6 +259,18 @@ where
     /// The next stomaton runs with the state produced by this one.
     /// Notifications of both are kept in order; a rejection of this stomaton
     /// short-circuits and keeps its notifications.
+    ///
+    /// ```
+    /// use edomata_core::{Stomaton, nonempty};
+    ///
+    /// let program: Stomaton<(), i32, &str, (), i32> = Stomaton::modify(|s| s + 1)
+    ///     .and_then(|s| if s > 1 { Stomaton::reject("too big") } else { Stomaton::modify(|s| s * 10) });
+    ///
+    /// let ok = futures::executor::block_on(program.run((), 0));
+    /// assert_eq!(ok.result, Ok((10, 10)));
+    /// let ko = futures::executor::block_on(program.run((), 5));
+    /// assert_eq!(ko.result, Err(nonempty!["too big"]));
+    /// ```
     pub fn and_then<B, F>(self, f: F) -> Stomaton<Env, S, R, N, B>
     where
         Env: Clone,
@@ -309,7 +324,17 @@ where
     }
 
     /// Decides on a new state from the resulting state; the output becomes
-    /// the new state.
+    /// the new state. An `Err` rejects the whole program.
+    ///
+    /// ```
+    /// use edomata_core::{NonEmpty, Stomaton};
+    ///
+    /// let withdraw: Stomaton<u32, u32, &str, (), u32> = Stomaton::unit().decide_state(|balance: u32| {
+    ///     balance.checked_sub(30).ok_or_else(|| NonEmpty::new("insufficient funds"))
+    /// });
+    /// assert_eq!(futures::executor::block_on(withdraw.run(0, 100)).result, Ok((70, 70)));
+    /// assert!(futures::executor::block_on(withdraw.run(0, 10)).result.is_err());
+    /// ```
     pub fn decide_state<F>(self, f: F) -> Stomaton<Env, S, R, N, S>
     where
         S: Clone,

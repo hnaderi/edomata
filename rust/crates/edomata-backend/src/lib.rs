@@ -15,8 +15,71 @@
 //!
 //! All traits are runtime-agnostic (`async fn` via `#[async_trait]`, `futures::Stream`);
 //! time and synchronisation primitives come from Tokio.
+//!
+//! ```
+//! use edomata_backend::eventsourcing::Backend;
+//! use edomata_backend::inmemory::InMemoryDriver;
+//! use edomata_backend::OutboxConsumer;
+//! use edomata_core::*;
+//!
+//! struct Account;
+//! impl DomainModel for Account {
+//!     type State = u64; type Event = u64; type Rejection = String;
+//!     fn initial(&self) -> u64 { 0 }
+//!     fn transition(&self, e: &u64, s: u64) -> Result<u64, NonEmpty<String>> { Ok(s + e) }
+//! }
+//!
+//! # tokio::runtime::Runtime::new().unwrap().block_on(async {
+//! let dsl = Account.dsl::<u64, String>();
+//! let backend = Backend::builder(Account, dsl)
+//!     .driver(InMemoryDriver::new())
+//!     .build_default()
+//!     .await?;
+//! let deposit = backend.compile(dsl.router(move |amount| {
+//!     if amount == 0 {
+//!         dsl.reject("empty deposit".to_string())
+//!     } else {
+//!         dsl.accept(amount).publish([format!("deposited {amount}")])
+//!     }
+//! }));
+//!
+//! // `Ok(Ok(()))`: accepted; `Ok(Err(reasons))`: rejected by the domain;
+//! // `Err(_)`: the backend itself failed.
+//! let now = chrono::Utc::now();
+//! assert_eq!(deposit(CommandMessage::new("c1", now, "acc-1", 10)).await?, Ok(()));
+//! assert!(deposit(CommandMessage::new("c2", now, "acc-1", 0)).await?.is_err());
+//!
+//! // Notifications are written to the outbox in the same transaction.
+//! let mut published = Vec::new();
+//! OutboxConsumer::new()
+//!     .consume_once(backend.outbox().as_ref(), &mut |item| {
+//!         published.push(item.data);
+//!         async { Ok(()) }
+//!     })
+//!     .await?;
+//! assert_eq!(published, ["deposited 10"]);
+//! # Ok::<(), edomata_backend::BackendError>(())
+//! # }).unwrap();
+//! ```
+//!
+//! ## Where it fits
+//!
+//! `edomata-backend` depends only on `edomata-core`. Everything that talks
+//! to a storage builds on it: `edomata-serde` implements its [`Codec`],
+//! `edomata-sqlx` implements its storage drivers on PostgreSQL,
+//! `edomata-backend-tests` checks drivers against it, and `edomata-saas-sqlx`,
+//! `edomata-simple` and `edomata-broker` use its backends, readers and
+//! errors. It is the port of the Scala `backend` module.
+//!
+//! ## Feature flags
+//!
+//! This crate has no Cargo feature flags.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
+#![warn(rustdoc::broken_intra_doc_links, rustdoc::private_intra_doc_links)]
+// `doc_auto_cfg` was merged into `doc_cfg` (Rust 1.92), which now shows
+// feature-gated items on docs.rs automatically.
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 use std::sync::Arc;

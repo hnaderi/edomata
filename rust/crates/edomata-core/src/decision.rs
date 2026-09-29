@@ -76,6 +76,16 @@ impl<R, E, A> Decision<R, E, A> {
 
     /// Constructs a program that either outputs a value or rejects with all
     /// the given reasons.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, nonempty};
+    ///
+    /// let ok: Decision<&str, (), i32> = Decision::validate(Ok(1));
+    /// assert_eq!(ok, Decision::InDecisive(1));
+    ///
+    /// let ko: Decision<&str, (), i32> = Decision::validate(Err(nonempty!["too small", "odd"]));
+    /// assert_eq!(ko.rejections(), Some(&nonempty!["too small", "odd"]));
+    /// ```
     pub fn validate(validation: Result<A, NonEmpty<R>>) -> Self {
         match validation {
             Ok(a) => Decision::InDecisive(a),
@@ -124,7 +134,20 @@ impl<R, E, A> Decision<R, E, A> {
 
     /// Binds another decision to this one, creating a new decision.
     ///
-    /// Events accumulate in order, and a rejection terminates the chain.
+    /// Events accumulate in order, and a rejection terminates the chain:
+    /// `f` is not called when this decision is rejected, and a rejection
+    /// returned by `f` drops the events accepted so far.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, nonempty};
+    ///
+    /// let opened: Decision<&str, &str, u32> = Decision::accept_return(100, "opened");
+    /// let deposited = opened.and_then(|balance| Decision::accept_return(balance + 50, "deposited"));
+    /// assert_eq!(deposited, Decision::Accepted { events: nonempty!["opened", "deposited"], result: 150 });
+    ///
+    /// let rejected = deposited.and_then(|_| Decision::<_, _, ()>::reject("closed"));
+    /// assert_eq!(rejected, Decision::Rejected(nonempty!["closed"]));
+    /// ```
     pub fn and_then<B, F: FnOnce(A) -> Decision<R, E, B>>(self, f: F) -> Decision<R, E, B> {
         match self {
             Decision::Accepted { events, result } => match f(result) {
@@ -192,6 +215,13 @@ impl<R, E, A> Decision<R, E, A> {
     }
 
     /// Ignores events and converts this decision to a `Result`.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, nonempty};
+    ///
+    /// assert_eq!(Decision::<&str, &str, i32>::accept_return(1, "e").to_result(), Ok(1));
+    /// assert_eq!(Decision::<&str, &str, i32>::reject("no").to_result(), Err(nonempty!["no"]));
+    /// ```
     pub fn to_result(self) -> Result<A, NonEmpty<R>> {
         self.visit(Err, Ok)
     }
@@ -269,7 +299,16 @@ impl<R, E, A> Decision<R, E, A> {
         self.flat_tap(|a| Decision::from_result(f(a)))
     }
 
-    /// Recovers from a rejection.
+    /// Recovers from a rejection: `f` receives the rejection reasons and
+    /// decides again. Non-rejected decisions are returned unchanged.
+    ///
+    /// ```
+    /// use edomata_core::Decision;
+    ///
+    /// let d: Decision<&str, &str, i32> = Decision::reject("not found");
+    /// let recovered = d.handle_error_with(|_| Decision::accept_return(0, "created"));
+    /// assert_eq!(recovered, Decision::accept_return(0, "created"));
+    /// ```
     pub fn handle_error_with<F>(self, f: F) -> Decision<R, E, A>
     where
         F: FnOnce(NonEmpty<R>) -> Decision<R, E, A>,
@@ -283,7 +322,23 @@ impl<R, E, A> Decision<R, E, A> {
     /// Stack-safe iteration: repeatedly applies `f` while it returns
     /// `Continue`, accumulating events along the way.
     ///
-    /// This is the counterpart of Cats' `tailRecM`.
+    /// This is the counterpart of Cats' `tailRecM`. It runs in constant stack
+    /// space, however many iterations it takes; a rejection stops the loop.
+    ///
+    /// ```
+    /// use std::ops::ControlFlow;
+    /// use edomata_core::{Decision, nonempty};
+    ///
+    /// // Accept one event per step until the counter reaches 3.
+    /// let d: Decision<(), u8, &str> = Decision::tail_rec(0u8, |i| {
+    ///     if i < 3 {
+    ///         Decision::accept_return(ControlFlow::Continue(i + 1), i)
+    ///     } else {
+    ///         Decision::pure(ControlFlow::Break("done"))
+    ///     }
+    /// });
+    /// assert_eq!(d, Decision::Accepted { events: nonempty![0, 1, 2], result: "done" });
+    /// ```
     pub fn tail_rec<S, F>(init: S, mut f: F) -> Decision<R, E, A>
     where
         F: FnMut(S) -> Decision<R, E, ControlFlow<A, S>>,
@@ -325,7 +380,14 @@ impl<R, E, A> Decision<R, E, A> {
         }
     }
 
-    /// Converts the events to another type.
+    /// Converts the events to another type, keeping their order.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, nonempty};
+    ///
+    /// let d: Decision<(), i32, ()> = Decision::accept(nonempty![1, 2]);
+    /// assert_eq!(d.map_events(|e| e * 10), Decision::accept(nonempty![10, 20]));
+    /// ```
     pub fn map_events<E2, F: FnMut(E) -> E2>(self, f: F) -> Decision<R, E2, A> {
         match self {
             Decision::InDecisive(a) => Decision::InDecisive(a),
@@ -356,6 +418,15 @@ impl<R, E> Decision<R, E, ()> {
     /// Constructs a program that decides to accept a sequence of events.
     ///
     /// A single event or a [`NonEmpty`] of events can be passed.
+    ///
+    /// ```
+    /// use edomata_core::{Decision, nonempty};
+    ///
+    /// let one: Decision<(), &str, ()> = Decision::accept("opened");
+    /// let many: Decision<(), &str, ()> = Decision::accept(nonempty!["opened", "deposited"]);
+    /// assert_eq!(one.events().map(|e| e.len()), Some(1));
+    /// assert_eq!(many.events().map(|e| e.len()), Some(2));
+    /// ```
     pub fn accept(events: impl Into<NonEmpty<E>>) -> Self {
         Decision::Accepted {
             events: events.into(),
@@ -365,6 +436,13 @@ impl<R, E> Decision<R, E, ()> {
 
     /// Constructs a program that accepts a sequence of events when
     /// `predicate` holds, or does nothing otherwise.
+    ///
+    /// ```
+    /// use edomata_core::Decision;
+    ///
+    /// assert!(Decision::<(), _, ()>::accept_when(true, "e").is_accepted());
+    /// assert!(Decision::<(), _, ()>::accept_when(false, "e").is_indecisive());
+    /// ```
     pub fn accept_when(predicate: bool, events: impl Into<NonEmpty<E>>) -> Self {
         if predicate {
             Self::accept(events)
@@ -410,6 +488,19 @@ impl<R, E> Decision<R, E, ()> {
 
     /// Constructs a program that rejects with a sequence of reasons when
     /// `predicate` holds, or does nothing otherwise.
+    ///
+    /// Handy for guards at the start of a chain:
+    ///
+    /// ```
+    /// use edomata_core::Decision;
+    ///
+    /// let withdraw = |balance: u32, amount: u32| {
+    ///     Decision::reject_when(amount > balance, "insufficient funds")
+    ///         .then(Decision::accept(amount))
+    /// };
+    /// assert!(withdraw(10, 5).is_accepted());
+    /// assert!(withdraw(10, 50).is_rejected());
+    /// ```
     pub fn reject_when(predicate: bool, reasons: impl Into<NonEmpty<R>>) -> Self {
         if predicate {
             Self::reject(reasons)
