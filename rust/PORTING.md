@@ -376,6 +376,11 @@ All under `rust/examples/src/bin/`; run with `cargo run -p edomata-examples --bi
 | `principles/index.md`, `principles/definitions.md` | `principles/index.md`, `principles/definitions.md` | |
 | `backends/skunk.md`, `backends/doobie.md` | `backends/postgres.md` (one sqlx page) | `book/samples/src/running.rs` |
 | `backends/java-api.md` | `backends/simple-api.md` | `book/samples/src/simple.rs` |
-| *(none)* | `backends/brokers.md` | `book/samples/src/processes.rs`, `examples/src/bin/{kafka,rabbitmq}_relay.rs` |
+| *(none)* | `backends/brokers.md` | `book/samples/src/processes.rs`, `book/samples/src/brokers.rs` |
+| *(none)* | `guides/cookbook.md`, `guides/testing.md` | `book/samples/src/cookbook.rs`, `book/samples/src/testing.rs`, `book/samples/src/eventsourcing.rs` |
+| *(none)* | `operations/schema.md`, `operations/relays.md`, `operations/saas.md` | `book/samples/src/operations.rs` |
+| *(none)* | `operations/migrations.md` | |
+| *(none)* | `operations/troubleshooting.md` | `book/samples/src/troubleshooting.rs` |
+| *(none)* | `reference/api.md` (links to the rustdoc deployed with the website) | |
 | `other/modules.md`, `other/faq.md` | `other/modules.md`, `other/faq.md` | |
 | *(none)* | `other/migration-guide.md`, `other/porting.md` (this file), `design/*` (the ADRs) | |

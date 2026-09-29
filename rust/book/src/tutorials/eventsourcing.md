@@ -147,7 +147,7 @@ To complete the model we define the transitions (the famous event-sourcing fold)
 
 > **Thinking further**: not all timelines are valid, and you do not control what you read from a journal. With states modelled as enums, the compiler makes those impossible cases explicit, which lets you find logical problems very easily.
 
-> **Info**: if a programming error in your fold would cause a conflict, Edomata has your back: a decision whose events conflict with the model is never persisted (see the [processes](processes.md) chapter for `AggregateState::Conflicted`).
+> **Info**: if a programming error in your fold would cause a conflict, Edomata has your back: a decision whose events conflict with the model is never persisted. `execute` reports it as `EdomatonResult::Conflicted`, and the backend returns the reasons as a rejection. A journal that already conflicts with the model (after a change of meaning of an event, for instance) is read as `AggregateState::Conflicted`, see the [processes](processes.md#repository) chapter.
 
 As simple as that!
 
@@ -227,7 +227,7 @@ Now we can assert our expectations with any test framework:
 {{#include ../../samples/src/eventsourcing.rs:scenario_assert}}
 ```
 
-The `edomata-testkit` crate makes such tests one-liners:
+The `edomata-testkit` crate makes such tests one-liners (see [Testing](../guides/testing.md)):
 
 ```rust,ignore
 {{#include ../../samples/src/testing.rs:testkit}}

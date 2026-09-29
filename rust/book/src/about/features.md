@@ -32,6 +32,6 @@ You can create your own models and use them with or without the other data model
 ## Production backends and integrations
 
 - `edomata-sqlx`: event-sourcing and CQRS drivers on PostgreSQL (journal, outbox, commands, snapshots, states, migrations), schema or prefixed naming, DDL extraction for Flyway, `skip_setup`.
-- `edomata-serde`: `jsonb` (default), `json` and `bytea` payloads through serde, compatible with the payloads written by the Scala Circe, jsoniter and uPickle codecs.
+- `edomata-serde`: `jsonb` (default), `json` and `bytea` payloads through serde. It reads and writes the JSON of the Scala Circe, jsoniter and uPickle codecs when your types use the matching serde representation; uPickle's `msgpack` payloads (MessagePack in `bytea`) are not readable.
 - `edomata-saas` / `edomata-saas-sqlx`: multi-tenant CRUD with automatic tenant isolation and authorisation, tenant-aware tables and optional Row-Level Security.
 - `edomata-broker` with `edomata-kafka` and `edomata-rabbitmq`: opt-in, at-least-once distribution of outbox notifications and journal events with leader election and `LISTEN/NOTIFY` wake-ups (a Rust addition without Scala equivalent).

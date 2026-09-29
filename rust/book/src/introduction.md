@@ -59,6 +59,9 @@ This library is meant to help with that: it shows how those ideas map to values 
 ## Next
 
 - [Getting started](tutorials/getting-started.md)
+- [Cookbook](guides/cookbook.md) and [Testing](guides/testing.md)
+- [Operations](operations/schema.md) and [Troubleshooting](operations/troubleshooting.md)
+- [API reference](reference/api.md)
 - [Principles](principles/index.md)
 - [Migration guide for Scala and Java users](other/migration-guide.md)
 - [FAQ](other/faq.md)

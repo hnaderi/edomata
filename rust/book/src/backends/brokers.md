@@ -19,7 +19,7 @@ command ──▶ aggregate ──▶ PostgreSQL: journal + outbox (one transact
 
 - **At-least-once**: a crash between publishing and marking redelivers the batch. Every message has a stable, deterministic id, `"{source}:outbox:{seq_nr}"` (or `"{source}:journal:{seq_nr}"`), so consumers deduplicate on it (the `edomata-id` header / `message_id` property).
 - **Per-stream ordering**: relays publish in sequence order, one batch at a time; Kafka uses the stream id as partition key, RabbitMQ as routing key and awaits each confirm.
-- **Resilience**: transient failures are retried with exponential backoff (`RetryPolicy`); permanent failures stop the relay with an error. `RelayMetrics` exposes published / retried / failed / lag counters, and the relay emits `tracing` events.
+- **Resilience**: transient failures are retried with exponential backoff (`RetryPolicy`); permanent failures, and transient ones once the policy's `max_retries` budget is exhausted, stop the relay with an error (counted as `failed`). `RelayMetrics` exposes published / retried / failed / lag counters, and the relay emits `tracing` events.
 - **Multiple replicas**: `run_as_leader` with a `LeaderLock` (a PostgreSQL advisory lock) ensures only one relay per source publishes at a time, with automatic failover.
 
 ## Relaying the outbox
@@ -28,12 +28,12 @@ command ──▶ aggregate ──▶ PostgreSQL: journal + outbox (one transact
 {{#include ../../samples/src/processes.rs:relay}}
 ```
 
-With a real broker, the publisher is a `KafkaPublisher` or a `RabbitMqPublisher`. The full examples (`rust/examples/src/bin/kafka_relay.rs`, `rabbitmq_relay.rs`) wire a writer and a relay:
+With a real broker, the publisher is a `KafkaPublisher` or a `RabbitMqPublisher`. The samples below are compiled with the `kafka` / `rabbitmq` features of the samples crate (`rust/book/samples/src/brokers.rs`); the full examples (`rust/examples/src/bin/kafka_relay.rs`, `rabbitmq_relay.rs`) also wire a writer:
 
 ### Kafka
 
 ```rust,ignore
-{{#include ../../../examples/src/bin/kafka_relay.rs:relay}}
+{{#include ../../samples/src/brokers.rs:kafka}}
 ```
 
 `KafkaPublisher::builder(bootstrap)` configures an idempotent producer (`enable.idempotence=true`, `acks=all`); `with_topic` chooses the topic per message (default: one topic per source), `with_config` sets any librdkafka property. Ids and metadata travel as record headers (see `edomata_broker::headers`).
@@ -45,7 +45,7 @@ KAFKA_BOOTSTRAP=localhost:9092 cargo run -p edomata-examples --features kafka --
 ### RabbitMQ
 
 ```rust,ignore
-{{#include ../../../examples/src/bin/rabbitmq_relay.rs:relay}}
+{{#include ../../samples/src/brokers.rs:rabbitmq}}
 ```
 
 `RabbitMqPublisher::connect(uri)` enables publisher confirms; `with_exchange` / `with_routing_key` choose the route per message (defaults: the source and the stream id); messages are persistent (`delivery_mode = 2`) with `message_id` set, and the publisher reconnects after a connection failure.
@@ -66,4 +66,4 @@ A relay passes over the outbox when started, whenever a wake-up stream yields, a
 
 `RecordingPublisher` records every message it receives and can fail before or after publishing on demand, which is how the crash-between-publish-and-mark scenario is tested without a broker. The `edomata-kafka` and `edomata-rabbitmq` crates run their integration tests against real brokers started with testcontainers (Docker required): no message marked before acknowledgment, redelivery and deduplication, per-stream ordering, leader election with two relays.
 
-See [ADR 0012](../design/adr-0012.md) for the design decisions.
+Running relays with several replicas, deduplicating on the consumer side and monitoring are covered in [Running relays in production](../operations/relays.md). See [ADR 0012](../design/adr-0012.md) for the design decisions.

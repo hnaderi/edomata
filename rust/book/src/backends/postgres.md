@@ -17,9 +17,10 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ## Imports
 
 ```rust,ignore
-use edomata_backend::eventsourcing::Backend;           // or edomata_backend::cqrs::Backend
-use edomata_sqlx::{SqlxDriver, SqlxCqrsDriver, SqlxCodec, PGNaming, PGSchema, PgPool};
+{{#include ../../samples/src/running.rs:imports}}
 ```
+
+The CQRS driver is `edomata_sqlx::SqlxCqrsDriver`.
 
 ## Defining codecs
 
@@ -63,7 +64,7 @@ If you manage your schema with Flyway (or another migration tool), extract the D
 
 ### 1. Generate the migration SQL
 
-`PGSchema` returns one standalone statement per element (`CREATE TABLE`, `CREATE INDEX`), byte-for-byte identical to the Scala library's output:
+`PGSchema` returns one standalone statement per element (`CREATE SCHEMA IF NOT EXISTS` first in schema mode only, then `CREATE TABLE` and `CREATE INDEX`), byte-for-byte identical to the Scala library's output:
 
 ```rust,ignore
 {{#include ../../samples/src/running.rs:flyway}}
@@ -85,7 +86,7 @@ Copy the output into a migration file (e.g. `V1__create_accounts_tables.sql`). T
 
 ## Cross-process wake-ups
 
-`with_outbox_notify_channel(channel)` and `with_journal_notify_channel(channel)` make the driver raise `NOTIFY channel` in the writing transaction, so that a relay or process in another process can `LISTEN` instead of polling (`edomata_broker::postgres::listen`). Off by default; the Scala drivers have no equivalent.
+`with_outbox_notify_channel(channel)` (on `SqlxDriver` and `SqlxCqrsDriver`) and `with_journal_notify_channel(channel)` (on `SqlxDriver` only) make the driver raise `NOTIFY channel` in the writing transaction, so that a relay or process in another process can `LISTEN` instead of polling (`edomata_broker::postgres::listen`). Off by default; the Scala drivers have no equivalent.
 
 ## Compatibility with the Scala backends
 

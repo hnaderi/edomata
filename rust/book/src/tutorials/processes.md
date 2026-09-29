@@ -67,7 +67,7 @@ Use `backend.outbox()` directly, or the provided `OutboxConsumer`:
 {{#include ../../samples/src/processes.rs:repository}}
 ```
 
-> **Tip**: the repository yields `AggregateState`: a valid state with its version, or the last valid state together with the conflicting event. Your journal never becomes corrupt through conflicting decisions, as they are rejected before being written; but if you change the *meaning* of events you change the meaning of history, and may face a conflicting stream. Invest in compatibility testing when migrating.
+> **Tip**: the repository yields `AggregateState`: `Valid` (a state with its version), or `Conflicted { last, on_event, errors }` (the last valid state, the event that could not be applied and why). Your journal never becomes corrupt through conflicting decisions, as they are rejected before being written; but if you change the *meaning* of events you change the meaning of history, and may face a conflicting stream. Invest in compatibility testing when migrating.
 
 ### Wake-ups
 

@@ -70,21 +70,33 @@ pub fn v1_to_v3() -> EventMigration {
 // ANCHOR_END: chaining
 
 // ANCHOR: running
-/// Run the migrations before building the backend: idempotent, safe on every startup.
+/// Runs the migrations once the tables exist and before any command is
+/// handled: idempotent, safe on every start-up.
 pub async fn run_migrations(
     pool: edomata_sqlx::PgPool,
 ) -> Result<(), edomata_backend::BackendError> {
+    use edomata_backend::BackendError;
+    use edomata_postgres::PGSchema;
     use edomata_sqlx::{SqlxDriver, SqlxMigrations};
 
-    let naming = PGNaming::prefixed_str("products")
-        .map_err(|e| edomata_backend::BackendError::persistence(e.to_string()))?;
+    let naming = PGNaming::prefixed_str("products").map_err(BackendError::persistence)?;
+    // 1. The journal and snapshots tables must exist: here from `PGSchema`,
+    //    as Flyway would create them.
+    for statement in PGSchema::eventsourcing(&naming) {
+        sqlx::query(&statement)
+            .execute(&pool)
+            .await
+            .map_err(BackendError::unknown)?;
+    }
+    // 2. The pending migrations rewrite the journal.
     let result = SqlxMigrations::run(&naming, &pool, &all_migrations()).await?;
     println!(
         "Applied: {:?}, skipped: {:?}",
         result.applied, result.skipped
     );
-    // Now build the backend with the latest event codec only.
-    let _driver = SqlxDriver::new(naming, pool).await?;
+    // 3. Then the driver (no DDL needed any more) and the backend, with the
+    //    latest event codec only.
+    let _driver = SqlxDriver::new_with(naming, pool, true).await?;
     Ok(())
 }
 // ANCHOR_END: running

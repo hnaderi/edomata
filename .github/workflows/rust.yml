@@ -125,6 +125,8 @@ jobs:
           workspaces: rust
       - run: cargo install mdbook --locked
       - run: mdbook build book
+      # Every include, anchor and relative link of the rendered book resolves.
+      - run: python3 book/check_links.py
       # The book's code samples are the `edomata-book-samples` workspace
       # member, compiled and tested by the lint and test jobs.
 

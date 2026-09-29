@@ -19,6 +19,6 @@
 | `edomata-examples` | `examples/` | one binary per Scala example, plus the broker relays | native |
 | `edomata-book-samples` | `docs/` | the compiled samples of this book | native |
 
-Every crate is `#![forbid(unsafe_code)]` and supports Rust 1.88 or later (edition 2024); every library crate documents every public item (the samples crate is exempt). Only `edomata-core` is built for `wasm32-unknown-unknown` in CI. None of them depends on a JVM, Scala or Java artifact.
+`unsafe` code is forbidden in every crate (the `unsafe_code = "forbid"` workspace lint, plus `#![forbid(unsafe_code)]` in each library crate), and every crate supports Rust 1.88 or later (edition 2024); every library crate documents every public item (the samples crate is exempt). Only `edomata-core` is built for `wasm32-unknown-unknown` in CI. None of them depends on a JVM, Scala or Java artifact.
 
 The complete mapping of Scala modules and test suites to Rust is in the [porting map](porting.md).

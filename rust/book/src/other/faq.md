@@ -24,7 +24,7 @@ Absolutely. Backends are interpreters for your programs: implement the `StorageD
 
 ## Can Rust and Scala services share a database?
 
-Yes. The tables and DDL are byte-for-byte identical, `jsonb` payloads written by serde are the same JSON the Scala Circe, jsoniter and uPickle codecs write and read (except uPickle's `msgpack`), and a cross-language test exercises exactly this. See the [migration guide](migration-guide.md).
+Yes. The tables and DDL are byte-for-byte identical, and serde reads and writes the JSON of each Scala codec (Circe, jsoniter, uPickle) once your types use the matching serde representation; only uPickle's `msgpack` payloads (MessagePack in `bytea`) cannot be read. A cross-language test exercises exactly this. See the [migration guide](migration-guide.md#matching-the-json-shape).
 
 ## What is the point of this library? I can create my own data structures.
 

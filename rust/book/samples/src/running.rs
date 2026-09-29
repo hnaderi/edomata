@@ -4,10 +4,12 @@
 use crate::eventsourcing::{
     Account, AccountModel, Command, Event, Notification, Rejection, account_service,
 };
-use edomata_backend::eventsourcing::Backend;
+// ANCHOR: imports
+use edomata_backend::eventsourcing::Backend; // or edomata_backend::cqrs::Backend
 use edomata_backend::{BackendError, RetryConfig};
 use edomata_core::*;
 use edomata_sqlx::{PGNaming, PGSchema, PgPool, SqlxCodec, SqlxDriver};
+// ANCHOR_END: imports
 
 // ANCHOR: minimal
 /// Wires the account service of the previous chapters to PostgreSQL.

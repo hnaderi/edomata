@@ -1013,7 +1013,9 @@ dependencies = [
  "edomata-backend",
  "edomata-broker",
  "edomata-core",
+ "edomata-kafka",
  "edomata-postgres",
+ "edomata-rabbitmq",
  "edomata-saas",
  "edomata-saas-sqlx",
  "edomata-serde",
@@ -1025,6 +1027,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
+ "tracing",
  "uuid",
 ]
 

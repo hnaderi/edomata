@@ -26,6 +26,8 @@ edomata-saas-sqlx = { workspace = true }
 edomata-simple = { workspace = true }
 edomata-broker = { workspace = true }
 edomata-testkit = { workspace = true }
+edomata-kafka = { workspace = true, optional = true }
+edomata-rabbitmq = { workspace = true, optional = true }
 
 chrono = { workspace = true, features = ["clock"] }
 futures = { workspace = true, features = ["executor"] }
@@ -34,6 +36,13 @@ serde_json = { workspace = true }
 sqlx = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
+tracing = { workspace = true }
+
+[features]
+# The broker samples, opt-in like in `edomata-examples`: without these
+# features no broker client is built or linked.
+kafka = ["dep:edomata-kafka"]
+rabbitmq = ["dep:edomata-rabbitmq"]
 
 [lints.rust]
 unsafe_code = "forbid"

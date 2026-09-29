@@ -16,22 +16,24 @@ edomata-saas = { path = "rust/crates/edomata-saas" }
 edomata-saas-sqlx = { path = "rust/crates/edomata-saas-sqlx" } # tenant-aware PostgreSQL driver
 ```
 
-`edomata-saas` re-exports what an application needs from the core (`CommandMessage`, `Decision`, `MessageMetadata`, `NonEmpty`, `PGNaming`, `PGNamespace`), so `use edomata_saas::*;` is usually enough.
+`edomata-saas` re-exports the core types its APIs take and return (`CommandMessage`, `Decision`, `MessageMetadata`, `NonEmpty`, `PGNaming`, `PGNamespace`), so `use edomata_saas::*;` covers the programs. An application still depends on `edomata-core` for the `CqrsModel` / `DomainModel` traits it implements, and on `edomata-backend` for `Backend::builder`:
+
+```toml
+[dependencies]
+edomata-core = { git = "https://github.com/beyond-scale-group/edomata" }
+edomata-backend = { git = "https://github.com/beyond-scale-group/edomata" }
+```
 
 ## Core types
 
 ### `AuthPolicy`
 
-The central abstraction for authentication and authorisation. Implement it for your auth context type:
+The central abstraction for authentication and authorisation, implemented for your auth context type `Auth` (the trait requires `Send + Sync`). It has two methods:
 
-```rust,ignore
-pub trait AuthPolicy<Auth>: Send + Sync {
-    /// The tenant the caller acts for.
-    fn tenant_id(&self, auth: &Auth) -> TenantId;
-    /// `Ok(())` if the caller may perform `action`, `Err(reason)` otherwise.
-    fn authorize(&self, auth: &Auth, action: CrudAction) -> Result<(), String>;
-}
-```
+- `tenant_id(&self, auth: &Auth) -> TenantId`: the tenant the caller acts for;
+- `authorize(&self, auth: &Auth, action: CrudAction) -> Result<(), String>`: `Ok(())` if the caller may perform `action`, `Err(reason)` otherwise.
+
+The [custom auth types](#custom-auth-types) section below implements it.
 
 ### `CallerIdentity` and `RoleBasedPolicy`
 
@@ -104,14 +106,14 @@ Edomata does not handle reads. The SaaS crate provides abstractions that make te
 
 ## Backend wiring
 
-The tenant-aware driver `SaaSSqlxCqrsDriver` fills the `tenant_id` / `owner_id` columns of the states and outbox tables, so that Row-Level Security and tenant-scoped indexes are possible. `SaaSPGSchema` generates the DDL (with optional RLS statements) for migration tools:
+The tenant-aware driver `SaaSSqlxCqrsDriver` fills the `tenant_id` and `owner_id` columns of the states table and the `tenant_id` column of the outbox table, so that Row-Level Security and tenant-scoped indexes are possible. `SaaSPGSchema` generates the DDL (with optional RLS statements) for migration tools:
 
 ```rust,ignore
 {{#include ../../samples/src/saas.rs:wiring}}
 ```
 
-`TenantStateLister::list_by_tenant` lists the states of one tenant, and `SaaSCodec` pairs a payload codec with the tenant extractor (`TenantExtractor`, implemented by `CrudState`).
+`TenantStateLister::list_by_tenant` lists the states of one tenant, and `SaaSCodec` wraps a payload codec; state codecs also carry the tenant extractor (`TenantExtractor`, implemented by `CrudState`) that fills those columns, notification codecs need none. Deploying with Row-Level Security is covered in [Multi-tenant deployment](../operations/saas.md).
 
 ## Build configuration
 
-For maximum enforcement, an application can depend only on `edomata-saas` (and the SaaS driver) and build every program through the guarded DSLs: the raw `DomainDsl` / `CqrsDomainDsl` are reachable only through `service.domain()`, which is meant for `Backend::builder`.
+For maximum enforcement, build every program through the guarded DSLs (`service.saas()`), and use `service.domain()` only to pass the DSL marker to `Backend::builder`. The raw `DomainDsl` / `CqrsDomainDsl` stay reachable (`model.dsl()` and `domain()`), so this is a convention to keep in code review, for example by searching for `.dsl::<` and `unsafe_` in the SaaS code.

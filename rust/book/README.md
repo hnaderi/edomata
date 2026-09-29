@@ -8,4 +8,11 @@ mdbook build rust/book      # HTML under rust/book/book/
 mdbook serve rust/book      # live preview
 ```
 
-Every code block of the tutorials (except the `AuthPolicy` trait quoted in the SaaS chapter) is included from `samples/` (the `edomata-book-samples` workspace member), so the samples are compiled and linted by `cargo clippy --workspace --all-targets` and, when they need no database, exercised by `cargo test -p edomata-book-samples`. The porting map and the ADRs are included from `rust/PORTING.md` and `rust/docs/adr/`.
+Every Rust code block of the chapters is included from `samples/` (the `edomata-book-samples` workspace member) by anchor, so the samples are compiled and linted by `cargo clippy --workspace --all-targets --all-features` and exercised by `cargo test -p edomata-book-samples` (the PostgreSQL integration test of the testing chapter reads `DATABASE_URL`; the other samples that need a database or a broker are compiled but not run, and the broker ones are behind the `kafka` / `rabbitmq` features). The porting map and the ADRs are included from `rust/PORTING.md` and `rust/docs/adr/`.
+
+After a build, `check_links.py` checks that every include and anchor exists and that every relative link and `#fragment` of the rendered HTML resolves (CI runs it):
+
+```bash
+cd rust
+mdbook build book && python3 book/check_links.py
+```

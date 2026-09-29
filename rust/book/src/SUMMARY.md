@@ -17,6 +17,11 @@
 - [SaaS multi-tenant module](tutorials/saas.md)
 - [Event migrations](tutorials/migrations.md)
 
+# Guides
+
+- [Cookbook](guides/cookbook.md)
+- [Testing](guides/testing.md)
+
 # Principles
 
 - [Principles](principles/index.md)
@@ -27,6 +32,18 @@
 - [PostgreSQL (sqlx)](backends/postgres.md)
 - [Simple API](backends/simple-api.md)
 - [Distributing events with Kafka / RabbitMQ](backends/brokers.md)
+
+# Operations
+
+- [Schema management](operations/schema.md)
+- [Event migrations in production](operations/migrations.md)
+- [Running relays in production](operations/relays.md)
+- [Multi-tenant deployment](operations/saas.md)
+- [Troubleshooting](operations/troubleshooting.md)
+
+# Reference
+
+- [API reference](reference/api.md)
 
 # Other
 

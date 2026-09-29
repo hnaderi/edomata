@@ -253,7 +253,8 @@ A Cargo workspace under `rust/` ports the library to Rust, milestone by mileston
 - **Crates**: `rust/crates/*` (`edomata-core` first; see `rust/README.md` for the full list)
 - **Porting map**: `rust/PORTING.md` maps every Scala module and test suite to its Rust counterpart
 - **Book**: `rust/book/` (mdBook; `mdbook build rust/book`); chapters include their code from the `rust/book/samples`
-  crate (`edomata-book-samples`) by anchor, so samples compile and are tested with the workspace
+  crate (`edomata-book-samples`) by anchor, so samples compile and are tested with the workspace;
+  `python3 rust/book/check_links.py` (after `mdbook build`) checks every include, anchor and relative link
 - **ADRs**: `rust/docs/adr/` records design decisions (effects/futures, `chrono`, `Edomaton` shape, `RaiseError`, backend abstractions, PostgreSQL naming and golden DDL, codecs and the `jsonb` wire format, the sqlx driver, the test kit and SaaS crates, the simple facade, the e2e/examples/cross-language layout, broker distribution, documentation)
 - **MSRV**: 1.88 (edition 2024); every crate has `#![forbid(unsafe_code)]`
 - **CI**: `.github/workflows/rust.yml` (fmt, clippy, doc, tests with PostgreSQL plus a JDK and `sbt` for the cross-language test and Docker for the testcontainers broker tests, MSRV, wasm32 build of `edomata-core`, mdBook build, no-JVM-dependency and no-broker-client guards)

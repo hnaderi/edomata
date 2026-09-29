@@ -15,18 +15,20 @@ Traditional applications store data by overwriting the current state. When you u
 
 ## Add to your build
 
-The crates live in the `rust/` workspace of the repository. Depend on them by path (or by git):
+The crates live in the `rust/` workspace of the repository. Depend on them by git (Cargo finds each crate in the workspace by its name):
 
 ```toml
 [dependencies]
-edomata-core = { path = "rust/crates/edomata-core" }
+edomata-core = { git = "https://github.com/beyond-scale-group/edomata" }
 # a PostgreSQL backend and serde codecs
-edomata-backend = { path = "rust/crates/edomata-backend" }
-edomata-sqlx = { path = "rust/crates/edomata-sqlx" }
-edomata-serde = { path = "rust/crates/edomata-serde" }
+edomata-backend = { git = "https://github.com/beyond-scale-group/edomata" }
+edomata-sqlx = { git = "https://github.com/beyond-scale-group/edomata" }
+edomata-serde = { git = "https://github.com/beyond-scale-group/edomata" }
 ```
 
-`edomata-core` has no runtime dependency and builds for `wasm32-unknown-unknown`; the backends need Tokio and sqlx. The minimum supported Rust version is 1.88 (edition 2024).
+With a local checkout, use `path = ".../edomata/rust/crates/edomata-core"` (and so on) instead, relative to your own `Cargo.toml`.
+
+`edomata-core` does not depend on an async runtime (only on `chrono`, plus `serde` behind its `serde` feature) and builds for `wasm32-unknown-unknown`; the backends need Tokio and sqlx. The minimum supported Rust version is 1.88 (edition 2024).
 
 ## Layers of abstraction
 

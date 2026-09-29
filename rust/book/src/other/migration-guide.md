@@ -49,7 +49,7 @@ Payloads written by uPickle's `msgpack` codec (real MessagePack in `bytea` colum
 | `ResponseD`, `ResponseE`, `Action`, `DecisionT` | same names (`Action` and `DecisionT` are futures) |
 | `Edomaton[F, Env, R, E, N, A]` | `Edomaton<Env, R, E, N, A>` |
 | `Stomaton[F, Env, S, R, E, A]` | `Stomaton<Env, S, R, N, A>` |
-| `DomainModel` + `ModelTC`, `CQRSModel` | `DomainModel`, `CqrsModel` traits (`perform`, `apply_all`, `dsl`) |
+| `DomainModel` + `ModelTC`, `CQRSModel` | `DomainModel` (`perform`, `apply_all`, `dsl`) and `CqrsModel` (`dsl`) traits |
 | `Domain[...]`, `App.router`, `dsl.*` | `model.dsl::<C, N>()`, `dsl.router`, `dsl.state`, `dsl.decide`, `dsl.publish`, ... |
 | `flatMap`, `>>`, `as`, `void` | `and_then` (alias `flat_map`), `then`, `replace`, `void` |
 | `modifyS`, `decideS`, `set` | `modify_s`, `decide_s`, `set` |
@@ -66,7 +66,7 @@ Payloads written by uPickle's `msgpack` codec (real MessagePack in `bytea` colum
 | `given AuthPolicy[Auth]` | an `AuthPolicy<Auth>` value passed to `SaaSCqrsService::new(policy, mk_rejection)` |
 | `SaaS.guardedRouter`, `unsafeUnguardedRouter` | `saas.guarded_router`, `saas.unsafe_unguarded_router` |
 
-Behavioural differences are recorded in the [ADRs](../design/index.md); the main ones: programs have no error channel (a failing effect is a panic or a `BackendError` from the storage, ADR 0005); the `Traverse` law set of `Decision` is not ported (no `Traverse` in Rust, ADR 0004); `Response`, the deprecated Scala alias, is not ported.
+Behavioural differences are recorded in the [ADRs](../design/index.md); the main ones: programs have no error channel (a failing effect is a panic or a `BackendError` from the storage, ADR 0005); Cats' `Traverse` instance of `ResponseT` is not ported (no `Traverse` in Rust, ADR 0004; `Decision` keeps its traverse laws, as `FromIterator` and `transpose`); `Response`, the deprecated Scala alias, is not ported.
 
 ## For Java users
 
@@ -92,15 +92,15 @@ The [Simple API](../backends/simple-api.md) chapter walks through a complete exa
 ## What is new in Rust
 
 - **Broker distribution**: `OutboxRelay` / `JournalRelay` with Kafka and RabbitMQ publishers, leader election and at-least-once delivery with stable ids ([Distributing events](../backends/brokers.md)).
-- **Cross-process wake-ups**: `with_outbox_notify_channel` / `with_journal_notify_channel` on the drivers plus `postgres::listen`.
+- **Cross-process wake-ups**: `with_outbox_notify_channel` / `with_journal_notify_channel` on the drivers plus `edomata_broker::postgres::listen`.
 - **In-memory driver** reproducing the PostgreSQL constraints, for tests and prototypes.
 - **DDL under an advisory lock** when several replicas create tables at once.
 - `wasm32` support for `edomata-core` (built in CI).
 
 ## Step by step
 
-1. Point a Rust service at the existing database with the same namespace and naming strategy (`schema` unless you used `PGNamespace.prefixed`).
-2. Define your event, state and notification types with serde derives matching the stored JSON; verify with a small program that reads the journal (`backend.journal().read_all()`).
+1. Point a Rust service at the existing database with the same namespace and naming strategy (`schema` unless you used `PGNamespace.prefixed`; Java API users are on prefixed naming, which `SimpleBackend::builder(..).namespace(..)` also uses).
+2. Define your event, state and notification types with serde derives matching the stored JSON; verify with a small program that reads the journal (`backend.journal().read_all().try_collect()`, a stream).
 3. Run the Rust and Scala services side by side; they share the `commands` table, so a command handled by one is redundant for the other.
 4. Move processes (outbox consumers, projections) over; `OutboxConsumer` marks items exactly like Scala's.
 5. Retire the Scala service.

@@ -46,7 +46,7 @@ Migrations are plain values, so they are easy to test:
 
 ## Running migrations
 
-Call the runner **before** building your backend. It is idempotent and safe to call on every startup:
+Call the runner once the journal exists and **before** any command is handled. It is idempotent and safe to call on every start-up. It does not create the journal or snapshots tables (only its own `migrations` table): create them first, with `PGSchema` or Flyway (see [Operations](../operations/schema.md)).
 
 ```rust,ignore
 {{#include ../../samples/src/migrations.rs:running}}
@@ -62,14 +62,14 @@ Application startup
   │     ├── BEGIN
   │     ├── SELECT id, payload FROM journal
   │     ├── apply the transformation to each payload
-  │     ├── UPDATE journal SET payload = new payload (in batches)
+  │     ├── UPDATE journal SET payload = new payload WHERE id = ... (row by row, batch_size rows at a time)
   │     ├── INSERT INTO migrations (version, description)
   │     ├── TRUNCATE snapshots (cached state is invalid now)
   │     └── COMMIT
   └── MigrationResult { applied, skipped }
 ```
 
-Each migration runs in its own transaction: if `"002"` fails, `"001"` stays applied and will not re-run. The `migrations` table tracks what was applied, like Flyway's history table. Snapshots are truncated because they hold state derived from the old format; the backend rebuilds them lazily. The snapshots table must therefore exist: use persisted snapshots, or create it with `PGSchema`.
+Payloads are read as text and written back as `jsonb`, so journal migrations apply to `json` and `jsonb` payload columns only, not `bytea`. Each migration runs in its own transaction: if `"002"` fails, `"001"` stays applied and will not re-run. The `migrations` table tracks what was applied, like Flyway's history table. Snapshots are truncated because they hold state derived from the old format; the backend rebuilds them lazily. The snapshots table must therefore exist even when the backend keeps its snapshots in memory: create it with `PGSchema` (or a backend with persisted snapshots creates it when built).
 
 ## Compile-time safety
 

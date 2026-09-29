@@ -24,7 +24,7 @@ A common functional pattern: programs define *what*, interpreters define *how*. 
 | **PostgreSQL** | `edomata-sqlx` | Asynchronous, built on `sqlx`; the production backend. Shares its tables and payloads with the Scala Skunk and Doobie backends. |
 | **In memory** | `edomata-backend` (`inmemory` module) | Reproduces the PostgreSQL constraints in memory; for tests and prototypes. |
 
-Creating new ones is straightforward: a backend is an implementation of the `StorageDriver` trait (event sourcing) or `cqrs::StorageDriver` (CQRS).
+Creating new ones is straightforward: a backend is an implementation of the `edomata_backend::eventsourcing::StorageDriver` trait (event sourcing) or `edomata_backend::cqrs::StorageDriver` (CQRS).
 
 ### PostgreSQL
 
@@ -70,7 +70,7 @@ Payload columns can be `jsonb` (the default, indexable and queryable), `json` or
 |--------|-----------------|------|------|
 | JSON (binary) | `jsonb` | indexable, fast queries | slightly less readable in dumps |
 | JSON (text) | `json` | human readable | larger, slower queries |
-| Binary | `bytea` | compact | not human readable |
+| Bytes | `bytea` | opaque to the database | not queryable, not readable in dumps; with serde the bytes are still JSON, so it is no smaller |
 
 > **Recommendation**: start with `jsonb`. It is also what `build_default()` uses.
 
@@ -82,7 +82,7 @@ Payload columns can be `jsonb` (the default, indexable and queryable), `json` or
 
 > **What's happening here?**
 > 1. Create a connection pool to PostgreSQL.
-> 2. Create a driver for the `account` namespace (tables are created automatically unless `skip_setup` is used).
+> 2. Create a driver for the `account` namespace: it creates the schema, and building the backend creates the tables (unless `skip_setup` is used).
 > 3. Build a backend with your domain model; `build_default` picks serde `jsonb` codecs for events and notifications, and the snapshot codec is given to `persisted_snapshot`.
 > 4. Compile the pure `Edomaton` into a service that talks to the database.
 > 5. Send commands and get results: `Ok(Ok(()))` when accepted (or already handled), `Ok(Err(reasons))` when rejected, `Err(BackendError)` on storage failures.

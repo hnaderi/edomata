@@ -23,15 +23,15 @@ guide for Scala and Java users, and CI.
    published), one module per chapter, delimited with `// ANCHOR: name`
    markers and pulled into the Markdown with mdBook's include directive
    (`#include ../../samples/src/<module>.rs:name` between double braces).
-   `cargo clippy --workspace --all-targets` checks every sample (the
-   test-only ones included) and `cargo build --workspace` the non-test
-   ones; the pure ones (decisions, models, services,
-   guards, migrations, the simple facade, the test kit) are exercised by
-   `cargo test -p edomata-book-samples`; the ones that need PostgreSQL or a
-   broker are compiled but not run. The broker chapter includes the real
-   examples (`rust/examples/src/bin/kafka_relay.rs`, `rabbitmq_relay.rs`)
-   through anchors too. The one exception is the `AuthPolicy` trait
-   definition quoted in the SaaS chapter. Code blocks are marked `rust,ignore` so that
+   `cargo clippy --workspace --all-targets --all-features` checks every
+   sample (the test-only ones included; the broker samples are behind the
+   samples crate's `kafka` / `rabbitmq` features, like in the examples) and
+   `cargo build --workspace` the non-test ones; the pure ones (decisions,
+   models, services on the in-memory driver, guards, migrations, the simple
+   facade, the test kit) and the PostgreSQL integration test of the testing
+   chapter are exercised by `cargo test -p edomata-book-samples`; the other
+   ones that need PostgreSQL or a broker are compiled but not run. Every
+   Rust code block of the book is such an include. Code blocks are marked `rust,ignore` so that
    `mdbook test` does not try to compile them without dependencies; the
    crate is the compiler.
 
@@ -50,7 +50,11 @@ guide for Scala and Java users, and CI.
    plan: "Simple API" for the Java API page and "PostgreSQL (sqlx)" for
    the Skunk and Doobie pages, and two additions: "Distributing events
    with Kafka / RabbitMQ" and the "Migration guide for Scala and Java
-   users". Diagrams (PlantUML / Mermaid in Scala) are plain-text figures,
+   users". The chapters without a Scala counterpart come after the
+   tutorials: Guides (cookbook, testing), Operations (schema management,
+   event migrations, relays, multi-tenant deployment, troubleshooting) and
+   Reference (links to the published rustdoc), then Design decisions (the
+   ADRs). Diagrams (PlantUML / Mermaid in Scala) are plain-text figures,
    which render everywhere and need no plugin.
 
 5. **Every crate has a README.** Short and uniform: purpose, the Scala
@@ -59,12 +63,14 @@ guide for Scala and Java users, and CI.
    links to the book and the migration guide.
 
 6. **CI builds the book.** A `book` job installs `mdbook` and runs
-   `mdbook build book` (from `rust/`); the samples are already covered by the lint
-   and test jobs since they are workspace members.
+   `mdbook build book` (from `rust/`), then `book/check_links.py`, which checks
+   every include, anchor and relative link of the rendered book (a small script,
+   since `mdbook-linkcheck` does not support mdBook 0.5); the samples are already
+   covered by the lint and test jobs since they are workspace members.
 
 ## Consequences
 
 Documentation drift is caught by the compiler (samples), by `mdbook build`
-(broken includes) and by the pre-PR documentation audit (prose
+and `check_links.py` (broken includes, anchors and links) and by the pre-PR documentation audit (prose
 against code). The price is that prose and samples live in two files per
 chapter, which the anchors keep close.
