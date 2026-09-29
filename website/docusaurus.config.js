@@ -90,6 +90,14 @@ const config = {
             ],
           },
           {
+            title: "Rust",
+            items: [
+              { label: "Rust port", to: "/docs/rust/" },
+              { label: "Rust book", href: "https://beyond-scale-group.github.io/edomata/rust/book/" },
+              { label: "Rust API docs", href: "https://beyond-scale-group.github.io/edomata/rust/api/" },
+            ],
+          },
+          {
             title: "Ecosystem",
             items: [
               { label: "Cats", href: "https://typelevel.org/cats/" },
@@ -104,7 +112,7 @@ const config = {
       prism: {
         theme: require("prism-react-renderer").themes.github,
         darkTheme: require("prism-react-renderer").themes.dracula,
-        additionalLanguages: ["java", "sql", "bash"],
+        additionalLanguages: ["java", "sql", "bash", "rust", "toml"],
       },
     }),
 };

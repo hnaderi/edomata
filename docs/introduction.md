@@ -9,6 +9,8 @@ This is a light weight, polymorphic, purely functional library to implement even
 It is light weight in the terms of simplicity, so you are always dealing with a few primitive abstractions that are very intuitive.
 It is purely functional and built for typelevel ecosystem in mind, however it does not enforce any structure or decision on you and you can use it however you like.  
 
+A [Rust port](rust/index.md) of the library is also available. It keeps the same semantics and on-disk formats, so Rust and Scala services can share a PostgreSQL database (except for payloads written by the uPickle MessagePack codec, which Rust cannot read).
+
 ## Goals
 provide a solution to implement event driven systems, using domain driven design, by focusing on domain logic and building an automaton to represent the language.
 
@@ -67,3 +69,4 @@ This library is meant to help with this problem, so it can be both a way to show
 - [FAQ](other/faq)
 - [Design goals](about/design-goals)
 - [List of modules](other/modules)
+- [Edomata for Rust](rust/index.md)

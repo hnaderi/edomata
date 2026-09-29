@@ -32,6 +32,17 @@ const sidebars = {
     },
     {
       type: "category",
+      label: "Rust",
+      items: [
+        "rust/index",
+        "rust/crates",
+        "rust/installation",
+        "rust/quickstart",
+        "rust/compatibility",
+      ],
+    },
+    {
+      type: "category",
       label: "Other",
       items: ["other/modules", "other/faq"],
     },
