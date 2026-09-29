@@ -12,9 +12,9 @@ the list consists of:
 
 - `Decision` a state machine which represent decisions and has `MonadError` and is also traversable.
 - `DecisionT` a transformer that runs an effect that yields a `Decision`
-- `Response` a state machine which consists of a `Decision` and has publishing capability like a writer monad.
-- `Action` a transformer which runs an effect that yields a `Response`
-- `Edomaton` a program that reads a value, runs an effect and yields a `Response`
+- `ResponseD` a state machine which consists of a `Decision` and has publishing capability like a writer monad (`Response` is a deprecated alias).
+- `Action` a transformer which runs an effect that yields a `ResponseD`
+- `Edomaton` a program that reads a value, runs an effect and yields a `ResponseD`
 - `Stomaton` a program that reads a value and the current state, runs an effect and yields a new state (for CQRS without event sourcing)
 
 ## Convenient syntax and friendly type inference

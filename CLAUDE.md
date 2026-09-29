@@ -73,7 +73,7 @@ website/               # Docusaurus documentation site
 | Type | Purpose |
 |------|---------|
 | `Decision[R, E, A]` | State machine with Accepted/Rejected/InDecisive outcomes |
-| `Response[R, E, N, A]` | Decision combined with notification publishing (alias of `ResponseD`) |
+| `ResponseD[R, E, N, A]` | Decision combined with notification publishing (`Response` is a deprecated alias) |
 | `Edomaton[F, Env, R, E, N, A]` | Event-driven automaton (full event sourcing) |
 | `Stomaton[F, Env, S, R, E, A]` | State-only automaton (CQRS without event sourcing) |
 | `DecisionT[F, R, E, A]` | Effectful decision transformer |
@@ -157,7 +157,8 @@ core
                 ├── doobie-upickle
                 └── java-api (JVM only)
 
-backend-tests and e2e are test-only modules built on the drivers.
+backend-tests depends on postgres and provides the shared suites the skunk and doobie drivers run in
+their tests; e2e is a test-only module built on the drivers.
 ```
 
 ## PostgreSQL Naming & DDL
