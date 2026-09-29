@@ -25,10 +25,10 @@ sbt compile
 # Run all tests
 sbt test
 
-# Pre-commit checks (format, headers, compile, test)
+# Pre-commit (format sources and sbt files, create headers, regenerate the GitHub workflow, compile, test)
 sbt precommit
 
-# Full release checklist (clean, format check, compile, test)
+# Full release checklist (clean, format and sbt-format check, header check, GitHub workflow check, compile, test)
 sbt commit
 
 # Generate documentation
@@ -320,6 +320,20 @@ GitHub Actions runs on:
 - JVM versions: temurin@8, temurin@17
 - Platforms: JVM, JS, Native
 - Checks: format, compile, test
+
+### Releases
+
+Every push to `main` runs `.github/workflows/auto-tag.yml`, which tags a release only when a
+published artifact changed (the rules live in `.github/scripts/detect-changes.sh`):
+
+| Change in the push | Tag | Effect |
+|--------------------|-----|--------|
+| Sources of a published Scala module (`modules/*/src/main`, except `backend-tests` and `e2e`), `build.sbt` or `project/` | `v0.12.N` | `publish.yml` publishes to Maven Central |
+| A published crate (`rust/crates/*/src`, `Cargo.toml`, `README.md`, except `edomata-backend-tests` and `edomata-e2e`) or `rust/Cargo.toml` | `rust-v0.1.N` | none yet: there is no crates.io release workflow |
+| Anything else (docs, tests, examples, book, website, CI files) | none | none |
+
+A push can create both tags. Maven Central releases can't be deleted, so check what a merge changes
+before merging.
 
 ## Language
 

@@ -1,5 +1,12 @@
 name: Auto Tag on Merge
 
+# Tags a release only when the merged change touches a published artifact:
+#   - Scala: a v0.12.N tag, which publish.yml publishes to Maven Central.
+#   - Rust:  a rust-v0.1.N tag. No workflow publishes it yet (there is no
+#            crates.io release); it only marks the state of the crates.
+# Documentation, tests, examples, the book, the website and CI-only changes
+# create no tag. The rules live in .github/scripts/detect-changes.sh.
+
 on:
   push:
     branches: [main]
@@ -9,7 +16,7 @@ permissions:
 
 jobs:
   auto-tag:
-    name: Create next patch tag
+    name: Create next patch tags
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -18,8 +25,15 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.SCALA_STEWARD_TOKEN }}
 
-      - name: Compute next version tag
-        id: next
+      - name: Detect what changed
+        id: changes
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: .github/scripts/detect-changes.sh "$BEFORE" "$AFTER" | tee -a "$GITHUB_OUTPUT"
+
+      - name: Tag a Scala release
+        if: steps.changes.outputs.scala == 'true'
         run: |
           BASE="0.12"
           LATEST=$(git tag --list "v${BASE}.*" --sort=-v:refname | head -n1)
@@ -29,10 +43,25 @@ jobs:
             PATCH=$(echo "$LATEST" | sed "s/v${BASE}\.\([0-9]*\)/\1/")
             NEXT="v${BASE}.$((PATCH + 1))"
           fi
-          echo "tag=$NEXT" >> "$GITHUB_OUTPUT"
-          echo "Next tag: $NEXT"
+          echo "Scala tag: $NEXT"
+          git tag "$NEXT"
+          git push origin "$NEXT"
 
-      - name: Create and push tag
+      - name: Tag a Rust release
+        if: steps.changes.outputs.rust == 'true'
         run: |
-          git tag "${{ steps.next.outputs.tag }}"
-          git push origin "${{ steps.next.outputs.tag }}"
+          BASE="0.1"
+          LATEST=$(git tag --list "rust-v${BASE}.*" --sort=-v:refname | head -n1)
+          if [ -z "$LATEST" ]; then
+            NEXT="rust-v${BASE}.0"
+          else
+            PATCH=$(echo "$LATEST" | sed "s/rust-v${BASE}\.\([0-9]*\)/\1/")
+            NEXT="rust-v${BASE}.$((PATCH + 1))"
+          fi
+          echo "Rust tag: $NEXT"
+          git tag "$NEXT"
+          git push origin "$NEXT"
+
+      - name: Nothing to release
+        if: steps.changes.outputs.scala != 'true' && steps.changes.outputs.rust != 'true'
+        run: echo "No published Scala module or Rust crate changed, so no tag was created."
