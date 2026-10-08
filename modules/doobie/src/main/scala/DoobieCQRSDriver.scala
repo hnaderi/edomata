@@ -19,8 +19,8 @@ package edomata.doobie
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.implicits.*
-import doobie.implicits.*
-import doobie.util.transactor.Transactor
+import org.typelevel.doobie.implicits.*
+import org.typelevel.doobie.util.transactor.Transactor
 import edomata.backend.PGNamespace
 import edomata.backend.cqrs.*
 import edomata.core.*
@@ -58,7 +58,7 @@ final class DoobieCQRSDriver[F[_]: Async] private (
       StateModelTC[S],
       BackendCodec[S],
       BackendCodec[N]
-  ): Resource[F, Storage[F, S, N, R]] = build[S, N, R](_ => doobie.FC.unit)
+  ): Resource[F, Storage[F, S, N, R]] = build[S, N, R](_ => org.typelevel.doobie.FC.unit)
 
 }
 
