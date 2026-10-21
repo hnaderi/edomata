@@ -18,7 +18,7 @@ package edomata.doobie
 
 import cats.data.NonEmptyChain
 import cats.implicits.*
-import doobie.ConnectionIO
+import org.typelevel.doobie.ConnectionIO
 
 type DoobieHandler[N] = NonEmptyChain[N] => ConnectionIO[Unit]
 object DoobieHandler {
