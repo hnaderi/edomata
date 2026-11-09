@@ -16,7 +16,7 @@
 
 package edomata.doobie
 
-import _root_.doobie.*
+import org.typelevel.doobie.*
 import cats.Show
 import cats.data.NonEmptyList
 import org.postgresql.util.PGobject
