@@ -16,7 +16,7 @@
 
 package edomata.doobie
 
-import _root_.doobie.Transactor
+import org.typelevel.doobie.Transactor
 import _root_.doobie.implicits.*
 import cats.effect.Concurrent
 import cats.implicits.*
