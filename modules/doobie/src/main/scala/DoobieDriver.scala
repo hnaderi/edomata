@@ -20,8 +20,8 @@ import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.SecureRandom
 import cats.implicits.*
-import doobie.implicits.*
-import doobie.util.transactor.Transactor
+import org.typelevel.doobie.implicits.*
+import org.typelevel.doobie.util.transactor.Transactor
 import edomata.backend.PGNamespace
 import edomata.backend.eventsourcing.*
 import edomata.core.*
