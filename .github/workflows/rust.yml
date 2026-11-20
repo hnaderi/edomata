@@ -45,6 +45,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
+      - name: Install protoc (the pulsar client compiles its protocol definitions)
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo doc --workspace --all-features --no-deps
@@ -77,6 +79,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
+      - name: Install protoc (the pulsar client compiles its protocol definitions)
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       # The Scala build is the external oracle of the cross-language
       # compatibility test (crates/edomata-e2e/tests/cross_language.rs).
       - uses: actions/setup-java@v4
@@ -99,6 +103,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
+      - name: Install protoc (the pulsar client compiles its protocol definitions)
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - run: cargo check --workspace --all-targets --all-features
 
   wasm:
@@ -137,10 +143,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: |
-          if cargo tree -p edomata-broker -e normal | grep -iE "rdkafka|lapin"; then
+          if cargo tree -p edomata-broker -e normal | grep -iE "rdkafka|lapin| pulsar v"; then
             echo "edomata-broker must not depend on a broker client"; exit 1
           fi
-          if cargo tree -p edomata-examples -e normal | grep -iE "rdkafka|lapin"; then
+          if cargo tree -p edomata-examples -e normal | grep -iE "rdkafka|lapin| pulsar v"; then
             echo "the examples must not pull a broker client without the kafka / rabbitmq features"; exit 1
           fi
 

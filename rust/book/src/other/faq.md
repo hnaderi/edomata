@@ -30,6 +30,6 @@ Yes. The tables and DDL are byte-for-byte identical, and serde reads and writes 
 
 Exactly, that's how simple it is. While it is not rocket science to write a monadic data type, it is not what you want to focus on when writing business logic; and building an effect stack out of readers, writers and error channels won't be appealing either. Too much flexibility is cognitive load better spent on real business problems. Edomata is a few opinionated, tailored data types for creating programs, plus production-ready interpreters for them.
 
-## Where are the Kafka / RabbitMQ features?
+## Where are the Kafka / RabbitMQ / Pulsar features?
 
-In `edomata-broker`, `edomata-kafka` and `edomata-rabbitmq`, see [Distributing events](../backends/brokers.md). They are opt-in: nothing in the core or the PostgreSQL backend depends on a broker client.
+In `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` and `edomata-pulsar`, see [Distributing events](../backends/brokers.md). They are opt-in: nothing in the core or the PostgreSQL backend depends on a broker client.

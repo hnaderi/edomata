@@ -273,6 +273,8 @@ struct CrashAfterPublish<P> {
 impl<P: Publisher> Publisher for CrashAfterPublish<P> {
     async fn publish(&self, batch: &NonEmpty<BrokerMessage>) -> Result<(), PublishError> {
         self.inner.publish(batch).await?;
+        // `fetch_update` is deprecated in favour of `try_update`, newer than the MSRV.
+        #[allow(deprecated)]
         let crash = self
             .remaining
             .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |n| n.checked_sub(1))

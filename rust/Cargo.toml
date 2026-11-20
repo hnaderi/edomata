@@ -28,6 +28,7 @@ edomata-e2e = { path = "crates/edomata-e2e", version = "0.1.0" }
 edomata-broker = { path = "crates/edomata-broker", version = "0.1.0" }
 edomata-kafka = { path = "crates/edomata-kafka", version = "0.1.0" }
 edomata-rabbitmq = { path = "crates/edomata-rabbitmq", version = "0.1.0" }
+edomata-pulsar = { path = "crates/edomata-pulsar", version = "0.1.0" }
 
 sqlx = { version = "0.8", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "uuid"] }
 
@@ -44,6 +45,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"
 tokio-util = { version = "0.7", default-features = false }
 rdkafka = { version = "0.39", default-features = false, features = ["tokio", "libz"] }
 lapin = { version = "4" }
+# rustls (ring) rather than native-tls: no system OpenSSL; no OAuth2, no compression.
+# Building it needs `protoc` (prost-build).
+pulsar = { version = "6.9", default-features = false, features = ["tokio-rustls-runtime-ring"] }
 testcontainers = "0.27"
 testcontainers-modules = { version = "0.15", default-features = false }
 tracing = "0.1"

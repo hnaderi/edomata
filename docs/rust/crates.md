@@ -25,6 +25,7 @@ Circe, jsoniter-scala and uPickle.
 | *(none)* | `edomata-broker` | `Publisher`, `OutboxRelay`, `JournalRelay`, leader election with advisory locks, `LISTEN/NOTIFY` wake-ups |
 | *(none)* | `edomata-kafka` | Kafka publisher, built on rdkafka |
 | *(none)* | `edomata-rabbitmq` | RabbitMQ publisher, built on lapin |
+| *(none)* | `edomata-pulsar` | Apache Pulsar publisher, built on the pulsar client |
 
 The workspace also holds `edomata-examples` (one binary per Scala example, plus the Kafka and
 RabbitMQ relays) and `edomata-book-samples` (the compiled code samples of the Rust book).
@@ -50,11 +51,11 @@ has an in-memory driver for tests and prototypes.
 | `edomata-saas-sqlx` | `edomata-saas`, `edomata-sqlx` and their dependencies |
 | `edomata-simple` | `edomata-sqlx` and its dependencies |
 | `edomata-broker` | `edomata-core`, `edomata-backend`, `edomata-postgres` |
-| `edomata-kafka`, `edomata-rabbitmq` | `edomata-core`, `edomata-broker` |
+| `edomata-kafka`, `edomata-rabbitmq`, `edomata-pulsar` | `edomata-core`, `edomata-broker` |
 | `edomata-backend-tests` (test-only) | `edomata-core`, `edomata-backend` |
 | `edomata-e2e` (test-only) | `edomata-core`, `edomata-backend`, `edomata-serde`, `edomata-sqlx` |
 
-Applications that do not depend on `edomata-kafka` or `edomata-rabbitmq` pull no broker client.
+Applications that do not depend on `edomata-kafka`, `edomata-rabbitmq` or `edomata-pulsar` pull no broker client.
 
 ## See also
 

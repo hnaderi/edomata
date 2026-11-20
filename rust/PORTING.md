@@ -28,6 +28,7 @@ port is complete when no row is left *planned*.
 | 17 | `java-api` | `edomata-simple` | ported (milestone 7) |
 | — | `examples/` | `rust/examples/` (`edomata-examples`, one binary per example) | ported (milestone 8); Kafka and RabbitMQ examples added (milestone 9) |
 | — | *(new)* | `edomata-broker`, `edomata-kafka`, `edomata-rabbitmq` | added (milestone 9; no Scala equivalent) |
+| — | *(new)* | `edomata-pulsar` | added after milestone 9 (no Scala counterpart) |
 | — | `docs/`, `website/` | `rust/book/` (mdBook) with `rust/book/samples` (`edomata-book-samples`) | ported (milestone 10) |
 
 ## Type mapping (core)
@@ -174,10 +175,11 @@ Method naming: Scala overloads become distinct names (`validate` /
 | leader election, cross-process wake-ups | `postgres::LeaderLock` / `LeaderGuard`, `postgres::listen`; `SqlxDriver::with_outbox_notify_channel` / `with_journal_notify_channel`, `SqlxCqrsDriver::with_outbox_notify_channel` |
 | Kafka | `edomata_kafka::KafkaPublisher` (`builder`, `with_topic`, `with_fixed_topic`, `with_config`), `default_topic` |
 | RabbitMQ | `edomata_rabbitmq::RabbitMqPublisher` (`connect`, `with_exchange`, `with_routing_key`, `with_fixed_exchange`, `declare_exchange`) |
+| Pulsar | `edomata_pulsar::PulsarPublisher` (`builder`, `with_token`, `with_namespace`, `with_topic`, `with_fixed_topic`, `from_clever_env`), `resolve_topic`, `default_topic` (no Scala counterpart) |
 
 Tests: `crates/edomata-broker/tests/{outbox_relay,journal_relay,postgres}.rs`,
-`crates/edomata-kafka/tests/kafka.rs` and `crates/edomata-rabbitmq/tests/rabbitmq.rs`
-(testcontainers; Docker required).
+`crates/edomata-kafka/tests/kafka.rs`, `crates/edomata-rabbitmq/tests/rabbitmq.rs` and
+`crates/edomata-pulsar/tests/pulsar.rs` (testcontainers; Docker required).
 
 ## Type mapping (simple facade)
 

@@ -16,6 +16,7 @@
 | `edomata-broker` | *(new)* | `Publisher`, `OutboxRelay`, `JournalRelay`, leader election, `LISTEN/NOTIFY` | native |
 | `edomata-kafka` | *(new)* | Kafka publisher (rdkafka) | native |
 | `edomata-rabbitmq` | *(new)* | RabbitMQ publisher (lapin) | native |
+| `edomata-pulsar` | *(new)* | Apache Pulsar publisher (pulsar; token auth, TLS) | native |
 | `edomata-examples` | `examples/` | one binary per Scala example, plus the broker relays | native |
 | `edomata-book-samples` | `docs/` | the compiled samples of this book | native |
 

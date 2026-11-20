@@ -2,9 +2,9 @@
 //!
 //! Optional distribution of Edomata's outbox notifications and journal
 //! events to a message broker, independent of the broker itself. Concrete
-//! publishers live in `edomata-kafka` (rdkafka) and `edomata-rabbitmq`
-//! (lapin); an application that does not depend on those crates pulls no
-//! broker client into its dependency tree.
+//! publishers live in `edomata-kafka` (rdkafka), `edomata-rabbitmq`
+//! (lapin) and `edomata-pulsar` (pulsar); an application that does not
+//! depend on those crates pulls no broker client into its dependency tree.
 //!
 //! **The transactional outbox is the only source.** Commands write events
 //! and outbox items to PostgreSQL in one transaction, as always; a relay
@@ -39,13 +39,14 @@
 //! `edomata-backend` [`Backend`](edomata_backend::eventsourcing::Backend)
 //! (in-memory, or PostgreSQL through `edomata-sqlx`), and its [`postgres`]
 //! module uses the `edomata-postgres` naming for the checkpoint table. It
-//! has no Scala counterpart. `edomata-kafka` and `edomata-rabbitmq`
-//! implement [`Publisher`] on top of it.
+//! has no Scala counterpart. `edomata-kafka`, `edomata-rabbitmq` and
+//! `edomata-pulsar` implement [`Publisher`] on top of it.
 //!
 //! ```text
 //! edomata-core ── edomata-backend ─┬─ edomata-sqlx (writers, NOTIFY)
 //!                                  └─ edomata-broker ─┬─ edomata-kafka
-//!                                                     └─ edomata-rabbitmq
+//!                                                     ├─ edomata-rabbitmq
+//!                                                     └─ edomata-pulsar
 //! ```
 //!
 //! ## Example
@@ -139,7 +140,7 @@
 //!     .build_default()
 //!     .await?;
 //!
-//! let publisher = Arc::new(RecordingPublisher::new()); // a KafkaPublisher, a RabbitMqPublisher...
+//! let publisher = Arc::new(RecordingPublisher::new()); // a KafkaPublisher, a RabbitMqPublisher, a PulsarPublisher...
 //! let relay = OutboxRelay::new(
 //!     Arc::clone(backend.outbox()),
 //!     publisher,

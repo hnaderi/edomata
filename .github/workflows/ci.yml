@@ -207,6 +207,9 @@ jobs:
           rm -rf website/build/rust/book
           cp -R rust/book/book website/build/rust/book
 
+      - name: Install protoc (the pulsar client compiles its protocol definitions)
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
       - name: Build Rust API docs
         working-directory: rust
         run: cargo doc --workspace --all-features --no-deps

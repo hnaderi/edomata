@@ -3,7 +3,7 @@
 RabbitMQ publisher for `edomata-broker` relays, over `lapin`: publisher confirms awaited per message, persistent messages, exchange and routing key per message, reconnection. Integration tests use testcontainers (Docker required).
 
 - **Scala module(s)**: *(new)*
-- **Book chapter**: [Distributing events with Kafka / RabbitMQ](../../book/src/backends/brokers.md)
+- **Book chapter**: [Distributing events with Kafka / RabbitMQ / Pulsar](../../book/src/backends/brokers.md)
 - **API documentation**: [edomata_rabbitmq](https://beyond-scale-group.github.io/edomata/rust/api/edomata_rabbitmq/) (locally: `cargo doc -p edomata-rabbitmq --no-deps --open`)
 
 ## Main items

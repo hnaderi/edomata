@@ -1,22 +1,22 @@
-//! Samples of the "Distributing events with Kafka / RabbitMQ" chapter.
+//! Samples of the "Distributing events with Kafka / RabbitMQ / Pulsar" chapter.
 //! Each publisher is behind the feature of the same name (`kafka`,
-//! `rabbitmq`), like in `edomata-examples`, so that the default build pulls
+//! `rabbitmq`, `pulsar`), like in `edomata-examples`, so that the default build pulls
 //! no broker client; `--all-features` (clippy and tests in CI) compiles
 //! them. They need a broker, so they are compiled but not run.
 
-#[cfg(any(feature = "kafka", feature = "rabbitmq"))]
+#[cfg(any(feature = "kafka", feature = "rabbitmq", feature = "pulsar"))]
 use std::sync::Arc;
-#[cfg(any(feature = "kafka", feature = "rabbitmq"))]
+#[cfg(any(feature = "kafka", feature = "rabbitmq", feature = "pulsar"))]
 use std::time::Duration;
 
-#[cfg(any(feature = "kafka", feature = "rabbitmq"))]
+#[cfg(any(feature = "kafka", feature = "rabbitmq", feature = "pulsar"))]
 use crate::eventsourcing::{Account, Event, Notification, Rejection};
-#[cfg(any(feature = "kafka", feature = "rabbitmq"))]
+#[cfg(any(feature = "kafka", feature = "rabbitmq", feature = "pulsar"))]
 use edomata_backend::eventsourcing::Backend;
-#[cfg(any(feature = "kafka", feature = "rabbitmq"))]
+#[cfg(any(feature = "kafka", feature = "rabbitmq", feature = "pulsar"))]
 use edomata_broker::{CancellationToken, MessageEncoder, OutboxRelay, RelayConfig};
 
-#[cfg(any(feature = "kafka", feature = "rabbitmq"))]
+#[cfg(any(feature = "kafka", feature = "rabbitmq", feature = "pulsar"))]
 type AccountBackend = Backend<Account, Event, Rejection, Notification>;
 
 /// Relays the outbox to Kafka, as the leader among the replicas.
@@ -81,5 +81,33 @@ pub async fn rabbitmq_relay(
     .wake_on(backend.updates().outbox());
     relay.run(cancel).await?;
     // ANCHOR_END: rabbitmq
+    Ok(())
+}
+
+/// Relays the outbox to Apache Pulsar (for example the Clever Cloud add-on).
+#[cfg(feature = "pulsar")]
+pub async fn pulsar_relay(
+    backend: &AccountBackend,
+    cancel: CancellationToken,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use edomata_pulsar::PulsarPublisherBuilder;
+
+    // ANCHOR: pulsar
+    // Service URL, token, tenant and namespace from the add-on's environment
+    // (`ADDON_PULSAR_*`); one topic for every message, the stream id as the
+    // message key, the ids and metadata as message properties. Nothing
+    // connects before the first publish.
+    let publisher = PulsarPublisherBuilder::from_clever_env()?
+        .with_fixed_topic("accounts-notifications")
+        .build()?;
+    let relay = OutboxRelay::new(
+        Arc::clone(backend.outbox()),
+        Arc::new(publisher),
+        MessageEncoder::<Notification>::serde(),
+        RelayConfig::new("pulsar_accounts").with_poll_interval(Duration::from_secs(10)),
+    )
+    .wake_on(backend.updates().outbox());
+    relay.run(cancel).await?;
+    // ANCHOR_END: pulsar
     Ok(())
 }

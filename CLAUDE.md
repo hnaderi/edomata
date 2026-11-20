@@ -312,8 +312,8 @@ sbt "e2eTestsJVM/Test/runMain crosslang.CrossLanguage verify cross_language"
 - **Examples**: `rust/examples/src/bin/*.rs` (`cargo run -p edomata-examples --bin <name>`), one per Scala
   example, plus `kafka_relay` / `rabbitmq_relay` behind the `kafka` / `rabbitmq` features.
 
-- **Broker tests**: `edomata-kafka` and `edomata-rabbitmq` start Kafka and RabbitMQ with testcontainers, so
-  `cargo test --workspace` needs Docker (their leader-election tests also use the docker-compose PostgreSQL).
+- **Broker tests**: `edomata-kafka`, `edomata-rabbitmq` and `edomata-pulsar` start Kafka, RabbitMQ and Pulsar with
+  testcontainers, so `cargo test --workspace` needs Docker (and building `edomata-pulsar` needs `protoc`) (their leader-election tests also use the docker-compose PostgreSQL).
 
 - **Database for Rust tests**: the SQL tests read `DATABASE_URL` (default
   `postgres://postgres:postgres@localhost:5432/postgres`, the docker-compose instance). If a local

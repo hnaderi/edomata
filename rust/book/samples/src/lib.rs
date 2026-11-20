@@ -6,7 +6,7 @@
 //! exercised by `cargo test -p edomata-book-samples`, like the PostgreSQL
 //! integration test of the testing chapter. The other samples that need
 //! PostgreSQL or a broker are compiled but not run; the broker ones are
-//! behind the `kafka` and `rabbitmq` features.
+//! behind the `kafka`, `rabbitmq` and `pulsar` features.
 
 #![forbid(unsafe_code)]
 

@@ -28,6 +28,7 @@ edomata-broker = { workspace = true }
 edomata-testkit = { workspace = true }
 edomata-kafka = { workspace = true, optional = true }
 edomata-rabbitmq = { workspace = true, optional = true }
+edomata-pulsar = { workspace = true, optional = true }
 
 chrono = { workspace = true, features = ["clock"] }
 futures = { workspace = true, features = ["executor"] }
@@ -43,6 +44,7 @@ tracing = { workspace = true }
 # features no broker client is built or linked.
 kafka = ["dep:edomata-kafka"]
 rabbitmq = ["dep:edomata-rabbitmq"]
+pulsar = ["dep:edomata-pulsar"]
 
 [lints.rust]
 unsafe_code = "forbid"

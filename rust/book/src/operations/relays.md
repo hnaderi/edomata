@@ -34,8 +34,8 @@ A `JournalRelay` publishes raw events from a checkpoint, stored in the `relay_ch
 ## Delivery guarantees
 
 - **At-least-once.** Items are marked as sent (or the checkpoint advanced) only after the publisher returned, which it does once the broker acknowledged the whole batch. A crash in between publishes the batch again after the restart or the failover.
-- **Stable message ids.** Every message has a deterministic id, `"{source}:outbox:{seq_nr}"` or `"{source}:journal:{seq_nr}"`, in the `edomata-id` header (Kafka) or the `message_id` property (RabbitMQ). A redelivery has the same id.
-- **Ordering.** A relay publishes in sequence-number order, one batch at a time; Kafka partitions by stream id and RabbitMQ routes by stream id and awaits each confirm, so the messages of one aggregate stay in order.
+- **Stable message ids.** Every message has a deterministic id, `"{source}:outbox:{seq_nr}"` or `"{source}:journal:{seq_nr}"`, in the `edomata-id` header (Kafka), the `message_id` property (RabbitMQ) or the `edomata-id` message property (Pulsar). A redelivery has the same id.
+- **Ordering.** A relay publishes in sequence-number order, one batch at a time; Kafka partitions by stream id and RabbitMQ routes by stream id and awaits each confirm, Pulsar keys by stream id and awaits every send receipt, so the messages of one aggregate stay in order.
 - **Duplicates on the producer side too.** Rejected or indecisive commands that are sent again write their notifications again (only accepted commands are recorded as handled), and those are new outbox rows with new ids.
 
 So consumers must be idempotent. Record each message id in the same transaction as the effect, and skip the ids already recorded:

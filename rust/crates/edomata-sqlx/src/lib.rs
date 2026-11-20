@@ -72,7 +72,7 @@
 //! (naming and DDL) and `edomata-serde` (payload wire formats). It is used
 //! by `edomata-saas-sqlx` (through [`shared`]) and `edomata-simple`, is
 //! the storage of `edomata-e2e`, and backs the tests and examples of
-//! `edomata-broker` and the Kafka / RabbitMQ publishers.
+//! `edomata-broker` and the Kafka / RabbitMQ / Pulsar publishers.
 //!
 //! ## Feature flags
 //!

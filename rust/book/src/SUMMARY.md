@@ -31,7 +31,7 @@
 
 - [PostgreSQL (sqlx)](backends/postgres.md)
 - [Simple API](backends/simple-api.md)
-- [Distributing events with Kafka / RabbitMQ](backends/brokers.md)
+- [Distributing events with Kafka / RabbitMQ / Pulsar](backends/brokers.md)
 
 # Operations
 
