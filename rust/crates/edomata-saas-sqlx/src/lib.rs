@@ -46,6 +46,29 @@
 //! # let _ = driver; Ok(()) }
 //! ```
 //!
+//! ## Event-sourced services under Row-Level Security
+//!
+//! [`RlsGateway`] is the single entry point of the contract that
+//! `edomata_saas::SaaSEventSourcedService` requires: it switches the
+//! transaction to the tenant, system or inspection role (`SET LOCAL ROLE`,
+//! which needs role membership) and sets the tenant with a
+//! transaction-local `set_config`. `RlsGateway::driver` gives an
+//! `edomata_sqlx::SqlxDriver` that runs every transaction that way:
+//!
+//! ```no_run
+//! # use edomata_saas::{PGNaming, RlsAccessPolicy, TenantId};
+//! # use edomata_saas_sqlx::RlsGateway;
+//! # async fn example(pool: sqlx::PgPool) -> Result<(), Box<dyn std::error::Error>> {
+//! let policy: RlsAccessPolicy<TenantId> = RlsAccessPolicy::with_prefix("shop")?;
+//! let gateway = RlsGateway::new(pool, policy.clone());
+//! let driver = gateway.driver(PGNaming::prefixed_str("shop")?).await?;
+//! // per request: gateway.with_access(&policy.tenant_access(&tenant)?, handle(command)).await
+//! # let _ = driver; Ok(()) }
+//! ```
+//!
+//! The tables and policies come from
+//! `edomata_saas::SaaSPGSchema::eventsourcing_rls`.
+//!
 //! ## Where it fits
 //!
 //! It depends on `edomata-saas` (tenancy types, [`TenantExtractor`](edomata_saas::TenantExtractor)
@@ -70,7 +93,9 @@
 mod codec;
 mod driver;
 mod queries;
+mod rls;
 
 pub use codec::SaaSCodec;
 pub use driver::{SaaSSqlxCqrsDriver, TenantStateLister};
 pub use edomata_sqlx::SqlxHandler;
+pub use rls::RlsGateway;

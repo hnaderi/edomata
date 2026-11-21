@@ -13,7 +13,15 @@
 //!   [`UnsafeCrossTenantQuery`]; [`TenantExtractor`] for tenant-aware
 //!   storage
 //! - [`SaaSPGSchema`]: DDL with `tenant_id` / `owner_id` columns and
-//!   optional Row-Level Security
+//!   optional Row-Level Security (CQRS tables)
+//! - the mandatory Row-Level Security contract of event-sourced services:
+//!   [`RlsAccessPolicy`] (required by the builder of
+//!   [`SaaSEventSourcedService`]), [`Access`] / [`AccessMode`] (tenant,
+//!   system, inspection: three PostgreSQL roles), [`TenantKey`], and
+//!   [`SaaSPGSchema::eventsourcing_rls`] for the tables, policies and grants.
+//!   The Scala module has no equivalent. See the book chapter *Multi-tenant
+//!   deployment* and `edomata-saas-sqlx`'s `RlsGateway`, the entry point
+//!   that applies it at run time.
 //!
 //! Application code should build programs through the guarded DSLs: every
 //! command routed with `guarded_router` is checked for tenant isolation and
@@ -75,6 +83,7 @@ mod dsl;
 mod extractor;
 mod guard;
 mod reader;
+mod rls;
 mod schema;
 mod service;
 mod types;
@@ -85,8 +94,14 @@ pub use guard::SaaSGuard;
 pub use reader::{
     CrossTenantQueryFn, ScopedQueryFn, TenantAwareReader, TenantScopedQuery, UnsafeCrossTenantQuery,
 };
+pub use rls::{
+    Access, AccessMode, RlsAccessPolicy, RlsPolicyError, TENANT_SEPARATOR, TenantKey,
+    TenantKeyError, validate_tenant_key,
+};
 pub use schema::{RlsConfig, SaaSPGSchema, ddl};
-pub use service::{SaaSCqrsService, SaaSEventSourcedService};
+pub use service::{
+    Missing, SaaSCqrsService, SaaSEventSourcedService, SaaSEventSourcedServiceBuilder, Set,
+};
 pub use types::{
     AuthPolicy, CallerIdentity, CrudAction, CrudState, PermissivePolicy, RoleBasedPolicy,
     SaaSCommand, TenantId, UserId,

@@ -64,6 +64,14 @@
 //! # Ok(()) }
 //! ```
 //!
+//! ## Preparing every transaction (Row-Level Security)
+//!
+//! [`SqlxDriver::with_tx_scope`] takes a [`TxScope`]: with one, the driver
+//! runs every statement, reads included, inside a transaction the scope has
+//! prepared (`SET LOCAL ROLE`, a transaction-local tenant...). Without one
+//! nothing changes. `edomata-saas-sqlx`'s `RlsGateway` is the implementation
+//! for multi-tenant services.
+//!
 //! ## Where it fits
 //!
 //! It depends on `edomata-core` (programs), `edomata-backend` (the
@@ -91,12 +99,14 @@ mod error;
 mod eventsourcing;
 mod migrations;
 pub mod queries;
+mod scope;
 
 pub use codec::SqlxCodec;
 pub use cqrs::{SqlxCqrsDriver, SqlxHandler};
 pub use edomata_postgres::{EventMigration, MigrationResult, PGNamespace, PGNaming, PGSchema};
 pub use eventsourcing::SqlxDriver;
 pub use migrations::{DEFAULT_MIGRATION_BATCH_SIZE, SqlxMigrations};
+pub use scope::TxScope;
 pub use sqlx::PgPool;
 
 /// Building blocks for derived drivers (used by `edomata-saas-sqlx`).

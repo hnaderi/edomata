@@ -12,6 +12,7 @@ Multi-tenant CRUD abstractions: tenancy types, pluggable authorisation policies,
 - `AuthPolicy`, `PermissivePolicy`, `RoleBasedPolicy`, `SaaSGuard`
 - `SaaSDomainDsl`, `SaaSCqrsDsl`, `SaaSEventSourcedService`, `SaaSCqrsService`
 - `TenantAwareReader`, `TenantScopedQuery`, `UnsafeCrossTenantQuery`, `TenantExtractor`
-- `SaaSPGSchema`, `RlsConfig`
+- `SaaSPGSchema`, `RlsConfig` (CQRS tables, optional RLS)
+- `RlsAccessPolicy`, `Access`, `AccessMode`, `TenantKey`: the mandatory Row-Level Security contract of `SaaSEventSourcedService` (built with `builder()`, which does not compile without an access policy); `SaaSPGSchema::eventsourcing_rls` generates the tables, policies and grants
 
 Part of the [Edomata Rust port](../../README.md); see [`PORTING.md`](../../PORTING.md) for the mapping to the Scala library and [`docs/adr/`](../../docs/adr/) for the design decisions.

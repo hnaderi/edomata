@@ -26,6 +26,7 @@ use crate::error::{assert_inserted, map_sqlx, map_write};
 use crate::queries::{
     CommandQueries, JournalQueries, OutboxQueries, SnapshotQueries, setup_schema,
 };
+use crate::scope::{Db, TxScope};
 
 /// PostgreSQL storage driver for event-sourced aggregates.
 ///
@@ -74,6 +75,8 @@ pub struct SqlxDriver {
     auto_setup: bool,
     outbox_notify_channel: Option<String>,
     journal_notify_channel: Option<String>,
+    scope: Option<Arc<dyn TxScope>>,
+    snapshot_write_scope: Option<Arc<dyn TxScope>>,
 }
 
 impl SqlxDriver {
@@ -134,7 +137,31 @@ impl SqlxDriver {
             auto_setup: !skip_setup,
             outbox_notify_channel: None,
             journal_notify_channel: None,
+            scope: None,
+            snapshot_write_scope: None,
         })
+    }
+
+    /// Runs every transaction of the driver (journal, outbox, commands and
+    /// snapshots, reads included) through `scope`, which prepares it (for
+    /// example `SET LOCAL ROLE` and a transaction-local tenant setting for
+    /// Row-Level Security). See [`TxScope`]. Off by default: without a
+    /// scope the driver uses the pool directly. The setup DDL of a scoped
+    /// driver should be skipped (`skip_setup`): the scope's role does not
+    /// own the tables.
+    pub fn with_tx_scope(mut self, scope: Arc<dyn TxScope>) -> Self {
+        self.scope = Some(scope);
+        self
+    }
+
+    /// Uses `scope` instead of the driver's scope for **writing**
+    /// snapshots only. A persisted snapshot store writes evicted snapshots
+    /// from a background task, which has none of the caller's context: this
+    /// gives that task its own, explicit access (reads of snapshots keep
+    /// going through the driver's scope).
+    pub fn with_snapshot_write_scope(mut self, scope: Arc<dyn TxScope>) -> Self {
+        self.snapshot_write_scope = Some(scope);
+        self
     }
 
     /// Raises `NOTIFY channel` in the transaction that inserts outbox rows,
@@ -243,15 +270,19 @@ impl StorageDriver for SqlxDriver {
             execute_all(&self.pool, &commands_q.setup).await?;
         }
         let updates = Notifications::new();
+        let db = Db::new(self.pool.clone(), self.scope.clone());
         let journal: Arc<dyn JournalReader<E>> = Arc::new(SqlxJournalReader {
-            pool: self.pool.clone(),
+            db: db.clone(),
             q: Arc::clone(&journal_q),
             codec: event_codec.clone(),
         });
-        let outbox: Arc<dyn OutboxReader<N>> = Arc::new(SqlxOutboxReader {
-            pool: self.pool.clone(),
-            q: Arc::clone(&outbox_q),
-            codec: notification_codec.clone(),
+        let outbox: Arc<dyn OutboxReader<N>> = Arc::new(DbOutboxReader {
+            db: db.clone(),
+            inner: SqlxOutboxReader {
+                pool: self.pool.clone(),
+                q: Arc::clone(&outbox_q),
+                codec: notification_codec.clone(),
+            },
         });
         let reader: Arc<dyn RepositoryReader<S, E, R>> = Arc::new(JournalRepositoryReader::new(
             Arc::clone(&journal),
@@ -259,7 +290,7 @@ impl StorageDriver for SqlxDriver {
             model,
         ));
         let repository: Arc<dyn Repository<S, E, R, N>> = Arc::new(SqlxRepository {
-            pool: self.pool.clone(),
+            db,
             journal: journal_q,
             outbox: outbox_q,
             commands: commands_q,
@@ -289,8 +320,16 @@ impl StorageDriver for SqlxDriver {
         if self.auto_setup {
             execute_all(&self.pool, &q.setup).await?;
         }
+        let read = Db::new(self.pool.clone(), self.scope.clone());
+        let write = Db::new(
+            self.pool.clone(),
+            self.snapshot_write_scope
+                .clone()
+                .or_else(|| self.scope.clone()),
+        );
         Ok(Arc::new(SqlxSnapshotPersistence {
-            pool: self.pool.clone(),
+            read,
+            write,
             q,
             codec: state_codec,
         }))
@@ -302,7 +341,7 @@ impl StorageDriver for SqlxDriver {
 // ---------------------------------------------------------------------------
 
 struct SqlxRepository<S, E, R, N> {
-    pool: PgPool,
+    db: Db,
     journal: Arc<JournalQueries>,
     outbox: Arc<OutboxQueries>,
     commands: Arc<CommandQueries>,
@@ -410,7 +449,10 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Repository<S, E, R, N>
     for SqlxRepository<S, E, R, N>
 {
     async fn load(&self, cmd: CommandRef<'_>) -> Result<CommandState<S, E, R>, BackendError> {
-        if command_exists(&self.pool, &self.commands, cmd.id).await? {
+        let mut conn = self.db.reader().await?;
+        let exists = command_exists(conn.conn(), &self.commands, cmd.id).await;
+        conn.finish().await?;
+        if exists? {
             return Ok(CommandState::Redundant);
         }
         Ok(CommandState::Aggregate(self.reader.get(cmd.address).await?))
@@ -425,7 +467,7 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Repository<S, E, R, N>
         notifications: Vec<N>,
     ) -> Result<(), BackendError> {
         let now = now();
-        let mut tx = self.pool.begin().await.map_err(map_sqlx)?;
+        let mut tx = self.db.begin().await?;
         for (i, event) in events.iter().enumerate() {
             let affected = sqlx::query(&self.journal.insert)
                 .bind(Uuid::new_v4())
@@ -465,7 +507,7 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Repository<S, E, R, N>
         notifications: NonEmpty<N>,
     ) -> Result<(), BackendError> {
         let now = now();
-        let mut tx = self.pool.begin().await.map_err(map_sqlx)?;
+        let mut tx = self.db.begin().await?;
         insert_outbox(
             &mut tx,
             &self.outbox,
@@ -487,7 +529,7 @@ impl<S: Payload, E: Payload, R: Payload, N: Payload> Repository<S, E, R, N>
 // ---------------------------------------------------------------------------
 
 struct SqlxJournalReader<E> {
-    pool: PgPool,
+    db: Db,
     q: Arc<JournalQueries>,
     codec: SqlxCodec<E>,
 }
@@ -509,11 +551,25 @@ impl<E: Payload> SqlxJournalReader<E> {
         &'a self,
         query: Query<'a, Postgres, PgArguments>,
     ) -> BoxStream<'a, Result<EventMessage<E>, BackendError>> {
-        query
-            .fetch(&self.pool)
-            .map_err(map_sqlx)
-            .and_then(move |row| std::future::ready(self.row_to_event(&row)))
-            .boxed()
+        if !self.db.is_scoped() {
+            return query
+                .fetch(self.db.pool())
+                .map_err(map_sqlx)
+                .and_then(move |row| std::future::ready(self.row_to_event(&row)))
+                .boxed();
+        }
+        // Scoped: the rows are read inside a prepared transaction, then
+        // streamed from memory.
+        futures::stream::once(async move {
+            let mut conn = self.db.reader().await?;
+            let rows = query.fetch_all(conn.conn()).await.map_err(map_sqlx);
+            conn.finish().await?;
+            rows
+        })
+        .map_ok(|rows| futures::stream::iter(rows.into_iter().map(Ok)))
+        .try_flatten()
+        .and_then(move |row: PgRow| std::future::ready(self.row_to_event(&row)))
+        .boxed()
     }
 }
 
@@ -581,7 +637,7 @@ pub struct SqlxOutboxReader<N> {
 }
 
 impl<N: Payload> SqlxOutboxReader<N> {
-    fn row_to_item(&self, row: &PgRow) -> Result<OutboxItem<N>, BackendError> {
+    pub(crate) fn row_to_item(&self, row: &PgRow) -> Result<OutboxItem<N>, BackendError> {
         Ok(OutboxItem {
             seq_nr: row.try_get("seqnr").map_err(map_sqlx)?,
             stream_id: row.try_get("stream").map_err(map_sqlx)?,
@@ -617,12 +673,57 @@ impl<N: Payload> OutboxReader<N> for SqlxOutboxReader<N> {
     }
 }
 
+/// The outbox reader of [`SqlxDriver`]: [`SqlxOutboxReader`] when there is
+/// no scope, the same statements inside prepared transactions otherwise.
+struct DbOutboxReader<N> {
+    db: Db,
+    inner: SqlxOutboxReader<N>,
+}
+
+#[async_trait]
+impl<N: Payload> OutboxReader<N> for DbOutboxReader<N> {
+    fn read(&self) -> BoxStream<'_, Result<OutboxItem<N>, BackendError>> {
+        if !self.db.is_scoped() {
+            return self.inner.read();
+        }
+        futures::stream::once(async move {
+            let mut conn = self.db.reader().await?;
+            let rows = sqlx::query(&self.inner.q.read)
+                .fetch_all(conn.conn())
+                .await
+                .map_err(map_sqlx);
+            conn.finish().await?;
+            rows
+        })
+        .map_ok(|rows| futures::stream::iter(rows.into_iter().map(Ok)))
+        .try_flatten()
+        .and_then(move |row: PgRow| std::future::ready(self.inner.row_to_item(&row)))
+        .boxed()
+    }
+
+    async fn mark_all_as_sent(&self, items: &NonEmpty<OutboxItem<N>>) -> Result<(), BackendError> {
+        if !self.db.is_scoped() {
+            return self.inner.mark_all_as_sent(items).await;
+        }
+        let ids: Vec<SeqNr> = items.iter().map(|i| i.seq_nr).collect();
+        let mut tx = self.db.begin().await?;
+        sqlx::query(&self.inner.q.mark_published)
+            .bind(now())
+            .bind(&ids)
+            .execute(&mut *tx)
+            .await
+            .map_err(map_sqlx)?;
+        tx.commit().await.map_err(map_sqlx)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Snapshot persistence
 // ---------------------------------------------------------------------------
 
 struct SqlxSnapshotPersistence<S> {
-    pool: PgPool,
+    read: Db,
+    write: Db,
     q: SnapshotQueries,
     codec: SqlxCodec<S>,
 }
@@ -630,12 +731,14 @@ struct SqlxSnapshotPersistence<S> {
 #[async_trait]
 impl<S: Payload> SnapshotPersistence<S> for SqlxSnapshotPersistence<S> {
     async fn get(&self, id: &str) -> Result<Option<ValidState<S>>, BackendError> {
+        let mut conn = self.read.reader().await?;
         let row = sqlx::query(&self.q.get)
             .bind(id)
-            .fetch_optional(&self.pool)
+            .fetch_optional(conn.conn())
             .await
-            .map_err(map_sqlx)?;
-        match row {
+            .map_err(map_sqlx);
+        conn.finish().await?;
+        match row? {
             None => Ok(None),
             Some(row) => Ok(Some(ValidState {
                 state: self.codec.decode_row(&row, "state")?,
@@ -649,7 +752,7 @@ impl<S: Payload> SnapshotPersistence<S> for SqlxSnapshotPersistence<S> {
         if items.is_empty() {
             return Ok(());
         }
-        let mut tx = self.pool.begin().await.map_err(map_sqlx)?;
+        let mut tx = self.write.begin().await?;
         for (id, state) in &items {
             sqlx::query(&self.q.put)
                 .bind(id)

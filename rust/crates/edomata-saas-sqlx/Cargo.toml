@@ -24,6 +24,7 @@ chrono = { workspace = true, features = ["clock"] }
 futures = { workspace = true }
 serde = { workspace = true }
 sqlx = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

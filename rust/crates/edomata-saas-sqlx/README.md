@@ -9,5 +9,6 @@ The tenant-aware PostgreSQL CQRS driver: fills the `tenant_id` / `owner_id` colu
 ## Main items
 
 - `SaaSSqlxCqrsDriver`, `SaaSCodec<T>`, `TenantStateLister`
+- `RlsGateway`: the single entry point of the event-sourced Row-Level Security contract (`SET LOCAL ROLE`, transaction-local tenant, `with_access`, `driver`)
 
 Part of the [Edomata Rust port](../../README.md); see [`PORTING.md`](../../PORTING.md) for the mapping to the Scala library and [`docs/adr/`](../../docs/adr/) for the design decisions.

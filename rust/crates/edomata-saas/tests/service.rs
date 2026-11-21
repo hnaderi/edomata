@@ -4,8 +4,8 @@
 use edomata_core::{CqrsModel, DomainModel, RequestContext};
 use edomata_saas::{
     CallerIdentity, CommandMessage, CrudAction, CrudState, Decision, MessageMetadata, NonEmpty,
-    RoleBasedPolicy, SaaSCommand, SaaSCqrsApp, SaaSCqrsService, SaaSEsApp, SaaSEventSourcedService,
-    TenantId, UserId,
+    RlsAccessPolicy, RoleBasedPolicy, SaaSCommand, SaaSCqrsApp, SaaSCqrsService, SaaSEsApp,
+    SaaSEventSourcedService, TenantId, UserId,
 };
 use futures::executor::block_on;
 
@@ -195,14 +195,22 @@ fn es_app(service: &EsService) -> EsApp {
 
 #[test]
 fn es_service_domain_is_accessible() {
-    let service: EsService = SaaSEventSourcedService::new(RoleBasedPolicy::none(), |m| m);
+    let service: EsService = SaaSEventSourcedService::builder()
+        .auth_policy(RoleBasedPolicy::none())
+        .rejection(|m| m)
+        .access_policy(RlsAccessPolicy::with_prefix("test").unwrap())
+        .build();
     let _domain = service.domain();
     let _ = TestEsModel.dsl::<SaaSCommand<CallerIdentity, String>, String>();
 }
 
 #[test]
 fn es_service_guarded_router_creates_events() {
-    let service: EsService = SaaSEventSourcedService::new(RoleBasedPolicy::none(), |m| m);
+    let service: EsService = SaaSEventSourcedService::builder()
+        .auth_policy(RoleBasedPolicy::none())
+        .rejection(|m| m)
+        .access_policy(RlsAccessPolicy::with_prefix("test").unwrap())
+        .build();
     let ctx = RequestContext::new(cmd("create"), CrudState::NonExistent);
     let r = block_on(es_app(&service).run(ctx));
     match r.result {
